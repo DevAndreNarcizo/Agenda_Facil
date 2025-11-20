@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Tema Claro - Premium */
+    --background: 0 0% 98%; /* Cinza muito claro */
+    --foreground: 0 0% 10%; /* Preto suave */
+    
+    --card: 0 0% 100%; /* Branco */
+    --card-foreground: 0 0% 10%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    
+    --primary: 191 91% 36%; /* Azul Ciano */
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 45 93% 47%; /* Dourado */
+    --secondary-foreground: 0 0% 10%;
+    
+    --muted: 0 0% 96%; /* Cinza claro */
+    --muted-foreground: 0 0% 45%;
+    
+    --accent: 191 91% 36%; /* Ciano */
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 0 0% 90%; /* Cinza borda */
+    --input: 0 0% 90%;
+    --ring: 191 91% 36%; /* Ciano para focus */
+    
+    --radius: 0.5rem;
+    
+    /* Cores customizadas */
+    --gold: 45 93% 47%;
+    --cyan: 191 91% 36%;
+    --dark: 0 0% 10%;
+  }
+ 
+  .dark {
+    /* Tema Escuro - Premium */
+    --background: 0 0% 8%; /* Preto suave */
+    --foreground: 0 0% 95%; /* Branco suave */
+    
+    --card: 0 0% 12%; /* Preto card */
+    --card-foreground: 0 0% 95%;
+    
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 95%;
+    
+    --primary: 191 91% 50%; /* Ciano mais brilhante no escuro */
+    --primary-foreground: 0 0% 10%;
+    
+    --secondary: 45 93% 55%; /* Dourado mais brilhante */
+    --secondary-foreground: 0 0% 10%;
+    
+    --muted: 0 0% 18%; /* Cinza escuro */
+    --muted-foreground: 0 0% 65%;
+    
+    --accent: 191 91% 50%; /* Ciano */
+    --accent-foreground: 0 0% 10%;
+    
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 0 0% 95%;
+    
+    --border: 0 0% 20%; /* Cinza borda escura */
+    --input: 0 0% 20%;
+    --ring: 191 91% 50%;
+    
+    /* Cores customizadas */
+    --gold: 45 93% 55%;
+    --cyan: 191 91% 50%;
+    --dark: 0 0% 95%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
