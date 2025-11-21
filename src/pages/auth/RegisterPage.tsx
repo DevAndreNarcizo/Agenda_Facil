@@ -44,13 +44,17 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      // 1. Sign up user
+      // 1. Sign up user with metadata
+      // The database trigger 'on_auth_user_created' will handle creating the Organization and Profile
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
           data: {
             full_name: data.fullName,
+            org_name: data.orgName,
+            org_slug: data.orgSlug,
+            role: 'admin', // Explicitly set role in metadata for the trigger
           },
         },
       });
@@ -58,29 +62,8 @@ export default function RegisterPage() {
       if (authError) throw authError;
       if (!authData.user) throw new Error("Erro ao criar usuário");
 
-      // 2. Create Organization
-      const { data: orgData, error: orgError } = await supabase
-        .from("organizations")
-        .insert({
-          name: data.orgName,
-          slug: data.orgSlug,
-        })
-        .select()
-        .single();
-
-      if (orgError) throw orgError;
-
-      // 3. Create Profile linked to Organization
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .insert({
-          id: authData.user.id,
-          organization_id: orgData.id,
-          full_name: data.fullName,
-          role: "owner",
-        });
-
-      if (profileError) throw profileError;
+      // No need to manually insert organization or profile anymore.
+      // The trigger handles it.
 
       navigate("/dashboard");
     } catch (err: any) {

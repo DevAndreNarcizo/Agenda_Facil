@@ -7,8 +7,11 @@ import { useAppointments } from "@/hooks/use-appointments";
 import { useDashboardStats } from "@/hooks/use-dashboard-stats";
 import { Calendar, DollarSign, TrendingUp, Users } from "lucide-react";
 
+import { useAuth } from "@/context/AuthContext";
+
 export default function DashboardHome() {
   const { appointments, loading } = useAppointments();
+  const { profile } = useAuth();
   const stats = useDashboardStats(appointments);
 
   if (loading) {
@@ -18,6 +21,8 @@ export default function DashboardHome() {
       </div>
     );
   }
+
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'owner';
 
   return (
     <div className="space-y-6">
@@ -45,13 +50,15 @@ export default function DashboardHome() {
           description={`Total de agendamentos em ${new Date().toLocaleDateString('pt-BR', { month: 'long' })}`}
           trend="up"
         />
-        <StatsCard
-          title="Receita do Mês"
-          value={`R$ ${stats.monthRevenue.toFixed(2)}`}
-          icon={DollarSign}
-          description="Receita de agendamentos completados"
-          trend="up"
-        />
+        {isAdmin && (
+          <StatsCard
+            title="Receita do Mês"
+            value={`R$ ${stats.monthRevenue.toFixed(2)}`}
+            icon={DollarSign}
+            description="Receita de agendamentos completados"
+            trend="up"
+          />
+        )}
         <StatsCard
           title="Taxa de Conclusão"
           value={`${stats.completedRate}%`}
@@ -64,7 +71,7 @@ export default function DashboardHome() {
       {/* Charts Grid */}
       <div className="grid gap-4 md:grid-cols-2">
         <AppointmentsChart appointments={appointments} />
-        <RevenueChart appointments={appointments} />
+        {isAdmin && <RevenueChart appointments={appointments} />}
       </div>
 
       {/* Calendar */}
