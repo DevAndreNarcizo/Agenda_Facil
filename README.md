@@ -141,4 +141,4 @@ Este projeto é proprietário e desenvolvido para fins de portfólio e comercial
 
 ---
 
-**Desenvolvido com 💙 e código limpo.**
+**Desenvolvido por André Narcizo com 💙 e código limpo.**
