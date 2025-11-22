@@ -19,7 +19,7 @@ export function RevenueChart({ appointments }: RevenueChartProps) {
     // Calcular receita do dia (apenas agendamentos completados)
     const revenue = appointments
       .filter((apt) => {
-        const scheduledDate = new Date(apt.scheduled_at);
+        const scheduledDate = new Date(apt.start_time);
         return (
           apt.status === "completed" &&
           isWithinInterval(scheduledDate, { start: dayStart, end: dayEnd })
@@ -28,7 +28,7 @@ export function RevenueChart({ appointments }: RevenueChartProps) {
       .reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
 
     return {
-      date: format(date, "EEE", { locale: ptBR }), // Dia da semana abreviado
+      date: format(date, "eeee", { locale: ptBR }).replace("-feira", ""), // Dia da semana completo sem -feira
       revenue,
     };
   });
@@ -42,7 +42,12 @@ export function RevenueChart({ appointments }: RevenueChartProps) {
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
+            <XAxis 
+              dataKey="date" 
+              interval={0} 
+              tick={{ fontSize: 12 }}
+              tickFormatter={(value) => value.charAt(0).toUpperCase() + value.slice(1)} // Capitalizar primeira letra
+            />
             <YAxis />
             <Tooltip 
               formatter={(value: number) => `R$ ${value.toFixed(2)}`}

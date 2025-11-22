@@ -29,14 +29,16 @@ interface CustomerComboboxProps {
   value: string
   onChange: (value: string) => void
   onCustomerSelect: (customer: Customer | null) => void
-  onCreateNew: (name: string) => void
+  onRequestCreate: (name: string) => void
+  customerName?: string // Nome do cliente selecionado
 }
 
 export function CustomerCombobox({
   value,
   onChange,
   onCustomerSelect,
-  onCreateNew,
+  onRequestCreate,
+  customerName,
 }: CustomerComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [query, setQuery] = React.useState("")
@@ -49,6 +51,13 @@ export function CustomerCombobox({
       fetchCustomers()
     }
   }, [open, profile?.organization_id])
+
+  // Recarregar quando um novo cliente for criado (value mudou mas não está na lista)
+  React.useEffect(() => {
+    if (value && profile?.organization_id && !customers.find(c => c.id === value)) {
+      fetchCustomers()
+    }
+  }, [value, profile?.organization_id])
 
   const fetchCustomers = async () => {
     setLoading(true)
@@ -73,7 +82,7 @@ export function CustomerCombobox({
   )
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={true}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -82,7 +91,7 @@ export function CustomerCombobox({
           className="w-full justify-between"
         >
           {value
-            ? customers.find((customer) => customer.id === value)?.name || value
+            ? customers.find((customer) => customer.id === value)?.name || customerName || "Cliente selecionado"
             : "Selecione um cliente..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -95,6 +104,11 @@ export function CustomerCombobox({
             onValueChange={setQuery}
           />
           <CommandList>
+            {loading && (
+              <div className="p-2 text-sm text-muted-foreground text-center">
+                Carregando...
+              </div>
+            )}
             <CommandEmpty>
               <div className="p-2">
                 <p className="text-sm text-muted-foreground mb-2">
@@ -105,7 +119,7 @@ export function CustomerCombobox({
                   size="sm"
                   className="w-full"
                   onClick={() => {
-                    onCreateNew(query)
+                    onRequestCreate(query)
                     setOpen(false)
                   }}
                 >

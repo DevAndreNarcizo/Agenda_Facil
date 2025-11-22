@@ -18,12 +18,12 @@ export function AppointmentsChart({ appointments }: AppointmentsChartProps) {
 
     // Contar agendamentos do dia
     const count = appointments.filter((apt) => {
-      const scheduledDate = new Date(apt.scheduled_at);
+      const scheduledDate = new Date(apt.start_time);
       return isWithinInterval(scheduledDate, { start: dayStart, end: dayEnd });
     }).length;
 
     return {
-      date: format(date, "EEE", { locale: ptBR }), // Dia da semana abreviado
+      date: format(date, "eeee", { locale: ptBR }).replace("-feira", ""), // Dia da semana completo sem -feira
       count,
     };
   });
@@ -37,7 +37,12 @@ export function AppointmentsChart({ appointments }: AppointmentsChartProps) {
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
+            <XAxis 
+              dataKey="date" 
+              interval={0} 
+              tick={{ fontSize: 12 }}
+              tickFormatter={(value) => value.charAt(0).toUpperCase() + value.slice(1)} // Capitalizar primeira letra
+            />
             <YAxis />
             <Tooltip />
             <Bar dataKey="count" fill="#8884d8" name="Agendamentos" />

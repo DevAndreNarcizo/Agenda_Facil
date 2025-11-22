@@ -13,21 +13,25 @@ interface StatsCardProps {
 export function StatsCard({ title, value, icon: Icon, description, trend = "neutral" }: StatsCardProps) {
   // Define a cor da tendência
   const trendColor = {
-    up: "text-green-600",
-    down: "text-red-600",
-    neutral: "text-gray-600",
+    up: "text-emerald-500",
+    down: "text-rose-500",
+    neutral: "text-muted-foreground",
   }[trend];
 
   return (
-    <Card>
+    <Card className="bg-card/50 backdrop-blur-sm border-white/10 hover:scale-[1.02] transition-all duration-300 hover:shadow-lg hover:border-primary/20 group">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">
+          {title}
+        </CardTitle>
+        <div className="p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
+          <Icon className="h-4 w-4 text-primary" />
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className="text-2xl font-bold tracking-tight">{value}</div>
         {description && (
-          <p className={`text-xs ${trendColor} mt-1`}>
+          <p className={`text-xs ${trendColor} mt-1 font-medium`}>
             {description}
           </p>
         )}

@@ -21,13 +21,13 @@ export function useDashboardStats(appointments: Appointment[]): DashboardStats {
 
     // Filtrar agendamentos de hoje
     const todayAppointments = appointments.filter((apt) => {
-      const scheduledDate = new Date(apt.scheduled_at);
+      const scheduledDate = new Date(apt.start_time);
       return isWithinInterval(scheduledDate, { start: todayStart, end: todayEnd });
     });
 
     // Filtrar agendamentos do mês
     const monthAppointments = appointments.filter((apt) => {
-      const scheduledDate = new Date(apt.scheduled_at);
+      const scheduledDate = new Date(apt.start_time);
       return isWithinInterval(scheduledDate, { start: monthStart, end: monthEnd });
     });
 

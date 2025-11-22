@@ -12,8 +12,8 @@ interface RecentAppointmentsProps {
 export function RecentAppointments({ appointments }: RecentAppointmentsProps) {
   // Pegar os próximos 5 agendamentos (ordenados por data)
   const upcomingAppointments = appointments
-    .filter((apt) => new Date(apt.scheduled_at) >= new Date() && apt.status !== "cancelled")
-    .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())
+    .filter((apt) => new Date(apt.start_time) >= new Date() && apt.status !== "cancelled")
+    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
     .slice(0, 5);
 
   // Badge de status
@@ -64,12 +64,12 @@ export function RecentAppointments({ appointments }: RecentAppointmentsProps) {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="h-3 w-3" />
                     <span>
-                      {format(new Date(apt.scheduled_at), "dd 'de' MMMM", { locale: ptBR })}
+                      {format(new Date(apt.start_time), "dd 'de' MMMM", { locale: ptBR })}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    <span>{format(new Date(apt.scheduled_at), "HH:mm")}</span>
+                    <span>{format(new Date(apt.start_time), "HH:mm")}</span>
                     <span className="mx-1">•</span>
                     <span>{apt.service?.name || "Serviço"}</span>
                   </div>

@@ -8,11 +8,13 @@ export interface Appointment {
   customer_name: string;
   customer_phone: string;
   service_id: string;
-  scheduled_at: string;
+  start_time: string;
+  end_time: string;
   status: "pending" | "confirmed" | "completed" | "cancelled";
   notes?: string;
   created_at: string;
   organization_id: string;
+  customer_id?: string;
   service?: {
     name: string;
     price: number;
@@ -51,7 +53,7 @@ export function useAppointments() {
             service:services(name, price, duration_minutes)
           `)
           .eq("organization_id", profile.organization_id)
-          .order("scheduled_at", { ascending: true });
+          .order("start_time", { ascending: true });
 
         if (fetchError) throw fetchError;
 
