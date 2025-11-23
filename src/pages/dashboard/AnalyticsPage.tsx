@@ -140,9 +140,9 @@ export default function AnalyticsPage() {
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  label={(entry) => `${entry.service_name} (${entry.count})`}
+                  label={(entry: any) => `${entry.service_name} (${entry.count})`}
                 >
-                  {topServices.map((entry, index) => (
+                  {topServices.map((_entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
