@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-// import { z } from "zod"; // Removed unused import
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,22 +13,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
-import { CustomerCombobox } from "./customer-combobox"; // Removed unused type Customer
+import { CustomerCombobox } from "./customer-combobox";
 import { NewCustomerDialog } from "./new-customer-dialog";
-
-// Simplified form handling without the full shadcn Form component for now to save time/complexity
-// unless we want to implement the full Form suite. Let's stick to standard controlled inputs for speed.
-
-// Schema definition removed as it was unused. 
-// Validation is currently done manually in handleSubmit.
-// const appointmentSchema = z.object({
-//   customerId: z.string().min(1, "Selecione um cliente"),
-//   serviceId: z.string().min(1, "Selecione um serviço"),
-//   date: z.string().min(1, "Selecione uma data"),
-//   time: z.string().min(1, "Selecione um horário"),
-// });
-
-// type AppointmentForm = z.infer<typeof appointmentSchema>;
+import { useAvailability } from "@/hooks/use-availability";
+import { useEmployees } from "@/hooks/use-employees";
+import { usePromotions } from "@/hooks/use-promotions";
+import { toast } from "sonner";
 
 interface NewAppointmentModalProps {
   onAppointmentCreated: () => void;
@@ -41,11 +29,16 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
   const [loading, setLoading] = useState(false);
   const [services, setServices] = useState<any[]>([]);
   const { profile } = useAuth();
+  const { checkAvailability } = useAvailability();
+  const { employees } = useEmployees();
+  const { promotions } = usePromotions();
 
   // Form State
   const [customerId, setCustomerId] = useState("");
   const [customerName, setCustomerName] = useState(""); // For display/creation
   const [serviceId, setServiceId] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
+  const [promotionId, setPromotionId] = useState<string | null>(null);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
 
@@ -91,8 +84,10 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
       
       setCustomerId(newCustomer.id);
       setCustomerName(newCustomer.name);
+      toast.success("Cliente criado com sucesso!");
     } catch (error) {
       console.error("Error creating customer:", error);
+      toast.error("Erro ao criar cliente.");
     }
   };
 
@@ -108,6 +103,20 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
       const duration = service?.duration_minutes || 30;
       const endDateTime = new Date(startDateTime.getTime() + duration * 60000);
 
+      // Check availability (scoped to employee if selected)
+      const isAvailable = await checkAvailability(
+        startDateTime.toISOString(),
+        endDateTime.toISOString(),
+        undefined,
+        employeeId || undefined
+      );
+
+      if (!isAvailable) {
+        toast.error("Este horário já está ocupado para este profissional! Por favor, escolha outro horário.");
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase
         .from("appointments")
         .insert({
@@ -115,9 +124,11 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
           customer_id: customerId,
           customer_name: customerName, // Keep for cache/legacy
           service_id: serviceId,
+          employee_id: employeeId || null,
           start_time: startDateTime.toISOString(),
           end_time: endDateTime.toISOString(),
-          status: 'confirmed'
+          status: 'confirmed',
+          promotion_id: promotionId || null
         });
 
       if (error) throw error;
@@ -127,10 +138,14 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
       // Reset form
       setCustomerId("");
       setServiceId("");
+      setEmployeeId("");
+      setPromotionId(null);
       setDate("");
       setTime("");
+      toast.success("Agendamento criado com sucesso!");
     } catch (error) {
       console.error("Error creating appointment:", error);
+      toast.error("Erro ao criar agendamento.");
     } finally {
       setLoading(false);
     }
@@ -170,6 +185,23 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
             </div>
 
             <div className="grid gap-2">
+              <Label htmlFor="employee">Profissional (Opcional)</Label>
+              <select
+                id="employee"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={employeeId}
+                onChange={(e) => setEmployeeId(e.target.value)}
+              >
+                <option value="">Qualquer profissional</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid gap-2">
               <Label htmlFor="service">Serviço</Label>
               <select
                 id="service"
@@ -185,7 +217,47 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
                   </option>
                 ))}
               </select>
+
             </div>
+
+            {serviceId && (
+              <div className="grid gap-2">
+                <Label htmlFor="promotion">Promoção (Opcional)</Label>
+                <select
+                  id="promotion"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={promotionId || ""}
+                  onChange={(e) => setPromotionId(e.target.value || null)}
+                >
+                  <option value="">Sem promoção</option>
+                  {promotions
+                    ?.filter(p => p.active && (!p.service_id || p.service_id === serviceId))
+                    .map((promo) => (
+                      <option key={promo.id} value={promo.id}>
+                        {promo.name} ({promo.discount_type === 'percentage' ? `${promo.discount_value}% OFF` : `R$ ${promo.discount_value} OFF`})
+                      </option>
+                    ))}
+                </select>
+                {promotionId && (() => {
+                  const service = services.find(s => s.id === serviceId);
+                  const promo = promotions?.find(p => p.id === promotionId);
+                  if (service && promo) {
+                    let finalPrice = service.price;
+                    if (promo.discount_type === 'percentage') {
+                      finalPrice = service.price * (1 - promo.discount_value / 100);
+                    } else {
+                      finalPrice = Math.max(0, service.price - promo.discount_value);
+                    }
+                    return (
+                      <div className="text-sm text-muted-foreground mt-1">
+                        Preço final: <span className="line-through">R$ {service.price}</span> <span className="font-bold text-green-600">R$ {finalPrice.toFixed(2)}</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">

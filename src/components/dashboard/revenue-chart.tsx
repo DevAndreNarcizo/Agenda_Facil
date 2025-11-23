@@ -16,16 +16,16 @@ export function RevenueChart({ appointments }: RevenueChartProps) {
     const dayStart = startOfDay(date);
     const dayEnd = endOfDay(date);
 
-    // Calcular receita do dia (apenas agendamentos completados)
+    // Calcular receita do dia (apenas agendamentos pagos)
     const revenue = appointments
       .filter((apt) => {
         const scheduledDate = new Date(apt.start_time);
         return (
-          apt.status === "completed" &&
+          apt.payment_status === 'paid' &&
           isWithinInterval(scheduledDate, { start: dayStart, end: dayEnd })
         );
       })
-      .reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
+      .reduce((sum, apt) => sum + (apt.amount_paid || apt.service?.price || 0), 0);
 
     return {
       date: format(date, "eeee", { locale: ptBR }).replace("-feira", ""), // Dia da semana completo sem -feira

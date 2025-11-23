@@ -31,10 +31,10 @@ export function useDashboardStats(appointments: Appointment[]): DashboardStats {
       return isWithinInterval(scheduledDate, { start: monthStart, end: monthEnd });
     });
 
-    // Calcular receita do mês (apenas agendamentos completados)
+    // Calcular receita do mês (apenas agendamentos pagos)
     const monthRevenue = monthAppointments
-      .filter((apt) => apt.status === "completed")
-      .reduce((sum, apt) => sum + (apt.service?.price || 0), 0);
+      .filter((apt) => apt.payment_status === 'paid')
+      .reduce((sum, apt) => sum + (apt.amount_paid || apt.service?.price || 0), 0);
 
     // Calcular taxa de conclusão
     const completedCount = monthAppointments.filter((apt) => apt.status === "completed").length;

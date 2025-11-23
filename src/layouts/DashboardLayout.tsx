@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useOrganizationTheme } from "@/hooks/use-organization-theme";
 import { Button } from "@/components/ui/button";
 import { Calendar, Users, LayoutDashboard, Settings, LogOut, Menu, UserCircle } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -23,6 +24,9 @@ export function DashboardLayout() {
   const location = useLocation(); // Para saber a rota atual e destacar o item no menu
   const navigate = useNavigate(); // Para redirecionamento programático
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Estado para controlar o menu mobile
+  
+  // Aplicar tema da organização automaticamente
+  useOrganizationTheme();
 
   // Função para realizar logout
   const handleSignOut = async () => {

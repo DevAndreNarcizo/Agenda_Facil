@@ -6,6 +6,11 @@ import { ptBR } from "date-fns/locale";
 import type { Appointment } from "@/hooks/use-appointments";
 import { holidays } from "@/lib/holidays";
 import "react-big-calendar/lib/css/react-big-calendar.css";
+import { EditAppointmentModal } from "./edit-appointment-modal";
+import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
+import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
+
+const DnDCalendar = withDragAndDrop(Calendar);
 
 // Configurar localização do calendário
 const locales = {
@@ -23,16 +28,20 @@ const localizer = dateFnsLocalizer({
 // Props do componente
 interface CalendarViewProps {
   appointments: Appointment[]; // Lista de agendamentos
+  onAppointmentUpdate?: (id: string, updates: Partial<Appointment>) => Promise<void>;
 }
 
 // Converter agendamentos para eventos do calendário
 function appointmentsToEvents(appointments: Appointment[]): Event[] {
-  const appointmentEvents = appointments.map((apt) => ({
-    title: `${apt.customer_name} - ${apt.service?.name || "Serviço"}`,
-    start: new Date(apt.start_time),
-    end: new Date(apt.end_time),
-    resource: { type: "appointment", data: apt },
-  }));
+  const appointmentEvents = appointments.map((apt) => {
+    const professionalName = apt.employee?.full_name ? ` (${apt.employee.full_name.split(' ')[0]})` : "";
+    return {
+      title: `${apt.customer_name} - ${apt.service?.name || "Serviço"}${professionalName}`,
+      start: new Date(apt.start_time),
+      end: new Date(apt.end_time),
+      resource: { type: "appointment", data: apt },
+    };
+  });
 
   const holidayEvents = holidays.map((holiday) => {
     // Adiciona 12h para garantir que o fuso horário não mude o dia
@@ -49,9 +58,13 @@ function appointmentsToEvents(appointments: Appointment[]): Event[] {
   return [...appointmentEvents, ...holidayEvents];
 }
 
-export function CalendarView({ appointments }: CalendarViewProps) {
+export function CalendarView({ appointments, onAppointmentUpdate }: CalendarViewProps) {
   const [date, setDate] = useState(new Date());
   const [view, setView] = useState<View>(Views.MONTH);
+  
+  // Edit Modal State
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const events = appointmentsToEvents(appointments);
 
@@ -66,6 +79,41 @@ export function CalendarView({ appointments }: CalendarViewProps) {
       setDate(new Date());
     }
   }, [setView, setDate]);
+
+  // Manipulador de seleção de evento
+  const onSelectEvent = (event: Event) => {
+    const resource = event.resource as { type: string; data?: Appointment };
+    if (resource.type === "appointment" && resource.data) {
+      setSelectedAppointment(resource.data);
+      setEditModalOpen(true);
+    }
+  };
+
+  const onEventDrop = useCallback(
+    ({ event, start, end }: any) => {
+      const resource = event.resource as { type: string; data?: Appointment };
+      if (resource.type === "appointment" && resource.data && onAppointmentUpdate) {
+        onAppointmentUpdate(resource.data.id, {
+          start_time: start.toISOString(),
+          end_time: end.toISOString(),
+        });
+      }
+    },
+    [onAppointmentUpdate]
+  );
+
+  const onEventResize = useCallback(
+    ({ event, start, end }: any) => {
+      const resource = event.resource as { type: string; data?: Appointment };
+      if (resource.type === "appointment" && resource.data && onAppointmentUpdate) {
+        onAppointmentUpdate(resource.data.id, {
+          start_time: start.toISOString(),
+          end_time: end.toISOString(),
+        });
+      }
+    },
+    [onAppointmentUpdate]
+  );
 
   // Estilo customizado para eventos baseado no status
   const eventStyleGetter = (event: Event) => {
@@ -127,11 +175,11 @@ export function CalendarView({ appointments }: CalendarViewProps) {
       </CardHeader>
       <CardContent>
         <div style={{ height: "600px" }} className="calendar-container">
-          <Calendar
+          <DnDCalendar
             localizer={localizer}
             events={events}
-            startAccessor="start"
-            endAccessor="end"
+            startAccessor={(event: any) => event.start}
+            endAccessor={(event: any) => event.end}
             culture="pt-BR"
             messages={{
               next: "Próximo",
@@ -154,8 +202,23 @@ export function CalendarView({ appointments }: CalendarViewProps) {
             view={view}
             onNavigate={onNavigate}
             onView={onView}
+            onSelectEvent={onSelectEvent}
+            onEventDrop={onEventDrop}
+            onEventResize={onEventResize}
+            resizable
+            selectable
           />
         </div>
+
+        <EditAppointmentModal
+          appointment={selectedAppointment}
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          onAppointmentUpdated={() => {
+            // Refresh logic handled by realtime subscription
+            setEditModalOpen(false);
+          }}
+        />
       </CardContent>
     </Card>
   );

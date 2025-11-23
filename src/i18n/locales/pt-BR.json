@@ -1,0 +1,37 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "appointments": "Agendamentos",
+    "customers": "Clientes",
+    "employees": "Funcionários",
+    "services": "Serviços",
+    "settings": "Configurações",
+    "theme": "Tema",
+    "analytics": "Analytics"
+  },
+  "appointments": {
+    "new": "Novo Agendamento",
+    "edit": "Editar Agendamento",
+    "cancel": "Cancelar",
+    "complete": "Concluir",
+    "confirm": "Confirmar",
+    "status": {
+      "pending": "Pendente",
+      "confirmed": "Confirmado",
+      "completed": "Concluído",
+      "cancelled": "Cancelado"
+    }
+  },
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "loading": "Carregando...",
+    "error": "Erro",
+    "success": "Sucesso"
+  }
+}

@@ -7,32 +7,33 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Need to create tabs.tsx
 import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
   const { profile } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [orgName, setOrgName] = useState("");
   const [orgSlug, setOrgSlug] = useState("");
   const [services, setServices] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  // Service Form State
   const [newServiceName, setNewServiceName] = useState("");
   const [newServicePrice, setNewServicePrice] = useState("");
   const [newServiceDuration, setNewServiceDuration] = useState("30");
 
   useEffect(() => {
-    if (profile?.organization_id) {
-      fetchOrgData();
+    if (profile) {
+      fetchOrgDetails();
       fetchServices();
     }
-  }, [profile?.organization_id]);
+  }, [profile]);
 
-  const fetchOrgData = async () => {
+  const fetchOrgDetails = async () => {
+    if (!profile?.organization_id) return;
     const { data } = await supabase
       .from("organizations")
       .select("*")
-      .eq("id", profile?.organization_id)
+      .eq("id", profile.organization_id)
       .single();
+    
     if (data) {
       setOrgName(data.name);
       setOrgSlug(data.slug);
@@ -40,11 +41,12 @@ export default function SettingsPage() {
   };
 
   const fetchServices = async () => {
+    if (!profile?.organization_id) return;
     const { data } = await supabase
       .from("services")
       .select("*")
-      .eq("organization_id", profile?.organization_id)
-      .order("created_at");
+      .eq("organization_id", profile.organization_id)
+      .order("name");
     setServices(data || []);
   };
 
@@ -57,10 +59,10 @@ export default function SettingsPage() {
         .eq("id", profile?.organization_id);
       
       if (error) throw error;
-      alert("Configurações salvas com sucesso!");
+      toast.success("Configurações salvas com sucesso!");
     } catch (error) {
       console.error("Error updating org:", error);
-      alert("Erro ao salvar configurações.");
+      toast.error("Erro ao salvar configurações.");
     } finally {
       setLoading(false);
     }
@@ -86,12 +88,15 @@ export default function SettingsPage() {
       setNewServicePrice("");
       setNewServiceDuration("30");
       fetchServices();
+      toast.success("Serviço adicionado com sucesso!");
     } catch (error) {
       console.error("Error adding service:", error);
+      toast.error("Erro ao adicionar serviço.");
     }
   };
 
   const handleDeleteService = async (id: string) => {
+    // Ideally replace confirm with a Dialog, but for now just toast on error/success
     if (!confirm("Tem certeza que deseja excluir este serviço?")) return;
     try {
       const { error } = await supabase
@@ -101,8 +106,10 @@ export default function SettingsPage() {
       
       if (error) throw error;
       fetchServices();
+      toast.success("Serviço excluído com sucesso!");
     } catch (error) {
       console.error("Error deleting service:", error);
+      toast.error("Erro ao excluir serviço.");
     }
   };
 

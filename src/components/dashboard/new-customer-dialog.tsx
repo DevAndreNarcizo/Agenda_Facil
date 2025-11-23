@@ -28,9 +28,24 @@ export function NewCustomerDialog({
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
 
+  // Função para formatar telefone
+  const formatPhone = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 2) return numbers;
+    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhone(e.target.value);
+    setPhone(formatted);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onCreateCustomer({ name, phone, email });
+    // Remove formatação antes de enviar
+    const cleanPhone = phone.replace(/\D/g, '');
+    onCreateCustomer({ name, phone: cleanPhone, email });
     onOpenChange(false);
     // Reset form
     setName("");
@@ -65,8 +80,9 @@ export function NewCustomerDialog({
               id="phone"
               type="tel"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="(00) 00000-0000"
+              onChange={handlePhoneChange}
+              placeholder="(11) 99999-9999"
+              maxLength={15}
               required
             />
           </div>

@@ -1,0 +1,37 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "appointments": "Appointments",
+    "customers": "Customers",
+    "employees": "Employees",
+    "services": "Services",
+    "settings": "Settings",
+    "theme": "Theme",
+    "analytics": "Analytics"
+  },
+  "appointments": {
+    "new": "New Appointment",
+    "edit": "Edit Appointment",
+    "cancel": "Cancel",
+    "complete": "Complete",
+    "confirm": "Confirm",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    }
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  }
+}
