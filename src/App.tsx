@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -43,7 +44,7 @@ function App() {
           {/* Rotas Protegidas: Dashboard */}
           {/* O DashboardLayout serve como um "wrapper" que contém a Sidebar e o Header */}
           {/* Todas as rotas aninhadas aqui serão renderizadas dentro do <Outlet /> do DashboardLayout */}
-          <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
             {/* Rota Index: Renderizada quando o usuário acessa /dashboard */}
             <Route index element={<DashboardHome />} />
             
