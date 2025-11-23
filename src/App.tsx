@@ -27,6 +27,9 @@ function App() {
       <AuthProvider>
         {/* Routes: Container para definir as rotas da aplicação */}
         <Routes>
+          {/* Rota Raiz: Redireciona para Login */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          
           {/* Rota Pública: Página de Login */}
           <Route path="/login" element={<LoginPage />} />
           
