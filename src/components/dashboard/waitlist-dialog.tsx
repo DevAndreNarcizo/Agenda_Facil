@@ -130,7 +130,7 @@ export function WaitlistDialog() {
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
-          <Button variant="outline" className="gap-2">
+          <Button className="gap-2">
             <CalendarClock className="h-4 w-4" />
             Lista de Espera
             {pendingEntries.length > 0 && (
