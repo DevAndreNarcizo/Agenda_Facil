@@ -206,7 +206,7 @@ Contribuições são bem-vindas! Sinta-se à vontade para abrir issues e pull re
 
 ## 📧 Contato
 
-Desenvolvido por [Seu Nome](https://github.com/seu-usuario)
+Desenvolvido por [André Narcizo](https://github.com/DevAndreNarcizo)
 
 ---
 
