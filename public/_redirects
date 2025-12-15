@@ -1,0 +1,3 @@
+# SPA fallback - redireciona apenas rotas não encontradas para index.html
+# O Netlify verifica se o arquivo existe primeiro, então assets em /assets/* são servidos normalmente
+/*    /index.html   200
