@@ -12,17 +12,19 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
+      // EMERGENCY KILL SWITCH: Unregister all Service Workers
       if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker
-            .register("/sw.js")
-            .then((registration) => {
-              console.log("SW registered: ", registration);
-            })
-            .catch((registrationError) => {
-              console.log("SW registration failed: ", registrationError);
-            });
-        });
+        navigator.serviceWorker
+          .getRegistrations()
+          .then(function (registrations) {
+            for (let registration of registrations) {
+              registration.unregister().then(function () {
+                console.log("ServiceWorker unregistered permanently.");
+                // Force reload to clear any cached assets controlled by the dead SW
+                window.location.reload();
+              });
+            }
+          });
       }
     </script>
   </body>
