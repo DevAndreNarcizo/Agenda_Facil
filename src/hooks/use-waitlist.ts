@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/use-auth";
 
 export interface WaitlistEntry {
   id: string;
@@ -46,7 +46,7 @@ export function useWaitlist() {
       if (error) throw error;
       
       // Map single objects from arrays if necessary
-      return data.map((item: any) => ({
+      return data.map((item: Record<string, unknown>) => ({
         ...item,
         customer: Array.isArray(item.customer) ? item.customer[0] : item.customer,
         service: Array.isArray(item.service) ? item.service[0] : item.service,

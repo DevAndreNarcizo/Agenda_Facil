@@ -1,74 +1,91 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
-// URL do serviço WhatsApp local
-const WHATSAPP_SERVICE_URL = Deno.env.get('WHATSAPP_SERVICE_URL') || 'http://localhost:3001'
+const WHATSAPP_TOKEN = Deno.env.get('WHATSAPP_CLOUD_API_TOKEN')
+const PHONE_NUMBER_ID = Deno.env.get('PHONE_NUMBER_ID')
 
 serve(async (req) => {
   try {
-    const { phone, code, type = 'otp' } = await req.json()
+    const { phone, code, message, type = 'otp', templateName } = await req.json()
 
-    if (!phone || !code) {
+    if (!phone) {
       return new Response(
-        JSON.stringify({ error: 'Phone and code are required' }),
+        JSON.stringify({ error: 'Phone is required' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       )
     }
 
-    // Chamar serviço WhatsApp local
-    const endpoint = type === 'otp' ? '/send-otp' : '/send-message'
-    const whatsappResponse = await fetch(`${WHATSAPP_SERVICE_URL}${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, code })
-    })
+    // Limpar número do telefone (padrão E.164 sem o +)
+    const cleanPhone = phone.replace(/\D/g, '')
 
-    const whatsappData = await whatsappResponse.json()
+    let body;
 
-    if (!whatsappResponse.ok) {
-      console.error('WhatsApp service error:', whatsappData)
-      
-      // Se o serviço não estiver disponível, retornar código simulado
-      if (whatsappResponse.status === 503) {
-        return new Response(
-          JSON.stringify({ 
-            success: true,
-            message: 'Código gerado (WhatsApp offline)',
-            simulated_code: code,
-            warning: 'WhatsApp service not connected. Please scan QR code.'
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } }
-        )
+    if (type === 'template') {
+       // Enviar usando Template oficial (necessário para iniciar conversa)
+       body = {
+         messaging_product: "whatsapp",
+         to: cleanPhone,
+         type: "template",
+         template: {
+           name: templateName || "appointment_confirmation",
+           language: { code: "pt_BR" },
+           components: [
+             {
+               type: "body",
+               parameters: [
+                 { type: "text", text: message }
+               ]
+             }
+           ]
+         }
+       }
+    } else {
+      // Enviar OTP ou Mensagem de Texto Simples
+      // Nota: Cloud API exige templates se for fora da janela de 24h
+      body = {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: cleanPhone,
+        type: "text",
+        text: { 
+          body: type === 'otp' 
+            ? `🔐 Seu código de verificação Agenda Fácil é: ${code}`
+            : message 
+        }
       }
+    }
 
+    const response = await fetch(
+      `https://graph.facebook.com/v17.0/${PHONE_NUMBER_ID}/messages`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      console.error('WhatsApp API Error:', data)
       return new Response(
-        JSON.stringify({ 
-          error: 'Failed to send WhatsApp message',
-          details: whatsappData 
-        }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Failed to send WhatsApp', details: data }),
+        { status: response.status, headers: { 'Content-Type': 'application/json' } }
       )
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true,
-        message: 'WhatsApp message sent successfully'
-      }),
+      JSON.stringify({ success: true, data }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
-    console.error('Error in send-whatsapp function:', error)
-    
-    // Fallback para modo simulação
+    console.error('Error in send-whatsapp:', error)
     return new Response(
-      JSON.stringify({ 
-        success: true,
-        message: 'Código gerado (modo desenvolvimento)',
-        simulated_code: code || '000000',
-        error: error.message
-      }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }
 })

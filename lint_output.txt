@@ -1,0 +1,134 @@
+
+> frontend@0.0.0 lint
+> eslint .
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+
+/var/www/Agenda_Facil/src/components/dashboard/calendar-view.tsx
+   93:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  106:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  198:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  199:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/components/dashboard/edit-appointment-modal.tsx
+  33:44  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  48:6   warning  React Hook useEffect has a missing dependency: 'fetchServices'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/var/www/Agenda_Facil/src/components/dashboard/new-appointment-modal.tsx
+  29:44  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  52:6   warning  React Hook useEffect has a missing dependency: 'fetchServices'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/var/www/Agenda_Facil/src/components/dashboard/payment-modal.tsx
+  47:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/components/dashboard/recent-appointments.tsx
+  163:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/components/dashboard/service-manager.tsx
+  53:14  error  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/var/www/Agenda_Facil/src/components/dashboard/waitlist-dialog.tsx
+   29:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  102:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/components/ui/badge.tsx
+  40:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/var/www/Agenda_Facil/src/components/ui/button.tsx
+  61:18  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/var/www/Agenda_Facil/src/components/ui/command.tsx
+  24:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+/var/www/Agenda_Facil/src/components/ui/input.tsx
+  4:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+/var/www/Agenda_Facil/src/components/ui/stats-card.tsx
+  4:121  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/components/ui/theme-toggle.tsx
+  15:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/var/www/Agenda_Facil/src/components/ui/theme-toggle.tsx:15:5
+  13 |     
+  14 |     const initialTheme = savedTheme || (prefersDark ? "dark" : "light");
+> 15 |     setTheme(initialTheme);
+     |     ^^^^^^^^ Avoid calling setState() directly within an effect
+  16 |     
+  17 |     if (initialTheme === "dark") {
+  18 |       document.documentElement.classList.add("dark");  react-hooks/set-state-in-effect
+
+/var/www/Agenda_Facil/src/context/AuthContext.tsx
+  97:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/var/www/Agenda_Facil/src/hooks/use-appointments.ts
+  61:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/hooks/use-promotions.ts
+  52:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/hooks/use-waitlist.ts
+  49:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/layouts/DashboardLayout.tsx
+  24:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  25:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/pages/auth/ForgotPassword.tsx
+  43:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/pages/auth/LoginPage.tsx
+  44:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/pages/auth/RegisterPage.tsx
+  56:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/pages/auth/ResetPassword.tsx
+  43:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  90:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/pages/dashboard/AnalyticsPage.tsx
+   31:6   warning  React Hook useEffect has a missing dependency: 'fetchAnalytics'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  176:45  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  186:44  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/pages/dashboard/CustomersPage.tsx
+   29:46  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+   35:58  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+   42:6   warning  React Hook useEffect has a missing dependency: 'fetchCustomers'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  109:36  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/pages/dashboard/EmployeesPage.tsx
+   62:6   warning  React Hook useEffect has a missing dependency: 'fetchEmployees'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  127:19  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/pages/dashboard/ServicesPage.tsx
+   29:44  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+   34:56  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+   46:6   warning  React Hook useEffect has a missing dependency: 'fetchServices'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  130:35  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/pages/dashboard/SettingsPage.tsx
+  23:6  warning  React Hook useEffect has a missing dependency: 'fetchOrgDetails'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/var/www/Agenda_Facil/src/pages/portal/PortalBooking.tsx
+  13:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  15:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  36:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/pages/portal/PortalHome.tsx
+  11:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  28:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/var/www/Agenda_Facil/src/pages/portal/PortalLogin.tsx
+   77:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  113:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 51 problems (44 errors, 7 warnings)
+

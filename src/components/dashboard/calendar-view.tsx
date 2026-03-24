@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Calendar, dateFnsLocalizer, type Event, type View, Views } from "react-big-calendar";
 import { useState, useCallback } from "react";
 import { format, parse, startOfWeek, getDay, isSameDay } from "date-fns";
@@ -7,6 +8,7 @@ import type { Appointment } from "@/hooks/use-appointments";
 import { holidays } from "@/lib/holidays";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { EditAppointmentModal } from "./edit-appointment-modal";
+import { CreateAppointmentModal } from "./create-appointment-modal";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 
@@ -29,6 +31,7 @@ const localizer = dateFnsLocalizer({
 interface CalendarViewProps {
   appointments: Appointment[]; // Lista de agendamentos
   onAppointmentUpdate?: (id: string, updates: Partial<Appointment>) => Promise<void>;
+  onAppointmentCreated?: () => void;
 }
 
 // Converter agendamentos para eventos do calendário
@@ -36,7 +39,7 @@ function appointmentsToEvents(appointments: Appointment[]): Event[] {
   const appointmentEvents = appointments.map((apt) => {
     const professionalName = apt.employee?.full_name ? ` (${apt.employee.full_name.split(' ')[0]})` : "";
     return {
-      title: `${apt.customer_name} - ${apt.service?.name || "Serviço"}${professionalName}`,
+      title: apt.is_blocked ? "🚫 HORÁRIO BLOQUEADO" : `${apt.customer_name} - ${apt.service?.name || "Serviço"}${professionalName}`,
       start: new Date(apt.start_time),
       end: new Date(apt.end_time),
       resource: { type: "appointment", data: apt },
@@ -58,13 +61,15 @@ function appointmentsToEvents(appointments: Appointment[]): Event[] {
   return [...appointmentEvents, ...holidayEvents];
 }
 
-export function CalendarView({ appointments, onAppointmentUpdate }: CalendarViewProps) {
+export function CalendarView({ appointments, onAppointmentUpdate, onAppointmentCreated }: CalendarViewProps) {
   const [date, setDate] = useState(new Date());
   const [view, setView] = useState<View>(Views.MONTH);
   
-  // Edit Modal State
+  // Modal States
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [slotDate, setSlotDate] = useState<Date | undefined>(undefined);
 
   const events = appointmentsToEvents(appointments);
 
@@ -90,12 +95,12 @@ export function CalendarView({ appointments, onAppointmentUpdate }: CalendarView
   };
 
   const onEventDrop = useCallback(
-    ({ event, start, end }: any) => {
+    ({ event, start, end }: { event: Event; start: string | Date; end: string | Date }) => {
       const resource = event.resource as { type: string; data?: Appointment };
       if (resource.type === "appointment" && resource.data && onAppointmentUpdate) {
         onAppointmentUpdate(resource.data.id, {
-          start_time: start.toISOString(),
-          end_time: end.toISOString(),
+          start_time: (start as Date).toISOString(),
+          end_time: (end as Date).toISOString(),
         });
       }
     },
@@ -103,12 +108,12 @@ export function CalendarView({ appointments, onAppointmentUpdate }: CalendarView
   );
 
   const onEventResize = useCallback(
-    ({ event, start, end }: any) => {
+    ({ event, start, end }: { event: Event; start: string | Date; end: string | Date }) => {
       const resource = event.resource as { type: string; data?: Appointment };
       if (resource.type === "appointment" && resource.data && onAppointmentUpdate) {
         onAppointmentUpdate(resource.data.id, {
-          start_time: start.toISOString(),
-          end_time: end.toISOString(),
+          start_time: (start as Date).toISOString(),
+          end_time: (end as Date).toISOString(),
         });
       }
     },
@@ -125,14 +130,31 @@ export function CalendarView({ appointments, onAppointmentUpdate }: CalendarView
           backgroundColor: "#fef3c7", // Amarelo claro
           color: "#d97706", // Laranja escuro
           border: "1px solid #fcd34d",
-          borderRadius: "4px",
-          fontWeight: "bold",
-          fontSize: "0.85rem",
+          borderRadius: "8px",
+          fontWeight: "black",
+          fontSize: "0.75rem",
+          padding: "2px 6px",
         },
       };
     }
 
     const appointment = resource.data!;
+
+    if (appointment.is_blocked) {
+      return {
+        style: {
+          backgroundColor: "#1e1b4b", // Indigo muito escuro (Sovereign)
+          color: "#818cf8",
+          border: "1px dashed #4338ca",
+          borderRadius: "8px",
+          opacity: 0.9,
+          fontWeight: "bold",
+          fontSize: "0.75rem",
+          padding: "2px 8px",
+        }
+      };
+    }
+
     const colors = {
       pending: { backgroundColor: "#fbbf24", borderColor: "#f59e0b" },
       confirmed: { backgroundColor: "#3b82f6", borderColor: "#2563eb" },
@@ -145,11 +167,15 @@ export function CalendarView({ appointments, onAppointmentUpdate }: CalendarView
     return {
       style: {
         ...style,
-        borderRadius: "5px",
+        borderRadius: "8px",
         opacity: 0.9,
         color: "white",
-        border: `1px solid ${style.borderColor}`,
+        border: "none",
         display: "block",
+        fontWeight: "bold",
+        fontSize: "0.75rem",
+        padding: "2px 8px",
+        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
       },
     };
   };
@@ -159,27 +185,49 @@ export function CalendarView({ appointments, onAppointmentUpdate }: CalendarView
     const today = new Date();
     if (isSameDay(date, today)) {
       return {
-        className: "bg-primary/5 border border-primary/30 font-medium",
+        className: "bg-stitch-primary/5 font-bold",
         style: {
-          backgroundColor: "hsl(var(--primary) / 0.05)",
+          backgroundColor: "rgba(59, 130, 246, 0.05)",
         },
       };
     }
-    return {};
+    return {
+      className: "font-bold text-stitch-on-surface/40",
+    };
   };
 
   return (
-    <Card className="col-span-full">
-      <CardHeader>
-        <CardTitle>Calendário de Agendamentos</CardTitle>
+    <Card className="col-span-full rounded-[2.5rem] border-none shadow-2xl shadow-stitch-primary/5 bg-stitch-surface-container-low/30 overflow-hidden font-sans">
+      <CardHeader className="p-8 pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-stitch-primary/10 flex items-center justify-center text-stitch-primary">
+              <span className="material-symbols-outlined text-3xl">event_upcoming</span>
+            </div>
+            <div>
+              <CardTitle className="text-2xl font-black text-stitch-on-surface tracking-tight">Agenda Completa</CardTitle>
+              <p className="text-sm font-bold text-stitch-on-surface-variant opacity-60">Gerencie todos os seus compromissos</p>
+            </div>
+          </div>
+          <Button 
+            className="h-14 px-8 rounded-2xl font-black gap-2 shadow-lg shadow-stitch-primary/10"
+            onClick={() => {
+                setSlotDate(new Date());
+                setCreateModalOpen(true);
+            }}
+          >
+            <span className="material-symbols-outlined">add_circle</span>
+            Novo Agendamento
+          </Button>
+        </div>
       </CardHeader>
-      <CardContent>
-        <div style={{ height: "600px" }} className="calendar-container">
+      <CardContent className="p-4 sm:p-8">
+        <div style={{ height: "700px" }} className="calendar-container rounded-3xl overflow-hidden bg-stitch-surface-container-lowest border border-stitch-outline-variant/10 shadow-sm p-4">
           <DnDCalendar
             localizer={localizer}
             events={events}
-            startAccessor={(event: any) => event.start}
-            endAccessor={(event: any) => event.end}
+            startAccessor={(event: Event) => event.start as Date}
+            endAccessor={(event: Event) => event.end as Date}
             culture="pt-BR"
             messages={{
               next: "Próximo",
@@ -203,6 +251,10 @@ export function CalendarView({ appointments, onAppointmentUpdate }: CalendarView
             onNavigate={onNavigate}
             onView={onView}
             onSelectEvent={onSelectEvent}
+            onSelectSlot={(slotInfo) => {
+              setSlotDate(slotInfo.start as Date);
+              setCreateModalOpen(true);
+            }}
             onEventDrop={onEventDrop}
             onEventResize={onEventResize}
             resizable
@@ -215,8 +267,17 @@ export function CalendarView({ appointments, onAppointmentUpdate }: CalendarView
           open={editModalOpen}
           onOpenChange={setEditModalOpen}
           onAppointmentUpdated={() => {
-            // Refresh logic handled by realtime subscription
             setEditModalOpen(false);
+          }}
+        />
+
+        <CreateAppointmentModal
+          open={createModalOpen}
+          onOpenChange={setCreateModalOpen}
+          defaultDate={slotDate}
+          onAppointmentCreated={() => {
+            setCreateModalOpen(false);
+            onAppointmentCreated?.();
           }}
         />
       </CardContent>

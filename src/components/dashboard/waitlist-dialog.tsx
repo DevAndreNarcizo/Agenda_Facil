@@ -16,9 +16,9 @@ import { useEmployees } from "@/hooks/use-employees";
 import { CustomerCombobox } from "./customer-combobox";
 import { NewCustomerDialog } from "./new-customer-dialog";
 import { format } from "date-fns";
-import { CalendarClock, CheckCircle, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/use-auth";
+import { toast } from "sonner";
 
 export function WaitlistDialog() {
   const [open, setOpen] = useState(false);
@@ -27,7 +27,7 @@ export function WaitlistDialog() {
   const { profile } = useAuth();
   
   // Need services to select service
-  const [services, setServices] = useState<any[]>([]);
+  const [services, setServices] = useState<{ id: string; name: string }[]>([]);
   
   // Form State
   const [customerId, setCustomerId] = useState("");
@@ -78,8 +78,8 @@ export function WaitlistDialog() {
       if (error) throw error;
       setCustomerId(newCustomer.id);
       setCustomerName(newCustomer.name);
-    } catch (error) {
-      console.error("Error creating customer:", error);
+    } catch {
+      // Error handled by form
     }
   };
 
@@ -96,11 +96,7 @@ export function WaitlistDialog() {
         desired_date: date,
         notes,
         status: "pending",
-        organization_id: profile?.organization_id || "", // Hook handles this usually but type requires it? No, hook omits it.
-        // Wait, hook type Omit<WaitlistEntry, "id" | "created_at" | "customer" | "service" | "employee">
-        // organization_id is in WaitlistEntry? No, I didn't add it to interface but it is in DB.
-        // Let's check hook interface.
-      } as any); 
+      }); 
 
       // Reset form
       setCustomerId("");
@@ -108,9 +104,9 @@ export function WaitlistDialog() {
       setEmployeeId("");
       setDate("");
       setNotes("");
-      // Switch to list tab? Or just show success.
-    } catch (error) {
-      console.error("Error adding to waitlist:", error);
+      toast.success("Cliente adicionado à lista de espera!");
+    } catch {
+      toast.error("Erro ao adicionar à lista de espera.");
     } finally {
       setLoading(false);
     }
@@ -130,153 +126,212 @@ export function WaitlistDialog() {
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
-          <Button className="gap-2">
-            <CalendarClock className="h-4 w-4" />
+          <Button variant="outline" className="h-14 px-6 rounded-xl font-bold gap-3 border-2 border-stitch-outline-variant/20 hover:bg-stitch-primary/5 hover:text-stitch-primary transition-all">
+            <span className="material-symbols-outlined">event_repeat</span>
             Lista de Espera
             {pendingEntries.length > 0 && (
-              <span className="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+              <span className="bg-stitch-error text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
                 {pendingEntries.length}
               </span>
             )}
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Lista de Espera</DialogTitle>
-            <DialogDescription>
-              Gerencie clientes aguardando por um horário.
-            </DialogDescription>
+        <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden font-sans">
+          <DialogHeader className="p-8 pb-4 bg-stitch-surface-container-low/30">
+            <div className="flex items-center gap-4 mb-2">
+              <div className="w-14 h-14 rounded-2xl bg-stitch-primary/10 flex items-center justify-center text-stitch-primary">
+                <span className="material-symbols-outlined text-3xl">event_repeat</span>
+              </div>
+              <div>
+                <DialogTitle className="text-2xl font-black text-stitch-on-surface">Lista de Espera</DialogTitle>
+                <DialogDescription className="text-sm font-bold text-stitch-on-surface-variant opacity-60">
+                  Gerencie clientes aguardando por um horário.
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
 
-          <Tabs defaultValue="list" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="list">Aguardando ({pendingEntries.length})</TabsTrigger>
-              <TabsTrigger value="add">Adicionar Novo</TabsTrigger>
-            </TabsList>
+          <div className="px-8 pb-8">
+            <Tabs defaultValue="list" className="w-full mt-4">
+              <TabsList className="grid w-full grid-cols-2 h-14 p-1.5 bg-stitch-surface-container-low/50 rounded-2xl">
+                <TabsTrigger value="list" className="rounded-xl font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  Aguardando ({pendingEntries.length})
+                </TabsTrigger>
+                <TabsTrigger value="add" className="rounded-xl font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  Adicionar Novo
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="list" className="space-y-4">
-              {pendingEntries.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">Ninguém na lista de espera.</p>
-              ) : (
-                <div className="space-y-2">
-                  {pendingEntries.map((entry) => (
-                    <div key={entry.id} className="flex items-center justify-between p-3 border rounded-lg bg-card">
-                      <div>
-                        <p className="font-medium">{entry.customer?.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(entry.desired_date), "dd/MM/yyyy")}
-                          {entry.service && ` - ${entry.service.name}`}
-                          {entry.employee && ` (${entry.employee.full_name})`}
-                        </p>
-                        {entry.notes && <p className="text-xs text-muted-foreground italic">"{entry.notes}"</p>}
+              <TabsContent value="list" className="space-y-6 mt-6">
+                {pendingEntries.length === 0 ? (
+                  <div className="text-center py-16 rounded-3xl bg-stitch-surface-container-lowest border-2 border-dashed border-stitch-outline-variant/20">
+                    <span className="material-symbols-outlined text-5xl text-stitch-on-surface-variant/20 mb-3">person_search</span>
+                    <p className="font-bold text-stitch-on-surface-variant opacity-40">Ninguém na lista de espera.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {pendingEntries.map((entry) => (
+                      <div key={entry.id} className="flex items-center justify-between p-5 rounded-[1.5rem] bg-white border border-stitch-outline-variant/10 hover:shadow-md transition-all group">
+                        <div className="flex flex-col gap-1">
+                          <p className="font-black text-stitch-on-surface leading-tight">{entry.customer?.name}</p>
+                          <div className="flex items-center gap-3 text-xs font-bold text-stitch-on-surface-variant opacity-60">
+                            <span className="flex items-center gap-1">
+                              <span className="material-symbols-outlined text-sm">calendar_today</span>
+                              {format(new Date(entry.desired_date), "dd/MM/yyyy")}
+                            </span>
+                            {entry.service && <span>• {entry.service.name}</span>}
+                            {entry.employee && (
+                              <span className="flex items-center gap-1">
+                                <span className="material-symbols-outlined text-sm text-stitch-primary">person</span>
+                                {entry.employee.full_name}
+                              </span>
+                            )}
+                          </div>
+                          {entry.notes && (
+                            <p className="text-[10px] font-medium text-stitch-on-surface-variant opacity-40 italic mt-1 px-3 py-1 bg-stitch-surface-container-low/50 rounded-lg w-fit">
+                              "{entry.notes}"
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="w-10 h-10 rounded-xl text-stitch-primary bg-stitch-primary/5 hover:bg-stitch-primary/10"
+                            onClick={() => updateStatus({ id: entry.id, status: "contacted" })}
+                            title="Marcar como contatado"
+                          >
+                            <span className="material-symbols-outlined text-xl font-bold">check_circle</span>
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="w-10 h-10 rounded-xl text-stitch-error bg-stitch-error/5 hover:bg-stitch-error/10"
+                            onClick={() => deleteEntry(entry.id)}
+                            title="Remover"
+                          >
+                            <span className="material-symbols-outlined text-xl">delete</span>
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                          onClick={() => updateStatus({ id: entry.id, status: "contacted" })}
-                          title="Marcar como contatado"
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => deleteEntry(entry.id)}
-                          title="Remover"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {otherEntries.length > 0 && (
-                <div className="mt-8">
-                  <h4 className="text-sm font-medium mb-2 text-muted-foreground">Histórico Recente</h4>
-                  <div className="space-y-2 opacity-60">
-                    {otherEntries.slice(0, 5).map((entry) => (
-                       <div key={entry.id} className="flex items-center justify-between p-2 border rounded-lg text-sm">
-                         <span>{entry.customer?.name} - {entry.status}</span>
-                         <span className="text-xs">{format(new Date(entry.created_at), "dd/MM")}</span>
-                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-            </TabsContent>
+                )}
 
-            <TabsContent value="add">
-              <form onSubmit={handleSubmit} className="space-y-4 py-4">
-                <div className="grid gap-2">
-                  <Label>Cliente</Label>
-                  <CustomerCombobox
-                    value={customerId}
-                    onChange={setCustomerId}
-                    onCustomerSelect={(c) => setCustomerName(c?.name || "")}
-                    onRequestCreate={handleRequestCreateCustomer}
-                    customerName={customerName}
-                  />
-                </div>
+                {otherEntries.length > 0 && (
+                  <div className="mt-8 pt-8 border-t border-stitch-outline-variant/10">
+                    <h4 className="text-[10px] font-black text-stitch-on-surface-variant/40 uppercase tracking-[0.2em] mb-4 ml-1">Histórico Recente</h4>
+                    <div className="space-y-2">
+                      {otherEntries.slice(0, 5).map((entry) => (
+                         <div key={entry.id} className="flex items-center justify-between p-4 rounded-xl bg-stitch-surface-container-lowest/50 text-sm border border-stitch-outline-variant/5">
+                           <div className="flex items-center gap-2">
+                             <span className="font-bold text-stitch-on-surface opacity-60">{entry.customer?.name}</span>
+                             <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-stitch-outline-variant/10 text-stitch-on-surface-variant opacity-60">
+                               {entry.status}
+                             </span>
+                           </div>
+                           <span className="text-xs font-black text-stitch-on-surface-variant/30">{format(new Date(entry.created_at), "dd/MM")}</span>
+                         </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label>Data Desejada</Label>
-                    <Input
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      required
+              <TabsContent value="add" className="mt-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-bold ml-1">Cliente</Label>
+                    <CustomerCombobox
+                      value={customerId}
+                      onChange={setCustomerId}
+                      onCustomerSelect={(c) => setCustomerName(c?.name || "")}
+                      onRequestCreate={handleRequestCreateCustomer}
+                      customerName={customerName}
                     />
                   </div>
-                  <div className="grid gap-2">
-                    <Label>Profissional (Opcional)</Label>
-                    <select
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={employeeId}
-                      onChange={(e) => setEmployeeId(e.target.value)}
-                    >
-                      <option value="">Qualquer</option>
-                      {employees.map((emp) => (
-                        <option key={emp.id} value={emp.id}>{emp.full_name}</option>
-                      ))}
-                    </select>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold ml-1">Data Desejada</Label>
+                      <div className="relative group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40 group-focus-within:opacity-100 transition-opacity">event</span>
+                        <Input
+                          type="date"
+                          className="pl-12 h-14 rounded-xl border-none bg-[#1a1c1e] text-white font-bold"
+                          value={date}
+                          onChange={(e) => setDate(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold ml-1">Profissional (Opcional)</Label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40">person</span>
+                        <select
+                          className="flex h-14 w-full pl-12 rounded-xl border-none bg-[#1a1c1e] text-white font-bold px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-primary/20 appearance-none"
+                          value={employeeId}
+                          onChange={(e) => setEmployeeId(e.target.value)}
+                        >
+                          <option value="">Qualquer profissional</option>
+                          {employees.map((emp) => (
+                            <option key={emp.id} value={emp.id}>{emp.full_name}</option>
+                          ))}
+                        </select>
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40 pointer-events-none">unfold_more</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                <div className="grid gap-2">
-                  <Label>Serviço (Opcional)</Label>
-                  <select
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    value={serviceId}
-                    onChange={(e) => setServiceId(e.target.value)}
-                  >
-                    <option value="">Selecione...</option>
-                    {services.map((s) => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-bold ml-1">Serviço (Opcional)</Label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40">content_cut</span>
+                      <select
+                        className="flex h-14 w-full pl-12 rounded-xl border-none bg-[#1a1c1e] text-white font-bold px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-primary/20 appearance-none"
+                        value={serviceId}
+                        onChange={(e) => setServiceId(e.target.value)}
+                      >
+                        <option value="">Qualquer serviço</option>
+                        {services.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40 pointer-events-none">unfold_more</span>
+                    </div>
+                  </div>
 
-                <div className="grid gap-2">
-                  <Label>Observações</Label>
-                  <Input
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Ex: Preferência pela manhã..."
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-bold ml-1">Observações</Label>
+                    <div className="relative group">
+                      <span className="absolute left-4 top-4 material-symbols-outlined text-stitch-on-surface-variant opacity-40 group-focus-within:opacity-100 transition-opacity">notes</span>
+                      <Input
+                        className="pl-12 h-20 rounded-xl border-none bg-[#1a1c1e] text-white font-bold"
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="Ex: Preferência pela manhã, ligar se houver desistência..."
+                      />
+                    </div>
+                  </div>
 
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Adicionando..." : "Adicionar à Lista"}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+                  <Button type="submit" className="w-full h-16 rounded-[1.5rem] font-black text-lg gap-2 shadow-xl shadow-stitch-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]" disabled={loading}>
+                    {loading ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Adicionando...
+                      </span>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined">person_add</span>
+                        Adicionar à Lista
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+          </div>
         </DialogContent>
       </Dialog>
     </>

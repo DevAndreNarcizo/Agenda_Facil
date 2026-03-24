@@ -1,41 +1,34 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { LucideIcon } from "lucide-react";
 
-// Interface para as props do StatsCard
+
 interface StatsCardProps {
-  title: string; // Título do card (ex: "Total de Agendamentos")
-  value: string | number; // Valor principal a ser exibido
-  icon: LucideIcon; // Ícone do lucide-react
-  description?: string; // Descrição opcional (ex: "+20% em relação ao mês passado")
-  trend?: "up" | "down" | "neutral"; // Tendência para colorir a descrição
+  title: string;
+  value: string | number;
+  icon: string;
+  description?: string;
+  trend?: 'up' | 'down' | 'neutral';
+  colorClass?: string;
 }
 
-export function StatsCard({ title, value, icon: Icon, description, trend = "neutral" }: StatsCardProps) {
-  // Define a cor da tendência
-  const trendColor = {
-    up: "text-emerald-500",
-    down: "text-rose-500",
-    neutral: "text-muted-foreground",
-  }[trend];
-
+export function StatsCard({ title, value, icon, description, trend = "neutral", colorClass = "border-stitch-primary" }: StatsCardProps) {
   return (
-    <Card className="bg-card/50 backdrop-blur-sm border-white/10 hover:scale-[1.02] transition-all duration-300 hover:shadow-lg hover:border-primary/20 group">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">
-          {title}
-        </CardTitle>
-        <div className="p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
-          <Icon className="h-4 w-4 text-primary" />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold tracking-tight">{value}</div>
+    <div className={`bg-stitch-surface-container-lowest p-8 rounded-[2rem] border-l-8 ${colorClass} flex items-center justify-between shadow-sm hover:translate-y-[-4px] transition-all duration-300 border-stitch-outline-variant/10`}>
+      <div>
+        <p className="text-stitch-on-surface-variant text-xs font-black uppercase tracking-widest mb-2 opacity-60">{title}</p>
+        <h3 className="text-4xl font-black text-stitch-on-surface tracking-tighter">{value}</h3>
         {description && (
-          <p className={`text-xs ${trendColor} mt-1 font-medium`}>
+          <p className={`text-[11px] mt-2 font-bold uppercase tracking-wider flex items-center gap-1 ${
+            trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-500' : 'text-stitch-on-surface-variant opacity-40'
+          }`}>
+            <span className="material-symbols-outlined text-sm">
+              {trend === 'up' ? 'trending_up' : trend === 'down' ? 'trending_down' : 'stadium'}
+            </span>
             {description}
           </p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+      <div className={`w-16 h-16 rounded-[1.25rem] bg-stitch-surface-container-low text-stitch-primary flex items-center justify-center shadow-inner`}>
+        <span className="material-symbols-outlined text-3xl">{icon}</span>
+      </div>
+    </div>
   );
 }

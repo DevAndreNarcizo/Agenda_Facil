@@ -22,7 +22,7 @@ WHERE (status != 'cancelled');
 ALTER TABLE appointments 
 ADD CONSTRAINT no_overlapping_appointments_organization 
 EXCLUDE USING GIST (
-  organization_id WITH =,
+  company_id WITH =,
   tstzrange(start_time, end_time) WITH &&
 )
 WHERE (status != 'cancelled' AND employee_id IS NULL);

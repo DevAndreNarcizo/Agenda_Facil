@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/use-auth";
 
 export function useAvailability() {
   const { profile } = useAuth();
@@ -40,8 +40,7 @@ export function useAvailability() {
 
       // If any rows are returned, there is a conflict
       return data.length === 0;
-    } catch (error) {
-      console.error("Error checking availability:", error);
+    } catch {
       return false; // Assume unavailable on error to be safe
     } finally {
       setChecking(false);

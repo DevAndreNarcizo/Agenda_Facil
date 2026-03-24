@@ -1,7 +1,7 @@
 -- Analytics Functions for Advanced Reports
 
 -- Faturamento Mensal (últimos 6 meses)
-CREATE OR REPLACE FUNCTION get_monthly_revenue(org_id UUID)
+CREATE OR REPLACE FUNCTION get_monthly_revenue (company_id UUID)
 RETURNS TABLE (
   month TEXT,
   revenue NUMERIC
@@ -16,7 +16,7 @@ BEGIN
     COALESCE(SUM(s.price), 0)::NUMERIC as revenue
   FROM appointments a
   JOIN services s ON a.service_id = s.id
-  WHERE a.organization_id = org_id
+  WHERE a.company_id = company_id
     AND a.status = 'completed'
     AND a.start_time >= NOW() - INTERVAL '6 months'
   GROUP BY TO_CHAR(a.start_time, 'YYYY-MM')
@@ -28,7 +28,7 @@ $$;
 -- Primeiro, remover a função antiga se existir
 DROP FUNCTION IF EXISTS get_top_services(UUID);
 
-CREATE OR REPLACE FUNCTION get_top_services(org_id UUID)
+CREATE OR REPLACE FUNCTION get_top_services (company_id UUID)
 RETURNS TABLE (
   service_name TEXT,
   count BIGINT,
@@ -45,7 +45,7 @@ BEGIN
     SUM(s.price)::NUMERIC as revenue
   FROM appointments a
   JOIN services s ON a.service_id = s.id
-  WHERE a.organization_id = org_id
+  WHERE a.company_id = company_id
     AND a.status IN ('completed', 'confirmed')
   GROUP BY s.name
   ORDER BY count DESC
@@ -54,7 +54,7 @@ END;
 $$;
 
 -- Horários de Pico
-CREATE OR REPLACE FUNCTION get_peak_hours(org_id UUID)
+CREATE OR REPLACE FUNCTION get_peak_hours (company_id UUID)
 RETURNS TABLE (
   hour TEXT,
   appointments BIGINT
@@ -68,7 +68,7 @@ BEGIN
     TO_CHAR(start_time, 'HH24:00') as hour,
     COUNT(*)::BIGINT as appointments
   FROM appointments
-  WHERE organization_id = org_id
+  WHERE company_id = company_id
     AND status IN ('completed', 'confirmed')
   GROUP BY TO_CHAR(start_time, 'HH24:00')
   ORDER BY hour;
@@ -76,7 +76,7 @@ END;
 $$;
 
 -- Estatísticas Gerais
-CREATE OR REPLACE FUNCTION get_dashboard_stats(org_id UUID)
+CREATE OR REPLACE FUNCTION get_dashboard_stats (company_id UUID)
 RETURNS TABLE (
   total_appointments BIGINT,
   total_customers BIGINT,
@@ -89,10 +89,10 @@ AS $$
 BEGIN
   RETURN QUERY
   SELECT 
-    (SELECT COUNT(*) FROM appointments WHERE organization_id = org_id AND status = 'completed')::BIGINT,
-    (SELECT COUNT(DISTINCT customer_id) FROM appointments WHERE organization_id = org_id)::BIGINT,
-    (SELECT COALESCE(SUM(s.price), 0) FROM appointments a JOIN services s ON a.service_id = s.id WHERE a.organization_id = org_id AND a.status = 'completed')::NUMERIC,
-    (SELECT COALESCE(AVG(s.price), 0) FROM appointments a JOIN services s ON a.service_id = s.id WHERE a.organization_id = org_id AND a.status = 'completed')::NUMERIC;
+    (SELECT COUNT(*) FROM appointments WHERE company_id = company_id AND status = 'completed')::BIGINT,
+    (SELECT COUNT(DISTINCT customer_id) FROM appointments WHERE company_id = company_id)::BIGINT,
+    (SELECT COALESCE(SUM(s.price), 0) FROM appointments a JOIN services s ON a.service_id = s.id WHERE a.company_id = company_id AND a.status = 'completed')::NUMERIC,
+    (SELECT COALESCE(AVG(s.price), 0) FROM appointments a JOIN services s ON a.service_id = s.id WHERE a.company_id = company_id AND a.status = 'completed')::NUMERIC;
 END;
 $$;
 

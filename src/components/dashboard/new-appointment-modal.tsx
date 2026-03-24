@@ -4,7 +4,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -12,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/use-auth";
 import { CustomerCombobox } from "./customer-combobox";
 import { NewCustomerDialog } from "./new-customer-dialog";
 import { useAvailability } from "@/hooks/use-availability";
@@ -27,7 +26,7 @@ interface NewAppointmentModalProps {
 export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [services, setServices] = useState<any[]>([]);
+  const [services, setServices] = useState<{ id: string; name: string; price: number; duration_minutes: number }[]>([]);
   const { profile } = useAuth();
   const { checkAvailability } = useAvailability();
   const { employees } = useEmployees();
@@ -50,6 +49,7 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
     if (open && profile?.organization_id) {
       fetchServices();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, profile?.organization_id]);
 
   const fetchServices = async () => {
@@ -85,8 +85,7 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
       setCustomerId(newCustomer.id);
       setCustomerName(newCustomer.name);
       toast.success("Cliente criado com sucesso!");
-    } catch (error) {
-      console.error("Error creating customer:", error);
+    } catch {
       toast.error("Erro ao criar cliente.");
     }
   };
@@ -95,9 +94,23 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
     e.preventDefault();
     if (!customerId || !serviceId || !date || !time || !profile?.organization_id) return;
 
+    // Validação: impedir data no passado
+    const startCheck = new Date(`${date}T${time}`);
+    const now = new Date();
+    if (startCheck < now) {
+      toast.error("Não é possível agendar no passado. Selecione uma data/horário futuro.");
+      return;
+    }
+
+    // Validação: horário comercial (7h - 21h)
+    const hourCheck = startCheck.getHours();
+    if (hourCheck < 7 || hourCheck >= 21) {
+      toast.error("Horário fora do expediente (7h às 21h).");
+      return;
+    }
+
     setLoading(true);
     try {
-      // Combine date and time
       const startDateTime = new Date(`${date}T${time}`);
       const service = services.find(s => s.id === serviceId);
       const duration = service?.duration_minutes || 30;
@@ -143,8 +156,7 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
       setDate("");
       setTime("");
       toast.success("Agendamento criado com sucesso!");
-    } catch (error) {
-      console.error("Error creating appointment:", error);
+    } catch {
       toast.error("Erro ao criar agendamento.");
     } finally {
       setLoading(false);
@@ -162,19 +174,30 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
       
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button>Novo Agendamento</Button>
+          <Button className="h-14 px-8 rounded-2xl font-black text-lg gap-2 shadow-xl shadow-stitch-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
+            <span className="material-symbols-outlined font-black">add_circle</span>
+            Novo Agendamento
+          </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Novo Agendamento</DialogTitle>
-            <DialogDescription>
-              Preencha os detalhes para agendar um novo serviço.
-            </DialogDescription>
+        <DialogContent className="sm:max-w-[700px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden font-sans">
+          <DialogHeader className="p-10 pb-6 bg-stitch-surface-container-low/30">
+            <div className="flex items-center gap-4 mb-2">
+              <div className="w-14 h-14 rounded-2xl bg-stitch-primary/10 flex items-center justify-center text-stitch-primary">
+                <span className="material-symbols-outlined text-3xl">event_available</span>
+              </div>
+              <div>
+                <DialogTitle className="text-2xl font-black text-stitch-on-surface">Novo Agendamento</DialogTitle>
+                <DialogDescription className="text-sm font-bold text-stitch-on-surface-variant opacity-60">
+                  Preencha os detalhes para agendar um novo serviço.
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+
+          <form onSubmit={handleSubmit} className="px-10 pb-10 space-y-6 mt-4">
             
-            <div className="grid gap-2">
-              <Label>Cliente</Label>
+            <div className="space-y-2">
+              <Label className="text-sm font-bold ml-1">Cliente</Label>
               <CustomerCombobox
                 value={customerId}
                 onChange={setCustomerId}
@@ -184,60 +207,71 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="employee">Profissional (Opcional)</Label>
-              <select
-                id="employee"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                value={employeeId}
-                onChange={(e) => setEmployeeId(e.target.value)}
-              >
-                <option value="">Qualquer profissional</option>
-                {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.full_name}
-                  </option>
-                ))}
-              </select>
+            <div className="space-y-2">
+              <Label htmlFor="employee" className="text-sm font-bold ml-1">Profissional (Opcional)</Label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40">badge</span>
+                <select
+                  id="employee"
+                  className="flex h-14 w-full pl-12 rounded-xl border-none bg-[#1a1c1e] text-white font-bold px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-primary/20 appearance-none"
+                  value={employeeId}
+                  onChange={(e) => setEmployeeId(e.target.value)}
+                >
+                  <option value="">Qualquer profissional</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.full_name}
+                    </option>
+                  ))}
+                </select>
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40 pointer-events-none">unfold_more</span>
+              </div>
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="service">Serviço</Label>
-              <select
-                id="service"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                value={serviceId}
-                onChange={(e) => setServiceId(e.target.value)}
-                required
-              >
-                <option value="">Selecione um serviço...</option>
-                {services.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.name} - R$ {service.price}
-                  </option>
-                ))}
-              </select>
-
+            <div className="space-y-2">
+              <Label htmlFor="service" className="text-sm font-bold ml-1">Serviço</Label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40">content_cut</span>
+                <select
+                  id="service"
+                  className="flex h-14 w-full pl-12 rounded-xl border-none bg-[#1a1c1e] text-white font-bold px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-primary/20 appearance-none"
+                  value={serviceId}
+                  onChange={(e) => setServiceId(e.target.value)}
+                  required
+                >
+                  <option value="">Selecione um serviço...</option>
+                  {services.map((service) => (
+                    <option key={service.id} value={service.id}>
+                      {service.name} - R$ {service.price}
+                    </option>
+                  ))}
+                </select>
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40 pointer-events-none">unfold_more</span>
+              </div>
             </div>
 
             {serviceId && (
-              <div className="grid gap-2">
-                <Label htmlFor="promotion">Promoção (Opcional)</Label>
-                <select
-                  id="promotion"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={promotionId || ""}
-                  onChange={(e) => setPromotionId(e.target.value || null)}
-                >
-                  <option value="">Sem promoção</option>
-                  {promotions
-                    ?.filter(p => p.active && (!p.service_id || p.service_id === serviceId))
-                    .map((promo) => (
-                      <option key={promo.id} value={promo.id}>
-                        {promo.name} ({promo.discount_type === 'percentage' ? `${promo.discount_value}% OFF` : `R$ ${promo.discount_value} OFF`})
-                      </option>
-                    ))}
-                </select>
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                <Label htmlFor="promotion" className="text-sm font-bold ml-1 text-stitch-primary">Promoção Ativa</Label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-primary opacity-60">sell</span>
+                  <select
+                    id="promotion"
+                    className="flex h-14 w-full pl-12 rounded-xl border-2 border-stitch-primary/20 border-dashed bg-stitch-primary/5 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-primary/20 appearance-none font-bold text-stitch-primary"
+                    value={promotionId || ""}
+                    onChange={(e) => setPromotionId(e.target.value || null)}
+                  >
+                    <option value="">Sem promoção aplicada</option>
+                    {promotions
+                      ?.filter(p => p.active && (!p.service_id || p.service_id === serviceId))
+                      .map((promo) => (
+                        <option key={promo.id} value={promo.id}>
+                          {promo.name} ({promo.discount_type === 'percentage' ? `${promo.discount_value}% OFF` : `R$ ${promo.discount_value} OFF`})
+                        </option>
+                      ))}
+                  </select>
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-primary opacity-40 pointer-events-none">expand_more</span>
+                </div>
                 {promotionId && (() => {
                   const service = services.find(s => s.id === serviceId);
                   const promo = promotions?.find(p => p.id === promotionId);
@@ -249,8 +283,10 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
                       finalPrice = Math.max(0, service.price - promo.discount_value);
                     }
                     return (
-                      <div className="text-sm text-muted-foreground mt-1">
-                        Preço final: <span className="line-through">R$ {service.price}</span> <span className="font-bold text-green-600">R$ {finalPrice.toFixed(2)}</span>
+                      <div className="flex items-center gap-2 px-4 py-2 bg-stitch-primary/10 rounded-lg border border-stitch-primary/20">
+                        <span className="text-xs font-bold text-stitch-primary">Total:</span>
+                        <span className="text-xs line-through text-stitch-on-surface-variant opacity-40 font-bold">R$ {service.price}</span>
+                        <span className="text-sm font-black text-stitch-primary">R$ {finalPrice.toFixed(2)}</span>
                       </div>
                     );
                   }
@@ -260,33 +296,51 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
             )}
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="date">Data</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  required
-                />
+              <div className="space-y-2">
+                <Label htmlFor="date" className="text-sm font-bold ml-1">Data</Label>
+                <div className="relative group">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40 group-focus-within:opacity-100 transition-opacity">calendar_today</span>
+                  <Input
+                    id="date"
+                    type="date"
+                    className="pl-12 h-14 rounded-xl border-none bg-[#1a1c1e] text-white font-bold"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="time">Horário</Label>
-                <Input
-                  id="time"
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  required
-                />
+              <div className="space-y-2">
+                <Label htmlFor="time" className="text-sm font-bold ml-1">Horário</Label>
+                <div className="relative group">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40 group-focus-within:opacity-100 transition-opacity">schedule</span>
+                  <Input
+                    id="time"
+                    type="time"
+                    className="pl-12 h-14 rounded-xl border-none bg-[#1a1c1e] text-white font-bold"
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
             </div>
 
-            <DialogFooter>
-              <Button type="submit" disabled={loading}>
-                {loading ? "Agendando..." : "Agendar"}
+            <div className="pt-4">
+              <Button type="submit" className="w-full h-16 rounded-[1.5rem] font-black text-lg gap-2 shadow-xl shadow-stitch-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]" disabled={loading}>
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Agendando...
+                  </span>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined font-black">check_circle</span>
+                    Confirmar Agendamento
+                  </>
+                )}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         </DialogContent>
       </Dialog>

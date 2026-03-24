@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { type Appointment } from "@/hooks/use-appointments";
 import { supabase } from "@/lib/supabase";
-import { CreditCard, DollarSign, QrCode, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 interface PaymentModalProps {
@@ -45,8 +44,8 @@ export function PaymentModal({ appointment, open, onOpenChange, onPaymentComplet
       onPaymentComplete();
       onOpenChange(false);
       toast.success("Pagamento registrado com sucesso!");
-    } catch (error: any) {
-      console.error("Error processing payment:", error);
+    } catch (err: unknown) {
+      const error = err as Error;
       toast.error(`Erro ao processar pagamento: ${error.message || "Erro desconhecido"}`);
     } finally {
       setLoading(false);
@@ -63,75 +62,96 @@ export function PaymentModal({ appointment, open, onOpenChange, onPaymentComplet
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Registrar Pagamento</DialogTitle>
-          <DialogDescription>
-            {appointment?.customer_name} - {appointment?.service?.name}
+      <DialogContent className="sm:max-w-[700px] rounded-[3xl] border-none shadow-2xl p-0 overflow-hidden bg-stitch-surface">
+        <DialogHeader className="p-8 pb-4 bg-stitch-surface-container-low/30">
+          <DialogTitle className="text-2xl font-black text-stitch-on-surface">Registrar Pagamento</DialogTitle>
+          <DialogDescription className="text-sm font-bold text-stitch-on-surface-variant opacity-60">
+            {appointment?.customer_name} • {appointment?.service?.name}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <div className="flex items-center justify-center p-6 bg-muted rounded-lg">
-            <span className="text-3xl font-bold text-primary">
+        <div className="px-8 py-6 space-y-6">
+          <div className="flex flex-col items-center justify-center py-8 rounded-[2rem] bg-stitch-primary/5 border-2 border-stitch-primary/10">
+            <span className="text-[10px] font-black uppercase tracking-widest text-stitch-primary mb-1 opacity-60">Total a pagar</span>
+            <span className="text-4xl font-black text-stitch-primary">
               R$ {appointment?.service?.price?.toFixed(2)}
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             <Button
-              variant={method === 'cash' ? "default" : "outline"}
-              className="flex flex-col h-20 gap-2"
+              variant="ghost"
+              className={`flex flex-col h-28 gap-2 rounded-2xl border-2 transition-all group ${method === 'cash' ? "bg-stitch-primary/10 border-stitch-primary text-stitch-primary" : "bg-stitch-surface-container-low/30 border-transparent text-stitch-on-surface-variant hover:border-stitch-outline-variant/20 hover:bg-stitch-surface-container-low/50"}`}
               onClick={() => setMethod('cash')}
             >
-              <DollarSign className="h-6 w-6" />
-              Dinheiro
+              <span className="material-symbols-outlined text-3xl group-hover:scale-110 transition-transform">payments</span>
+              <span className="font-bold text-[10px] uppercase tracking-wider">Dinheiro</span>
             </Button>
             <Button
-              variant={method === 'pix' ? "default" : "outline"}
-              className="flex flex-col h-20 gap-2"
+              variant="ghost"
+              className={`flex flex-col h-28 gap-2 rounded-2xl border-2 transition-all group ${method === 'pix' ? "bg-stitch-primary/10 border-stitch-primary text-stitch-primary" : "bg-stitch-surface-container-low/30 border-transparent text-stitch-on-surface-variant hover:border-stitch-outline-variant/20 hover:bg-stitch-surface-container-low/50"}`}
               onClick={() => setMethod('pix')}
             >
-              <QrCode className="h-6 w-6" />
-              Pix
+              <span className="material-symbols-outlined text-3xl group-hover:scale-110 transition-transform">qr_code_2</span>
+              <span className="font-bold text-[10px] uppercase tracking-wider">Pix</span>
             </Button>
             <Button
-              variant={method === 'credit_card' ? "default" : "outline"}
-              className="flex flex-col h-20 gap-2"
+              variant="ghost"
+              className={`flex flex-col h-28 gap-2 rounded-2xl border-2 transition-all group ${method === 'credit_card' ? "bg-stitch-primary/10 border-stitch-primary text-stitch-primary" : "bg-stitch-surface-container-low/30 border-transparent text-stitch-on-surface-variant hover:border-stitch-outline-variant/20 hover:bg-stitch-surface-container-low/50"}`}
               onClick={() => setMethod('credit_card')}
             >
-              <CreditCard className="h-6 w-6" />
-              Crédito
+              <span className="material-symbols-outlined text-3xl group-hover:scale-110 transition-transform">credit_card</span>
+              <span className="font-bold text-[10px] uppercase tracking-wider">Crédito</span>
             </Button>
             <Button
-              variant={method === 'debit_card' ? "default" : "outline"}
-              className="flex flex-col h-20 gap-2"
+              variant="ghost"
+              className={`flex flex-col h-28 gap-2 rounded-2xl border-2 transition-all group ${method === 'debit_card' ? "bg-stitch-primary/10 border-stitch-primary text-stitch-primary" : "bg-stitch-surface-container-low/30 border-transparent text-stitch-on-surface-variant hover:border-stitch-outline-variant/20 hover:bg-stitch-surface-container-low/50"}`}
               onClick={() => setMethod('debit_card')}
             >
-              <Wallet className="h-6 w-6" />
-              Débito
+              <span className="material-symbols-outlined text-3xl group-hover:scale-110 transition-transform">account_balance_wallet</span>
+              <span className="font-bold text-[10px] uppercase tracking-wider">Débito</span>
             </Button>
           </div>
 
-          <div className="relative">
+          <div className="relative py-2">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+              <span className="w-full border-t border-stitch-outline-variant/10" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Ou pagamento online
+            <div className="relative flex justify-center text-[10px] font-black uppercase tracking-[0.2em]">
+              <span className="bg-stitch-surface px-4 text-stitch-on-surface-variant/40">
+                Ou cobrança remota
               </span>
             </div>
           </div>
 
-          <Button variant="secondary" onClick={handleSimulateOnline} disabled={loading}>
-            Gerar Link de Pagamento (Simulação)
+          <Button 
+            variant="outline" 
+            className="w-full h-14 rounded-2xl font-bold border-2 border-stitch-outline-variant/20 hover:bg-stitch-primary/5 hover:text-stitch-primary hover:border-stitch-primary/20 transition-all gap-3 group"
+            onClick={handleSimulateOnline} 
+            disabled={loading}
+          >
+            <span className="material-symbols-outlined text-xl group-hover:rotate-12 transition-transform">link</span>
+            Enviar link de pagamento
           </Button>
         </div>
 
-        <DialogFooter>
-          <Button onClick={handlePayment} disabled={!method || loading}>
-            {loading ? "Processando..." : "Confirmar Pagamento"}
+        <DialogFooter className="p-8 pt-2">
+          <Button 
+            className="w-full h-16 rounded-[1.5rem] font-black text-lg gap-2 shadow-xl shadow-stitch-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] bg-stitch-primary text-white"
+            onClick={handlePayment} 
+            disabled={!method || loading}
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Processando...
+              </span>
+            ) : (
+              <>
+                <span className="material-symbols-outlined">check_circle</span>
+                Confirmar Pagamento
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,222 +1,197 @@
-import { useState } from "react";
 import { StatsCard } from "@/components/ui/stats-card";
-import { CalendarView } from "@/components/dashboard/calendar-view";
-import { AppointmentsChart } from "@/components/dashboard/appointments-chart";
-import { RevenueChart } from "@/components/dashboard/revenue-chart";
-import { RecentAppointments } from "@/components/dashboard/recent-appointments";
 import { useAppointments } from "@/hooks/use-appointments";
 import { useDashboardStats } from "@/hooks/use-dashboard-stats";
-import { Calendar, DollarSign, TrendingUp, Users, Download, Star } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/context/AuthContext";
-import { NewAppointmentModal } from "@/components/dashboard/new-appointment-modal";
-import { Input } from "@/components/ui/input";
-import { ServiceManager } from "@/components/dashboard/service-manager";
-import { PromotionsManager } from "@/components/dashboard/promotions/promotions-manager";
-import { WaitlistDialog } from "@/components/dashboard/waitlist-dialog";
+import { useEmployees } from "@/hooks/use-employees";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
-import { useReviews } from "@/hooks/use-reviews";
+import { format, isSameDay } from "date-fns";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
+import { ptBR } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
 
 // Página Inicial do Dashboard
-// Exibe uma visão geral do negócio com métricas, gráficos e agenda
 export default function DashboardHome() {
-  // Hooks para buscar dados
-  const { appointments, loading, updateAppointmentStatus, updateAppointment } = useAppointments(); // Busca agendamentos do Supabase
-  const { profile } = useAuth(); // Dados do usuário logado
+  const { profile } = useAuth();
+  const { appointments, loading: loadingApts } = useAppointments();
+  const { employees, loading: loadingEmps } = useEmployees();
+  const navigate = useNavigate();
   
-  // Search and Filter State
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const stats = useDashboardStats(appointments);
+  const loading = loadingApts || loadingEmps;
 
-  // Filter appointments
-  const filteredAppointments = appointments.filter(apt => {
-    const matchesSearch = apt.customer_name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || apt.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Filtrar agendamentos de hoje
+  const todayApts = appointments.filter(apt => isSameDay(new Date(apt.start_time), new Date()));
 
-  const stats = useDashboardStats(appointments); // Keep stats based on ALL appointments for accuracy
-  const { averageRating, totalReviews } = useReviews();
-
-  const handleExport = () => {
-    const headers = ["Cliente", "Telefone", "Serviço", "Preço", "Data", "Hora", "Status"];
-    const csvContent = [
-      headers.join(","),
-      ...appointments.map(apt => [
-        `"${apt.customer_name}"`,
-        `"${apt.customer_phone}"`,
-        `"${apt.service?.name || ""}"`,
-        apt.service?.price || 0,
-        format(new Date(apt.start_time), "dd/MM/yyyy"),
-        format(new Date(apt.start_time), "HH:mm"),
-        apt.status
-      ].join(","))
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `agendamentos_${format(new Date(), "yyyy-MM-dd")}.csv`);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Estado de Carregamento (Loading State)
-  // Exibe Skeletons enquanto os dados estão sendo buscados para evitar layout shift
   if (loading) {
     return (
-      <div className="space-y-6">
-        {/* Skeleton do Header */}
-        <div>
-          <Skeleton className="h-9 w-48 mb-2" />
-          <Skeleton className="h-5 w-96" />
+      <div className="space-y-12 animate-pulse p-8 max-w-7xl mx-auto">
+        <div className="space-y-2">
+          <div className="h-4 w-24 bg-stitch-surface-container rounded-full" />
+          <div className="h-10 w-64 bg-stitch-surface-container rounded-xl" />
         </div>
-
-        {/* Skeleton dos Cards de Estatísticas */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-32 w-full rounded-xl" />
+            <div key={i} className="h-32 w-full rounded-[2rem] bg-stitch-surface-container" />
           ))}
         </div>
-
-        {/* Skeleton dos Gráficos */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <Skeleton className="h-[350px] w-full rounded-xl" />
-          <Skeleton className="h-[350px] w-full rounded-xl" />
+        <div className="h-[600px] w-full rounded-[2.5rem] bg-stitch-surface-container/50 overflow-hidden relative">
+           <div className="absolute inset-x-0 top-0 h-20 bg-stitch-surface-container" />
+           <div className="p-8 mt-20 space-y-6">
+             <div className="h-12 w-full bg-stitch-surface-container/50 rounded-2xl" />
+             <div className="h-12 w-full bg-stitch-surface-container/50 rounded-2xl" />
+             <div className="h-12 w-full bg-stitch-surface-container/50 rounded-2xl" />
+           </div>
         </div>
-        
-        {/* Skeleton do Calendário */}
-        <Skeleton className="h-[500px] w-full rounded-xl" />
       </div>
     );
   }
 
-  // Verifica permissões de administrador
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'owner';
-
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header da Página */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 animate-slide-up">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Dashboard
-          </h2>
-          <p className="text-muted-foreground">
-            Bem-vindo de volta! Aqui está um resumo do seu negócio.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="mr-2 h-4 w-4" />
-            Exportar
-          </Button>
-          <ServiceManager />
-          <PromotionsManager />
-          <WaitlistDialog />
-          <NewAppointmentModal onAppointmentCreated={() => {}} />
-        </div>
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000 pb-20 max-w-7xl mx-auto p-8">
+      <div>
+        <p className="text-stitch-on-surface-variant text-sm font-medium mb-1 uppercase tracking-wider">Visão Geral</p>
+        <h1 className="font-headline text-4xl font-black tracking-tight text-stitch-on-surface">Bem-vindo, {profile?.full_name?.split(' ')[0] || 'Usuário'}</h1>
       </div>
-
-      {/* Search and Filter Controls */}
-      <div className="flex flex-col sm:flex-row gap-4 animate-slide-up [animation-delay:50ms]">
-        <Input
-          placeholder="Buscar cliente..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="sm:w-[300px]"
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="flex h-10 w-[180px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <option value="all">Todos os Status</option>
-          <option value="pending">Pendente</option>
-          <option value="confirmed">Confirmado</option>
-          <option value="completed">Concluído</option>
-          <option value="cancelled">Cancelado</option>
-        </select>
-      </div>
-
-      {/* Grid de Cards de Estatísticas (KPIs) */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-slide-up [animation-delay:100ms]">
-        {/* Card: Agendamentos Hoje */}
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="Agendamentos Hoje"
           value={stats.todayAppointments}
-          icon={Calendar}
-          description={`${stats.todayAppointments} agendamento${stats.todayAppointments !== 1 ? 's' : ''} para hoje`}
-          trend="neutral"
+          icon="event_available"
+          colorClass="border-stitch-primary"
+          description={`${stats.todayAppointments} agendamentos`}
         />
-        
-        {/* Card: Total do Mês */}
         <StatsCard
-          title="Agendamentos do Mês"
+          title="Total no Mês"
           value={stats.monthAppointments}
-          icon={Users}
-          description={`Total de agendamentos em ${new Date().toLocaleDateString('pt-BR', { month: 'long' })}`}
-          trend="up"
+          icon="person_add"
+          colorClass="border-stitch-secondary"
+          description="Acompanhamento mensal"
         />
-        
-        {/* Card: Receita (Apenas Admin) */}
-        {isAdmin && (
-          <StatsCard
-            title="Receita do Mês"
-            value={`R$ ${stats.monthRevenue.toFixed(2)}`}
-            icon={DollarSign}
-            description="Receita de agendamentos completados"
-            trend="up"
-          />
-        )}
-        
-        {/* Card: Taxa de Conclusão */}
         <StatsCard
-          title="Taxa de Conclusão"
+          title="Faturamento Previsto"
+          value={`R$ ${stats.monthRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
+          icon="payments"
+          colorClass="border-stitch-tertiary"
+          description="Baseado em agendamentos pagos"
+        />
+        <StatsCard
+          title="Capacidade"
           value={`${stats.completedRate}%`}
-          icon={TrendingUp}
-          description={`${stats.completedRate}% dos agendamentos foram concluídos`}
-          // Lógica visual para indicar se a taxa está boa (verde), média (cinza) ou ruim (vermelha)
-          trend={stats.completedRate >= 80 ? "up" : stats.completedRate >= 50 ? "neutral" : "down"}
-        />
-
-        {/* Card: Avaliação Média */}
-        <StatsCard
-          title="Avaliação Média"
-          value={averageRating.toFixed(1)}
-          icon={Star}
-          description={`Baseado em ${totalReviews} avaliações`}
-          trend="neutral"
+          icon="speed"
+          colorClass="border-stitch-outline"
+          description="Status atual"
         />
       </div>
 
-      {/* Grid de Gráficos */}
-      <div className="grid gap-4 md:grid-cols-2 animate-slide-up [animation-delay:200ms]">
-        {/* Gráfico de Barras: Agendamentos por dia */}
-        <AppointmentsChart appointments={filteredAppointments} />
-        
-        {/* Gráfico de Linha: Receita acumulada (Apenas Admin) */}
-        {isAdmin && <RevenueChart appointments={filteredAppointments} />}
+      {/* Agenda Visualization Section */}
+      <div className="bg-stitch-surface-container-low/30 p-8 rounded-[32px] shadow-sm border border-stitch-outline-variant/10">
+        <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+          <h3 className="text-2xl font-black font-headline flex items-center gap-3 text-stitch-on-surface">
+            <span className="material-symbols-outlined text-stitch-primary text-3xl">calendar_month</span>
+            Agenda do Dia - {format(new Date(), "dd 'de' MMMM", { locale: ptBR })}
+          </h3>
+          <div className="flex bg-stitch-surface-container-lowest p-1.5 rounded-2xl shadow-sm border border-stitch-outline-variant/5">
+            <Button variant="default" size="sm" onClick={() => navigate('/dashboard/calendar?view=day')} className="rounded-xl shadow-none font-black text-[10px] tracking-widest uppercase">Hoje</Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/calendar?view=week')} className="rounded-xl text-stitch-on-surface-variant font-black text-[10px] tracking-widest uppercase">Semana</Button>
+          </div>
+        </div>
+
+        {/* Professional Columns Grid - Dynamic from Employees */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 overflow-x-auto pb-4">
+          {employees.length === 0 ? (
+            <div className="col-span-full py-20 text-center text-stitch-on-surface-variant opacity-60 italic">
+                Nenhum profissional cadastrado. Adicione-os na aba "Equipe".
+            </div>
+          ) : (
+            employees.map((emp) => (
+              <div key={emp.id} className="space-y-6 min-w-[280px]">
+                <div className="flex items-center gap-4 mb-2 p-2">
+                  <Avatar className="h-12 w-12 border-2 border-stitch-surface-container-highest shadow-sm">
+                    <AvatarFallback className="font-black bg-stitch-primary/10 text-stitch-primary uppercase">
+                       {emp.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-black text-sm text-stitch-on-surface">{emp.full_name}</p>
+                    <p className="text-[10px] text-stitch-on-surface-variant font-black uppercase tracking-wider opacity-60">{emp.role === 'admin' ? 'Administrador' : 'Profissional'}</p>
+                  </div>
+                </div>
+                
+                {todayApts.filter(apt => apt.employee_id === emp.id).length === 0 ? (
+                  <div className="p-10 border-4 border-dashed border-stitch-outline-variant/10 rounded-[28px] flex flex-col items-center justify-center text-stitch-on-surface-variant opacity-40">
+                    <p className="text-xs font-bold uppercase tracking-widest">Sem agendamentos</p>
+                  </div>
+                ) : (
+                  todayApts.filter(apt => apt.employee_id === emp.id).map(apt => (
+                    <Card key={apt.id} className="p-5 border-l-4 border-stitch-secondary bg-stitch-surface-container-lowest group hover:scale-[1.02] transition-all border-y-0 border-r-0 rounded-2xl shadow-sm">
+                      <div className="flex justify-between items-start mb-3">
+                        <p className="text-[10px] font-black text-stitch-primary uppercase tracking-tight">
+                          {format(new Date(apt.start_time), 'HH:mm')} - {format(new Date(apt.end_time), 'HH:mm')}
+                        </p>
+                        {apt.status === 'completed' && (
+                          <span className="material-symbols-outlined text-emerald-500 text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                        )}
+                      </div>
+                      <h4 className="font-black text-stitch-on-surface text-lg">{apt.customer_name}</h4>
+                      <p className="text-xs text-stitch-on-surface-variant mb-5 font-bold italic opacity-70">{apt.service?.name}</p>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          onClick={() => navigate('/dashboard/calendar')}
+                          className="flex-1 text-[10px] font-black tracking-widest uppercase rounded-xl bg-stitch-surface-container hover:bg-stitch-primary hover:text-white transition-colors"
+                        >
+                          GERENCIAR
+                        </Button>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
-      {/* Visualização de Calendário */}
-      <div className="animate-slide-up [animation-delay:300ms]">
-        <CalendarView 
-          appointments={filteredAppointments} 
-          onAppointmentUpdate={updateAppointment}
-        />
-      </div>
+      {/* Activity Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
+        <Card className="p-8 bg-stitch-surface-container-low/30 backdrop-blur-xl border border-stitch-outline-variant/10 rounded-[32px] shadow-sm">
+          <h3 className="text-xl font-black mb-6 flex items-center gap-3 text-stitch-on-surface">
+            <span className="material-symbols-outlined text-stitch-primary text-2xl">history</span>
+            Atividade Recente
+          </h3>
+          <div className="space-y-4">
+            {appointments.slice(0, 3).map((apt) => (
+              <div key={apt.id} className="flex items-start gap-4 p-4 hover:bg-stitch-surface-container/30 rounded-2xl transition-all cursor-pointer group border border-transparent hover:border-stitch-outline-variant/10">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-stitch-primary/10 text-stitch-primary">
+                  <span className="material-symbols-outlined text-lg">event</span>
+                </div>
+                <div>
+                  <p className="text-sm font-black text-stitch-on-surface">Agendamento de {apt.customer_name}</p>
+                  <p className="text-[10px] text-stitch-on-surface-variant uppercase tracking-wider mt-1 opacity-50 font-black">
+                     Status: {apt.status === 'confirmed' ? 'Confirmado' : apt.status}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
 
-      {/* Lista de Agendamentos Recentes */}
-      <div className="animate-slide-up [animation-delay:400ms]">
-        <RecentAppointments 
-          appointments={filteredAppointments} 
-          onUpdateStatus={updateAppointmentStatus}
-        />
+        <div className="bg-stitch-primary text-white p-10 rounded-[40px] overflow-hidden relative shadow-2xl shadow-stitch-primary/20 flex flex-col justify-center group cursor-pointer" onClick={() => navigate('/dashboard/subscription')}>
+          <div className="relative z-10 space-y-4">
+            <div className="bg-white/20 w-16 h-16 rounded-3xl flex items-center justify-center mb-6 backdrop-blur-md group-hover:scale-110 transition-transform duration-500">
+              <span className="material-symbols-outlined text-4xl text-white">card_membership</span>
+            </div>
+            <h3 className="text-3xl font-black leading-tight text-white uppercase tracking-tighter">Upgrade Premium</h3>
+            <p className="text-sm font-bold opacity-80 max-w-xs leading-relaxed text-white">Libere agendamentos ilimitados e notificações WhatsApp profissionais.</p>
+            <Button className="w-fit bg-white text-stitch-primary hover:bg-white/90 mt-4 py-6 px-10 text-[10px] tracking-[0.2em] font-black rounded-2xl transition-all shadow-xl group-hover:translate-x-2 uppercase">VER PLANOS</Button>
+          </div>
+          <div className="absolute top-0 right-0 p-10">
+            <span className="material-symbols-outlined text-[120px] opacity-10 rotate-12 text-white">crown</span>
+          </div>
+        </div>
       </div>
     </div>
   );

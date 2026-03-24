@@ -1,27 +1,8 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import type { Session, User } from "@supabase/supabase-js";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-
-export type UserRole = 'admin' | 'employee' | 'owner' | 'staff';
-
-export type Profile = {
-  id: string;
-  organization_id: string;
-  role: UserRole;
-  full_name: string | null;
-  created_at: string;
-};
-
-type AuthContextType = {
-  session: Session | null;
-  user: User | null;
-  profile: Profile | null;
-  loading: boolean;
-  signOut: () => Promise<void>;
-  refreshProfile: () => Promise<void>;
-};
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext } from "./auth-context-types";
+import type { AuthContextType, Profile } from "./auth-context-types";
+import type { Session, User } from "@supabase/supabase-js";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -30,20 +11,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching profile:', error);
-      } else {
-        setProfile(data);
+    // Tentar até 3 vezes com delay (RLS pode não estar pronto logo após login)
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+
+        if (!error && data) {
+          setProfile(data);
+          return;
+        }
+
+        // Se erro de RLS ou não encontrado, esperar e tentar de novo
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+        }
+      } catch {
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+        }
       }
-    } catch (error) {
-      console.error('Unexpected error fetching profile:', error);
     }
   };
 
@@ -87,17 +77,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const value: AuthContextType = {
+    session,
+    user,
+    profile,
+    loading,
+    signOut,
+    refreshProfile
+  };
+
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 }
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};

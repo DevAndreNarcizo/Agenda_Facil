@@ -60,8 +60,7 @@ export function PromotionsManager() {
         service_id: "all",
       });
       toast.success("Promoção criada com sucesso!");
-    } catch (error) {
-      console.error("Error creating promotion:", error);
+    } catch {
       toast.error("Erro ao criar promoção.");
     } finally {
       setIsSubmitting(false);
@@ -73,8 +72,7 @@ export function PromotionsManager() {
       try {
         await deletePromotion(id);
         toast.success("Promoção excluída com sucesso!");
-      } catch (error) {
-        console.error("Error deleting promotion:", error);
+      } catch {
         toast.error("Erro ao excluir promoção.");
       }
     }
@@ -88,24 +86,35 @@ export function PromotionsManager() {
           Promoções
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Gerenciar Promoções</DialogTitle>
-          <DialogDescription>
-            Crie e gerencie pacotes e descontos para seus clientes.
-          </DialogDescription>
+      <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-y-auto rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden font-sans">
+        <DialogHeader className="p-10 pb-6 bg-stitch-surface-container-low/30">
+          <div className="flex items-center gap-4 mb-2">
+            <div className="w-14 h-14 rounded-2xl bg-stitch-primary/10 flex items-center justify-center text-stitch-primary">
+              <span className="material-symbols-outlined text-3xl">star</span>
+            </div>
+            <div>
+              <DialogTitle className="text-2xl font-black text-stitch-on-surface">Gerenciar Promoções</DialogTitle>
+              <DialogDescription className="text-sm font-bold text-stitch-on-surface-variant opacity-60">
+                Crie e gerencie pacotes e descontos para seus clientes.
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className="grid gap-6 py-4 md:grid-cols-2">
+        <div className="grid gap-10 p-10 md:grid-cols-2">
           {/* Form Side */}
-          <div className="space-y-4 border-r pr-4">
-            <h3 className="font-medium">Nova Promoção</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="material-symbols-outlined text-stitch-primary">add_circle</span>
+              <h3 className="font-black text-lg text-stitch-on-surface">Nova Promoção</h3>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome da Promoção</Label>
+                <Label htmlFor="name" className="text-sm font-bold ml-1 text-stitch-on-surface-variant">Nome da Promoção</Label>
                 <Input
                   id="name"
                   placeholder="Ex: Verão 2024, Pacote Corte + Barba"
+                  className="h-14 rounded-xl border-none bg-[#1a1c1e] font-bold text-white px-4 placeholder:text-white/20"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
@@ -113,10 +122,11 @@ export function PromotionsManager() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Descrição (Opcional)</Label>
+                <Label htmlFor="description" className="text-sm font-bold ml-1 text-stitch-on-surface-variant">Descrição (Opcional)</Label>
                 <Input
                   id="description"
                   placeholder="Detalhes da promoção..."
+                  className="h-14 rounded-xl border-none bg-[#1a1c1e] font-bold text-white px-4 placeholder:text-white/20"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
@@ -124,12 +134,12 @@ export function PromotionsManager() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Tipo de Desconto</Label>
+                  <Label className="text-sm font-bold ml-1 text-stitch-on-surface-variant">Tipo de Desconto</Label>
                   <Select
                     value={formData.discount_type}
                     onValueChange={(value: 'percentage' | 'fixed') => setFormData({ ...formData, discount_type: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-14 rounded-xl border-none bg-[#1a1c1e] font-bold text-white px-4">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -139,11 +149,12 @@ export function PromotionsManager() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Valor do Desconto</Label>
+                  <Label className="text-sm font-bold ml-1 text-stitch-on-surface-variant">Valor</Label>
                   <Input
                     type="number"
                     min="0"
                     step="0.01"
+                    className="h-14 rounded-xl border-none bg-[#1a1c1e] font-bold text-white px-4"
                     value={formData.discount_value}
                     onChange={(e) => setFormData({ ...formData, discount_value: parseFloat(e.target.value) })}
                     required
@@ -157,7 +168,7 @@ export function PromotionsManager() {
                   value={formData.service_id || "all"}
                   onValueChange={(value: string) => setFormData({ ...formData, service_id: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-14 rounded-xl border-none bg-[#1a1c1e] font-bold text-white px-4">
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
                   <SelectContent>

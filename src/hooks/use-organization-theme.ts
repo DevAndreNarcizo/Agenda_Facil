@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
 
 // Hook para aplicar tema da organização automaticamente
@@ -12,15 +12,12 @@ export function useOrganizationTheme() {
     const fetchAndApplyTheme = async () => {
       try {
         const { data, error } = await supabase
-          .from('organizations')
+          .from("organizations")
           .select('primary_color, secondary_color, accent_color, logo_url')
           .eq('id', profile.organization_id)
           .single();
 
-        if (error) {
-          console.error('Error fetching theme:', error);
-          return;
-        }
+        if (error) return;
 
         if (data) {
           // Aplicar cores como CSS variables no :root
@@ -38,8 +35,8 @@ export function useOrganizationTheme() {
             root.style.setProperty('--accent', data.accent_color);
           }
         }
-      } catch (err) {
-        console.error('Error applying theme:', err);
+      } catch {
+        // Theme application failed silently
       }
     };
 

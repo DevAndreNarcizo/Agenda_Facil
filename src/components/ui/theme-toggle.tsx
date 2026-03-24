@@ -4,20 +4,22 @@ import { useEffect, useState } from "react";
 
 // Componente de toggle para alternar entre tema claro e escuro
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-
-  // Carregar tema do localStorage ao montar
-  useEffect(() => {
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window === "undefined") return "light";
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    
-    const initialTheme = savedTheme || (prefersDark ? "dark" : "light");
-    setTheme(initialTheme);
-    
-    if (initialTheme === "dark") {
+    return savedTheme || (prefersDark ? "dark" : "light");
+  });
+
+  // Alternar tema e persistir
+  useEffect(() => {
+    if (theme === "dark") {
       document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
     }
-  }, []);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   // Alternar tema
   const toggleTheme = () => {

@@ -1,7 +1,6 @@
 import * as React from "react"
-import { Check, ChevronsUpDown, Plus } from "lucide-react"
 
-import { cn } from "@/lib/utils"
+
 import { Button } from "@/components/ui/button"
 import {
   Command,
@@ -17,7 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { supabase } from "@/lib/supabase"
-import { useAuth } from "@/context/AuthContext"
+import { useAuth } from "@/hooks/use-auth"
 
 export type Customer = {
   id: string
@@ -50,6 +49,7 @@ export function CustomerCombobox({
     if (open && profile?.organization_id) {
       fetchCustomers()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, profile?.organization_id])
 
   // Recarregar quando um novo cliente for criado (value mudou mas não está na lista)
@@ -57,7 +57,8 @@ export function CustomerCombobox({
     if (value && profile?.organization_id && !customers.find(c => c.id === value)) {
       fetchCustomers()
     }
-  }, [value, profile?.organization_id])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, profile?.organization_id, customers])
 
   const fetchCustomers = async () => {
     setLoading(true)
@@ -70,8 +71,8 @@ export function CustomerCombobox({
       
       if (error) throw error
       setCustomers(data || [])
-    } catch (error) {
-      console.error("Error fetching customers:", error)
+    } catch {
+      // Silently fail - customer list will be empty
     } finally {
       setLoading(false)
     }
@@ -88,64 +89,69 @@ export function CustomerCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between"
+          className="w-full justify-between h-14 rounded-xl border-stitch-outline-variant/20 bg-stitch-surface-container-low/30 hover:bg-stitch-surface-container-low/50 transition-all font-medium text-stitch-on-surface"
         >
           {value
             ? customers.find((customer) => customer.id === value)?.name || customerName || "Cliente selecionado"
             : "Selecione um cliente..."}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <span className="material-symbols-outlined ml-2 opacity-50">unfold_more</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0">
-        <Command shouldFilter={false}>
-          <CommandInput 
-            placeholder="Buscar cliente..." 
-            value={query}
-            onValueChange={setQuery}
-          />
-          <CommandList>
+      <PopoverContent className="w-[300px] p-2 rounded-2xl border-stitch-outline-variant/20 shadow-2xl">
+        <Command shouldFilter={false} className="rounded-xl overflow-hidden">
+          <div className="flex items-center px-3 border-b border-stitch-outline-variant/10">
+            <span className="material-symbols-outlined text-stitch-on-surface-variant opacity-40">search</span>
+            <CommandInput 
+              placeholder="Buscar cliente..." 
+              value={query}
+              onValueChange={setQuery}
+              className="border-none focus:ring-0 h-12"
+            />
+          </div>
+          <CommandList className="max-h-[300px] mt-1 scrollbar-thin">
             {loading && (
-              <div className="p-2 text-sm text-muted-foreground text-center">
-                Carregando...
+              <div className="p-4 flex flex-col items-center gap-2">
+                <div className="w-5 h-5 border-2 border-stitch-primary/20 border-t-stitch-primary rounded-full animate-spin" />
+                <p className="text-xs font-bold text-stitch-on-surface-variant opacity-40">Buscando...</p>
               </div>
             )}
             <CommandEmpty>
-              <div className="p-2">
-                <p className="text-sm text-muted-foreground mb-2">
+              <div className="p-4 text-center">
+                <p className="text-sm font-medium text-stitch-on-surface-variant opacity-60 mb-4">
                   Nenhum cliente encontrado.
                 </p>
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="w-full"
+                  className="w-full h-10 rounded-lg font-bold gap-2 text-stitch-primary bg-stitch-primary/5 hover:bg-stitch-primary/10 border-none"
                   onClick={() => {
                     onRequestCreate(query)
                     setOpen(false)
                   }}
                 >
-                  <Plus className="mr-2 h-4 w-4" />
+                  <span className="material-symbols-outlined text-sm font-bold">add</span>
                   Criar "{query}"
                 </Button>
               </div>
             </CommandEmpty>
-            <CommandGroup>
+            <CommandGroup className="p-1">
               {filteredCustomers.map((customer) => (
                 <CommandItem
                   key={customer.id}
                   value={customer.name}
+                  className="rounded-lg h-10 px-3 cursor-pointer aria-selected:bg-stitch-primary/5 aria-selected:text-stitch-primary transition-colors flex items-center"
                   onSelect={() => {
                     onChange(customer.id)
                     onCustomerSelect(customer)
                     setOpen(false)
                   }}
                 >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === customer.id ? "opacity-100" : "opacity-0"
+                  <div className="flex-1 flex items-center justify-between">
+                    <span className="font-medium">{customer.name}</span>
+                    {value === customer.id && (
+                      <span className="material-symbols-outlined text-lg">check</span>
                     )}
-                  />
-                  {customer.name}
+                  </div>
                 </CommandItem>
               ))}
             </CommandGroup>

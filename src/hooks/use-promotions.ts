@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/use-auth";
 
 export interface Promotion {
   id: string;
@@ -49,7 +49,7 @@ export function usePromotions() {
 
       if (error) throw error;
       
-      return data.map((item: any) => ({
+      return data.map((item: Record<string, unknown>) => ({
         ...item,
         service: Array.isArray(item.service) ? item.service[0] : item.service
       })) as Promotion[];
@@ -103,11 +103,25 @@ export function usePromotions() {
     },
   });
 
+  const updatePromotionMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<CreatePromotionData> }) => {
+      const { error } = await supabase
+        .from("promotions")
+        .update(updates)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["promotions", profile?.organization_id] });
+    },
+  });
+
   return {
     promotions,
     isLoading,
     error,
     createPromotion: createPromotionMutation.mutateAsync,
+    updatePromotion: (id: string, updates: Partial<CreatePromotionData>) => updatePromotionMutation.mutateAsync({ id, updates }),
     deletePromotion: deletePromotionMutation.mutateAsync,
     togglePromotionStatus: togglePromotionStatusMutation.mutateAsync,
   };

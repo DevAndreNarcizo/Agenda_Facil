@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS audit_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+  company_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
   action TEXT NOT NULL, -- 'create', 'update', 'delete'
   table_name TEXT NOT NULL, -- 'appointments', 'customers', 'services', etc
   record_id UUID, -- ID of the affected record
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 
 -- Indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_organization_id ON audit_logs(organization_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_company_id ON audit_logs(company_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_table_name ON audit_logs(table_name);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_record_id ON audit_logs(record_id);
@@ -26,7 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_record_id ON audit_logs(record_id);
 -- Function to log audit events
 CREATE OR REPLACE FUNCTION log_audit_event(
   p_user_id UUID,
-  p_organization_id UUID,
+  p_company_id UUID,
   p_action TEXT,
   p_table_name TEXT,
   p_record_id UUID,
@@ -42,7 +42,7 @@ DECLARE
 BEGIN
   INSERT INTO audit_logs (
     user_id,
-    organization_id,
+    company_id,
     action,
     table_name,
     record_id,
@@ -50,7 +50,7 @@ BEGIN
     new_data
   ) VALUES (
     p_user_id,
-    p_organization_id,
+    p_company_id,
     p_action,
     p_table_name,
     p_record_id,
@@ -72,7 +72,7 @@ BEGIN
   IF (TG_OP = 'DELETE') THEN
     PERFORM log_audit_event(
       auth.uid(),
-      OLD.organization_id,
+      OLD.company_id,
       'delete',
       'appointments',
       OLD.id,
@@ -83,7 +83,7 @@ BEGIN
   ELSIF (TG_OP = 'UPDATE') THEN
     PERFORM log_audit_event(
       auth.uid(),
-      NEW.organization_id,
+      NEW.company_id,
       'update',
       'appointments',
       NEW.id,
@@ -94,7 +94,7 @@ BEGIN
   ELSIF (TG_OP = 'INSERT') THEN
     PERFORM log_audit_event(
       auth.uid(),
-      NEW.organization_id,
+      NEW.company_id,
       'create',
       'appointments',
       NEW.id,
@@ -117,7 +117,7 @@ BEGIN
   IF (TG_OP = 'DELETE') THEN
     PERFORM log_audit_event(
       auth.uid(),
-      OLD.organization_id,
+      OLD.company_id,
       'delete',
       'customers',
       OLD.id,
@@ -128,7 +128,7 @@ BEGIN
   ELSIF (TG_OP = 'UPDATE') THEN
     PERFORM log_audit_event(
       auth.uid(),
-      NEW.organization_id,
+      NEW.company_id,
       'update',
       'customers',
       NEW.id,
@@ -139,7 +139,7 @@ BEGIN
   ELSIF (TG_OP = 'INSERT') THEN
     PERFORM log_audit_event(
       auth.uid(),
-      NEW.organization_id,
+      NEW.company_id,
       'create',
       'customers',
       NEW.id,
@@ -162,7 +162,7 @@ BEGIN
   IF (TG_OP = 'DELETE') THEN
     PERFORM log_audit_event(
       auth.uid(),
-      OLD.organization_id,
+      OLD.company_id,
       'delete',
       'services',
       OLD.id,
@@ -173,7 +173,7 @@ BEGIN
   ELSIF (TG_OP = 'UPDATE') THEN
     PERFORM log_audit_event(
       auth.uid(),
-      NEW.organization_id,
+      NEW.company_id,
       'update',
       'services',
       NEW.id,
@@ -184,7 +184,7 @@ BEGIN
   ELSIF (TG_OP = 'INSERT') THEN
     PERFORM log_audit_event(
       auth.uid(),
-      NEW.organization_id,
+      NEW.company_id,
       'create',
       'services',
       NEW.id,

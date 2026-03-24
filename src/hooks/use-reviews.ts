@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/use-auth";
 
 export interface Review {
   id: string;
@@ -54,10 +54,43 @@ export function useReviews() {
     ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
     : 0;
 
+  const updateReviewMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: { rating?: number; comment?: string } }) => {
+      const { data, error } = await supabase
+        .from("reviews")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reviews", profile?.organization_id] });
+      queryClient.invalidateQueries({ queryKey: ["appointments", profile?.organization_id] });
+    },
+  });
+
+  const deleteReviewMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("reviews")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reviews", profile?.organization_id] });
+      queryClient.invalidateQueries({ queryKey: ["appointments", profile?.organization_id] });
+    },
+  });
+
   return {
     reviews,
     loading,
     addReview: (review: Omit<Review, "id" | "created_at" | "organization_id">) => addReviewMutation.mutateAsync(review),
+    updateReview: (id: string, updates: { rating?: number; comment?: string }) => updateReviewMutation.mutateAsync({ id, updates }),
+    deleteReview: (id: string) => deleteReviewMutation.mutateAsync(id),
     averageRating,
     totalReviews: reviews.length,
   };

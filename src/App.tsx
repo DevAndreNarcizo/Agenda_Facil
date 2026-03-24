@@ -9,13 +9,17 @@ import { DashboardLayout } from "./layouts/DashboardLayout";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import EmployeesPage from "./pages/dashboard/EmployeesPage";
 import CustomersPage from "./pages/dashboard/CustomersPage";
+import ServicesPage from "./pages/dashboard/ServicesPage";
 import SettingsPage from "./pages/dashboard/SettingsPage";
 import ThemeCustomization from "./pages/dashboard/ThemeCustomization";
 import AnalyticsPage from "./pages/dashboard/AnalyticsPage";
+import SubscriptionPage from "./pages/dashboard/SubscriptionPage";
+import CalendarPage from "./pages/dashboard/CalendarPage";
 import PortalLogin from "./pages/portal/PortalLogin";
 import PortalLayout from "./pages/portal/PortalLayout";
 import PortalHome from "./pages/portal/PortalHome";
 import PortalBooking from "./pages/portal/PortalBooking";
+import OnboardingPage from "./pages/onboarding/OnboardingPage";
 import { Toaster } from "@/components/ui/sonner";
 
 // Componente Principal da Aplicação
@@ -41,6 +45,9 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           
+          {/* Rotas de Onboarding */}
+          <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
+          
           {/* Rotas Protegidas: Dashboard */}
           {/* O DashboardLayout serve como um "wrapper" que contém a Sidebar e o Header */}
           {/* Todas as rotas aninhadas aqui serão renderizadas dentro do <Outlet /> do DashboardLayout */}
@@ -54,6 +61,9 @@ function App() {
             {/* Rota: Gestão de Clientes (/dashboard/customers) */}
             <Route path="customers" element={<CustomersPage />} />
             
+            {/* Rota: Gestão de Serviços (/dashboard/services) */}
+            <Route path="services" element={<ServicesPage />} />
+            
             {/* Rota: Configurações (/dashboard/settings) */}
             <Route path="settings" element={<SettingsPage />} />
             
@@ -62,6 +72,12 @@ function App() {
             
             {/* Rota: Analytics (/dashboard/analytics) */}
             <Route path="analytics" element={<AnalyticsPage />} />
+            
+            {/* Rota: Assinatura (/dashboard/subscription) */}
+            <Route path="subscription" element={<SubscriptionPage />} />
+            
+            {/* Rota: Calendário (/dashboard/calendar) */}
+            <Route path="calendar" element={<CalendarPage />} />
           </Route>
 
           {/* Rotas do Portal do Cliente */}

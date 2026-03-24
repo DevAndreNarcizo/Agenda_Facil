@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type Appointment } from "@/hooks/use-appointments";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CheckCircle, MessageCircle, Star, DollarSign } from "lucide-react";
+
 import { CustomerDetailsDialog } from "./customer-details-dialog";
 import { ReviewDialog } from "./review-dialog";
 import { PaymentModal } from "./payment-modal";
@@ -96,7 +96,7 @@ export function RecentAppointments({ appointments, onUpdateStatus }: RecentAppoi
                       <Button
                         variant="ghost"
                         size="icon"
-                        className={`h-8 w-8 ${apt.review ? "text-yellow-400 hover:text-yellow-500" : "text-muted-foreground hover:text-yellow-400"}`}
+                        className={`h-10 w-10 rounded-xl transition-all ${apt.review ? "text-amber-500 bg-amber-50" : "text-stitch-on-surface-variant/40 hover:text-amber-500 hover:bg-amber-50"}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleReviewClick(apt);
@@ -104,7 +104,12 @@ export function RecentAppointments({ appointments, onUpdateStatus }: RecentAppoi
                         title={apt.review ? "Ver avaliação" : "Avaliar atendimento"}
                         disabled={!!apt.review}
                       >
-                        <Star className={`h-4 w-4 ${apt.review ? "fill-yellow-400" : ""}`} />
+                        <span 
+                          className="material-symbols-outlined text-xl"
+                          style={{ fontVariationSettings: apt.review ? "'FILL' 1" : "'FILL' 0" }}
+                        >
+                          star
+                        </span>
                       </Button>
                     )}
 
@@ -113,14 +118,14 @@ export function RecentAppointments({ appointments, onUpdateStatus }: RecentAppoi
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                        className="h-10 w-10 rounded-xl text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-all"
                         onClick={(e) => {
                           e.stopPropagation();
                           handlePaymentClick(apt);
                         }}
                         title="Registrar Pagamento"
                       >
-                        <DollarSign className="h-4 w-4" />
+                        <span className="material-symbols-outlined text-xl text-emerald-600">payments</span>
                       </Button>
                     )}
 
@@ -128,7 +133,7 @@ export function RecentAppointments({ appointments, onUpdateStatus }: RecentAppoi
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/30"
+                      className="h-10 w-10 rounded-xl text-green-600 hover:text-green-700 hover:bg-green-50 transition-all"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleWhatsAppClick(
@@ -141,7 +146,7 @@ export function RecentAppointments({ appointments, onUpdateStatus }: RecentAppoi
                       }}
                       title="Enviar lembrete no WhatsApp"
                     >
-                      <MessageCircle className="h-4 w-4" />
+                      <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>chat</span>
                     </Button>
 
                     {/* Complete Button */}
@@ -149,20 +154,19 @@ export function RecentAppointments({ appointments, onUpdateStatus }: RecentAppoi
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        className="h-10 w-10 rounded-xl text-stitch-on-surface-variant/40 hover:text-stitch-primary hover:bg-stitch-primary/5 transition-all"
                         onClick={async (e) => {
                           e.stopPropagation();
                           try {
                             await onUpdateStatus(apt.id, "completed");
                             toast.success("Agendamento concluído!");
-                          } catch (error: any) {
-                            console.error("Error completing appointment:", error);
-                            toast.error(`Erro ao concluir agendamento: ${error.message || "Erro desconhecido"}`);
+                          } catch {
+                            toast.error("Erro ao concluir agendamento.");
                           }
                         }}
                         title="Marcar como concluído"
                       >
-                        <CheckCircle className="h-4 w-4" />
+                        <span className="material-symbols-outlined text-xl">check_circle</span>
                       </Button>
                     )}
                   </div>

@@ -8,7 +8,6 @@ import {
 import { type Appointment } from "@/hooks/use-appointments";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, CheckCircle, Clock, DollarSign, Phone, User } from "lucide-react";
 
 interface CustomerDetailsDialogProps {
   customerName: string;
@@ -39,76 +38,85 @@ export function CustomerDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <User className="h-5 w-5" />
-            {customerName}
-          </DialogTitle>
-          <DialogDescription>
-            Histórico e detalhes do cliente
-          </DialogDescription>
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto rounded-[2.5rem] border-none shadow-2xl p-0 font-sans">
+        <DialogHeader className="p-8 pb-4 bg-stitch-surface-container-low/30">
+          <div className="flex items-center gap-4 mb-2">
+            <div className="w-14 h-14 rounded-2xl bg-stitch-primary/10 flex items-center justify-center text-stitch-primary">
+              <span className="material-symbols-outlined text-3xl">person</span>
+            </div>
+            <div>
+              <DialogTitle className="text-2xl font-black text-stitch-on-surface leading-tight">
+                {customerName}
+              </DialogTitle>
+              <DialogDescription className="text-sm font-bold text-stitch-on-surface-variant opacity-60">
+                Histórico e detalhes do cliente
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className="grid gap-6 py-4">
+        <div className="px-8 py-6 space-y-8">
           {/* Customer Stats Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div className="bg-muted/50 p-4 rounded-lg flex flex-col items-center justify-center text-center">
-              <DollarSign className="h-5 w-5 text-green-500 mb-2" />
-              <span className="text-sm text-muted-foreground">LTV Total</span>
-              <span className="text-lg font-bold">R$ {ltv.toFixed(2)}</span>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-stitch-surface-container-low/50 p-5 rounded-[1.5rem] flex flex-col items-center justify-center text-center border border-stitch-outline-variant/5">
+              <span className="material-symbols-outlined text-stitch-primary mb-2 text-2xl">payments</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-stitch-on-surface-variant opacity-40">LTV Total</span>
+              <span className="text-lg font-black text-stitch-on-surface">R$ {ltv.toFixed(2)}</span>
             </div>
-            <div className="bg-muted/50 p-4 rounded-lg flex flex-col items-center justify-center text-center">
-              <CheckCircle className="h-5 w-5 text-blue-500 mb-2" />
-              <span className="text-sm text-muted-foreground">Concluídos</span>
-              <span className="text-lg font-bold">{completedCount}</span>
+            <div className="bg-stitch-surface-container-low/50 p-5 rounded-[1.5rem] flex flex-col items-center justify-center text-center border border-stitch-outline-variant/5">
+              <span className="material-symbols-outlined text-stitch-primary mb-2 text-2xl">check_circle</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-stitch-on-surface-variant opacity-40">Concluídos</span>
+              <span className="text-lg font-black text-stitch-on-surface">{completedCount}</span>
             </div>
-            <div className="bg-muted/50 p-4 rounded-lg flex flex-col items-center justify-center text-center">
-              <Calendar className="h-5 w-5 text-purple-500 mb-2" />
-              <span className="text-sm text-muted-foreground">Total</span>
-              <span className="text-lg font-bold">{customerAppointments.length}</span>
+            <div className="bg-stitch-surface-container-low/50 p-5 rounded-[1.5rem] flex flex-col items-center justify-center text-center border border-stitch-outline-variant/5">
+              <span className="material-symbols-outlined text-stitch-primary mb-2 text-2xl">calendar_today</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-stitch-on-surface-variant opacity-40">Total</span>
+              <span className="text-lg font-black text-stitch-on-surface">{customerAppointments.length}</span>
             </div>
           </div>
 
           {/* Contact Info */}
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Contato</h4>
-            <div className="flex flex-col gap-2">
+          <div className="space-y-3">
+            <h4 className="text-[10px] font-black text-stitch-on-surface-variant/40 uppercase tracking-[0.2em] ml-1">Contato</h4>
+            <div className="flex items-center p-4 rounded-2xl bg-stitch-surface-container-low/30 border border-stitch-outline-variant/5">
               {customerPhone ? (
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span>{customerPhone}</span>
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-stitch-primary">call</span>
+                  <span className="font-bold text-stitch-on-surface">{customerPhone}</span>
                 </div>
               ) : (
-                <span className="text-sm text-muted-foreground italic">Telefone não informado</span>
+                <span className="text-sm font-medium text-stitch-on-surface-variant opacity-40 italic">Telefone não informado</span>
               )}
             </div>
           </div>
 
           {/* Appointment History */}
           <div className="space-y-4">
-            <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Histórico de Agendamentos</h4>
+            <h4 className="text-[10px] font-black text-stitch-on-surface-variant/40 uppercase tracking-[0.2em] ml-1">Histórico de Agendamentos</h4>
             {customerAppointments.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">Nenhum agendamento encontrado.</p>
+              <div className="text-center py-12 rounded-3xl bg-stitch-surface-container-lowest border-2 border-dashed border-stitch-outline-variant/20">
+                <span className="material-symbols-outlined text-4xl text-stitch-on-surface-variant/20 mb-2">event_busy</span>
+                <p className="text-sm font-bold text-stitch-on-surface-variant opacity-40">Nenhum agendamento encontrado.</p>
+              </div>
             ) : (
               <div className="space-y-3">
                 {customerAppointments.map((apt) => (
                   <div
                     key={apt.id}
-                    className="flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
+                    className="flex items-center justify-between p-5 rounded-[1.5rem] bg-white border border-stitch-outline-variant/10 hover:shadow-md transition-all group"
                   >
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{apt.service?.name || "Serviço"}</span>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-3">
+                        <span className="font-black text-stitch-on-surface">{apt.service?.name || "Serviço"}</span>
                         <span
-                          className={`text-xs px-2 py-0.5 rounded-full ${
+                          className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider ${
                             apt.status === "completed"
-                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                              ? "bg-green-100 text-green-700"
                               : apt.status === "cancelled"
-                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                              ? "bg-red-100 text-red-700"
                               : apt.status === "confirmed"
-                              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                              : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-yellow-100 text-yellow-700"
                           }`}
                         >
                           {apt.status === "completed"
@@ -120,14 +128,18 @@ export function CustomerDetailsDialog({
                             : "Pendente"}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        {format(new Date(apt.start_time), "dd 'de' MMMM, yyyy", { locale: ptBR })}
-                        <Clock className="h-3 w-3 ml-2" />
-                        {format(new Date(apt.start_time), "HH:mm", { locale: ptBR })}
+                      <div className="flex items-center gap-4 text-xs font-bold text-stitch-on-surface-variant opacity-60">
+                        <div className="flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-sm">calendar_today</span>
+                          {format(new Date(apt.start_time), "dd 'de' MMM, yyyy", { locale: ptBR })}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-sm">schedule</span>
+                          {format(new Date(apt.start_time), "HH:mm", { locale: ptBR })}
+                        </div>
                       </div>
                     </div>
-                    <div className="font-medium">
+                    <div className="text-lg font-black text-stitch-primary">
                       R$ {apt.service?.price.toFixed(2)}
                     </div>
                   </div>
