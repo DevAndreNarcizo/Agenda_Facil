@@ -73,7 +73,8 @@ BEGIN
     'customer', jsonb_build_object(
       'id', customer_record.id,
       'name', customer_record.name,
-      'company_id', customer_record.company_id
+      'phone', customer_record.phone,
+      'organization_id', customer_record.organization_id
     )
   );
 END;

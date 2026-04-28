@@ -9,12 +9,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatBrazilianPhone } from "@/lib/customer-normalizers";
 
 interface NewCustomerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialName: string;
-  onCreateCustomer: (data: { name: string; phone: string; email: string }) => void;
+  onCreateCustomer: (data: { name: string; phone: string; email: string }) => void | Promise<void>;
 }
 
 export function NewCustomerDialog({
@@ -27,33 +28,31 @@ export function NewCustomerDialog({
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
 
-  // Função para formatar telefone
-  const formatPhone = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length <= 2) return numbers;
-    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
-    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      setName(initialName);
+      setPhone("");
+      setEmail("");
+    }
+
+    onOpenChange(nextOpen);
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhone(e.target.value);
-    setPhone(formatted);
+    setPhone(formatBrazilianPhone(e.target.value));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Remove formatação antes de enviar
-    const cleanPhone = phone.replace(/\D/g, '');
-    onCreateCustomer({ name, phone: cleanPhone, email });
-    onOpenChange(false);
-    // Reset form
+    await onCreateCustomer({ name, phone, email });
+    handleOpenChange(false);
     setName("");
     setPhone("");
     setEmail("");
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[750px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden font-sans">
         <DialogHeader className="p-10 pb-6 bg-stitch-surface-container-low/30">
           <div className="flex items-center gap-4 mb-2">

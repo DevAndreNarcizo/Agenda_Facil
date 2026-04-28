@@ -53,7 +53,7 @@ export default function ForgotPassword() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#050505] text-white p-6 font-sans overflow-hidden relative">
       {/* Dynamic Background Elements */}
-      <div className="fixed top-[-10%] left-[-10%] w-[60%] h-[60%] bg-stitch-primary/10 rounded-full blur-[150px] -z-10 animate-pulse transition-transform duration-[10s]"></div>
+      <div className="fixed top-[-10%] left-[-10%] w-[60%] h-[60%] bg-stitch-primary/10 rounded-full blur-[150px] -z-10 animate-pulse transition-transform duration-1000"></div>
       <div className="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-stitch-secondary/5 rounded-full blur-[150px] -z-10 animate-pulse" style={{ animationDelay: '3s' }}></div>
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.02] -z-10"></div>
 

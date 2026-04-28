@@ -21,6 +21,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { formatBrazilianPhone } from "@/lib/customer-normalizers";
+import { getSupabaseErrorMessage } from "@/lib/supabase-errors";
 import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 10;
@@ -32,6 +34,7 @@ export default function CustomersPage() {
     newThisMonth,
     returnRate,
     totalCustomers,
+    error,
     createCustomer,
     updateCustomer,
     deleteCustomer,
@@ -52,6 +55,10 @@ export default function CustomersPage() {
     c.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handlePhoneChange = (value: string) => {
+    setFormData({ ...formData, phone: formatBrazilianPhone(value) });
+  };
+
   // Paginação real
   const totalPages = Math.max(1, Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE));
   const paginatedCustomers = filteredCustomers.slice(
@@ -67,7 +74,15 @@ export default function CustomersPage() {
 
   const handleSaveCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name) return;
+    if (!formData.name.trim()) {
+      toast.error("Informe o nome do cliente.");
+      return;
+    }
+
+    if (!formData.phone.trim()) {
+      toast.error("Informe o telefone do cliente.");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -75,21 +90,23 @@ export default function CustomersPage() {
         await updateCustomer(editingCustomer.id, {
           name: formData.name,
           phone: formData.phone,
-          email: formData.email || undefined,
+          email: formData.email || null,
         });
         toast.success("Cliente atualizado com sucesso!");
       } else {
         await createCustomer({
           name: formData.name,
           phone: formData.phone,
-          email: formData.email || undefined,
+          email: formData.email || null,
         });
         toast.success("Cliente cadastrado com sucesso!");
       }
       setIsModalOpen(false);
       resetForm();
-    } catch {
-      toast.error("Erro ao salvar cliente. Tente novamente.");
+    } catch (err) {
+      const message = getSupabaseErrorMessage(err, "Erro ao salvar cliente. Tente novamente.");
+      console.error("Erro ao salvar cliente:", err);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -100,8 +117,10 @@ export default function CustomersPage() {
     try {
       await deleteCustomer(id);
       toast.success("Cliente excluído com sucesso!");
-    } catch {
-      toast.error("Erro ao excluir cliente. Verifique se não há agendamentos vinculados.");
+    } catch (err) {
+      const message = getSupabaseErrorMessage(err, "Erro ao excluir cliente. Verifique se não há agendamentos vinculados.");
+      console.error("Erro ao excluir cliente:", err);
+      toast.error(message);
     }
   };
 
@@ -114,7 +133,7 @@ export default function CustomersPage() {
     setEditingCustomer(customer);
     setFormData({
       name: customer.name,
-      phone: customer.phone || "",
+      phone: formatBrazilianPhone(customer.phone || ""),
       email: customer.email || "",
     });
     setIsModalOpen(true);
@@ -198,9 +217,12 @@ export default function CustomersPage() {
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40 group-focus-within:opacity-100 transition-opacity">call</span>
                     <Input
                       id="phone"
+                      type="tel"
                       className="pl-12 h-14 rounded-xl border-none !bg-[#1a1c1e] text-white font-bold placeholder:text-white/20 transition-all focus-visible:ring-stitch-primary"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
+                      maxLength={15}
+                      required
                       placeholder="(11) 98765-4321"
                     />
                   </div>
@@ -243,6 +265,11 @@ export default function CustomersPage() {
 
       {/* CRM Data Table Section */}
       <div className="bg-stitch-surface-container-low/30 backdrop-blur-xl rounded-[2.5rem] overflow-hidden shadow-none border-none">
+        {error && (
+          <div className="m-6 rounded-xl bg-red-500/10 px-5 py-4 text-sm font-bold text-red-600">
+            {error}
+          </div>
+        )}
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>

@@ -11,7 +11,7 @@ interface StatsCardProps {
 
 export function StatsCard({ title, value, icon, description, trend = "neutral", colorClass = "border-stitch-primary" }: StatsCardProps) {
   return (
-    <div className={`bg-stitch-surface-container-lowest p-8 rounded-[2rem] border-l-8 ${colorClass} flex items-center justify-between shadow-sm hover:translate-y-[-4px] transition-all duration-300 border-stitch-outline-variant/10`}>
+    <div className={`bg-stitch-surface-container-lowest p-8 rounded-stitch-lg border-l-4 ${colorClass} flex items-center justify-between shadow-none transition-colors border-stitch-outline-variant/20`}>
       <div>
         <p className="text-stitch-on-surface-variant text-xs font-black uppercase tracking-widest mb-2 opacity-60">{title}</p>
         <h3 className="text-4xl font-black text-stitch-on-surface tracking-tighter">{value}</h3>
@@ -26,7 +26,7 @@ export function StatsCard({ title, value, icon, description, trend = "neutral", 
           </p>
         )}
       </div>
-      <div className={`w-16 h-16 rounded-[1.25rem] bg-stitch-surface-container-low text-stitch-primary flex items-center justify-center shadow-inner`}>
+      <div className="w-16 h-16 rounded-stitch-lg bg-stitch-surface-container-low text-stitch-primary flex items-center justify-center shadow-none">
         <span className="material-symbols-outlined text-3xl">{icon}</span>
       </div>
     </div>

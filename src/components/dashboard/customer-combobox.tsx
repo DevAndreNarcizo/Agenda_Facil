@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/popover"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
+import { getSupabaseErrorMessage } from "@/lib/supabase-errors"
 
 export type Customer = {
   id: string
@@ -71,8 +72,9 @@ export function CustomerCombobox({
       
       if (error) throw error
       setCustomers(data || [])
-    } catch {
-      // Silently fail - customer list will be empty
+    } catch (err) {
+      console.error("Erro ao buscar clientes:", getSupabaseErrorMessage(err, "Falha ao buscar clientes."))
+      setCustomers([])
     } finally {
       setLoading(false)
     }

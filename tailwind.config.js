@@ -67,6 +67,8 @@ export default {
           "on-tertiary": "var(--stitch-on-tertiary)",
           "tertiary-container": "var(--stitch-tertiary-container)",
           "on-tertiary-container": "var(--stitch-on-tertiary-container)",
+          "error": "var(--stitch-error)",
+          "on-error": "var(--stitch-on-error)",
           "background": "var(--stitch-background)",
           "on-background": "var(--stitch-on-background)",
           "surface": "var(--stitch-surface)",

@@ -16,8 +16,8 @@
     --popover: 210 17% 98%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Primary - Vibrant Indigo/Violet Gradient Base */
-    --primary: 249 95% 60%; /* Vivid Indigo */
+    /* Primary - ToShop inspired green */
+    --primary: 156 31% 25%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -34,36 +34,38 @@
 
     --border: 215 20% 85%; /* Darker division borders */
     --input: 215 20% 85%;
-    --ring: 249 95% 55%;
+    --ring: 156 31% 25%;
 
     --radius: 0.75rem;
 
     /* Google Stitch Tokens - Light Mode (Refined Darker White) */
-    --stitch-primary: #5343d4;
+    --stitch-primary: #2b5244;
     --stitch-on-primary: #ffffff;
-    --stitch-primary-container: #6d5fef;
-    --stitch-on-primary-container: #fffbff;
+    --stitch-primary-container: #bcdacb;
+    --stitch-on-primary-container: #17362b;
     --stitch-secondary: #006877;
     --stitch-on-secondary: #ffffff;
-    --stitch-secondary-container: #3fe1fd;
-    --stitch-on-secondary-container: #00616f;
+    --stitch-secondary-container: #fffce2;
+    --stitch-on-secondary-container: #2b5244;
     --stitch-tertiary: #904358;
     --stitch-on-tertiary: #ffffff;
-    --stitch-tertiary-container: #ae5b70;
-    --stitch-on-tertiary-container: #fffbff;
-    --stitch-background: #f0f2f5;
+    --stitch-tertiary-container: #198754;
+    --stitch-on-tertiary-container: #ffffff;
+    --stitch-error: #dc3545;
+    --stitch-on-error: #ffffff;
+    --stitch-background: #f8f9fa;
     --stitch-on-background: #191c1e;
-    --stitch-surface: #f0f2f5;
+    --stitch-surface: #f8f9fa;
     --stitch-on-surface: #191c1e;
-    --stitch-surface-variant: #e0e3e5;
-    --stitch-on-surface-variant: #474554;
-    --stitch-outline: #787586;
-    --stitch-outline-variant: #b8b4c7;
-    --stitch-surface-container-lowest: #f8f9fa;
-    --stitch-surface-container-low: #eceef0;
-    --stitch-surface-container: #e2e4e7;
-    --stitch-surface-container-high: #dadce0;
-    --stitch-surface-container-highest: #d2d4d8;
+    --stitch-surface-variant: #e7ece9;
+    --stitch-on-surface-variant: #4f5d55;
+    --stitch-outline: #738178;
+    --stitch-outline-variant: #cfd8d3;
+    --stitch-surface-container-lowest: #ffffff;
+    --stitch-surface-container-low: #f3f6f4;
+    --stitch-surface-container: #e9efec;
+    --stitch-surface-container-high: #dde7e2;
+    --stitch-surface-container-highest: #d2ddd8;
   }
 
   .dark {
@@ -77,7 +79,7 @@
     --popover: 222.2 84% 8%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 249 95% 70%; /* Lighter Indigo for dark mode */
+    --primary: 149 29% 73%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -94,21 +96,23 @@
 
     --border: 217.2 32.6% 20%;
     --input: 217.2 32.6% 20%;
-    --ring: 249 95% 70%;
+    --ring: 149 29% 73%;
 
     /* Google Stitch Tokens - Dark Mode */
-    --stitch-primary: #9e91ff;
-    --stitch-on-primary: #150067;
-    --stitch-primary-container: #3d28bf;
-    --stitch-on-primary-container: #e4dfff;
-    --stitch-secondary: #2fd9f4;
-    --stitch-on-secondary: #00363e;
-    --stitch-secondary-container: #004e5a;
-    --stitch-on-secondary-container: #a2eeff;
-    --stitch-tertiary: #ffb1c2;
-    --stitch-on-tertiary: #56122b;
-    --stitch-tertiary-container: #762e43;
-    --stitch-on-tertiary-container: #ffd9e0;
+    --stitch-primary: #bcdacb;
+    --stitch-on-primary: #10291f;
+    --stitch-primary-container: #2b5244;
+    --stitch-on-primary-container: #eef8f2;
+    --stitch-secondary: #fffce2;
+    --stitch-on-secondary: #2b5244;
+    --stitch-secondary-container: #36473f;
+    --stitch-on-secondary-container: #fffce2;
+    --stitch-tertiary: #7dd9a4;
+    --stitch-on-tertiary: #0d2a1b;
+    --stitch-tertiary-container: #20583b;
+    --stitch-on-tertiary-container: #e8fff1;
+    --stitch-error: #ff8a8a;
+    --stitch-on-error: #3b0808;
     --stitch-background: #0f1113;
     --stitch-on-background: #e2e2e6;
     --stitch-surface: #0f1113;
@@ -216,8 +220,8 @@ input:-webkit-autofill:active{
 }
 
 .dashboard-flat table :where(th, td) {
-  border-right: 4px solid rgba(158, 145, 255, 0.16) !important;
-  border-bottom: 4px solid rgba(158, 145, 255, 0.16) !important;
+  border-right: 4px solid rgba(43, 82, 68, 0.16) !important;
+  border-bottom: 4px solid rgba(43, 82, 68, 0.16) !important;
 }
 
 .dashboard-flat table :where(th:last-child, td:last-child) {
@@ -229,9 +233,9 @@ input:-webkit-autofill:active{
 }
 
 .dashboard-flat .subscription-plan-card {
-  border: 4px solid rgba(158, 145, 255, 0.28) !important;
+  border: 4px solid rgba(43, 82, 68, 0.28) !important;
 }
 
 .dashboard-flat .subscription-plan-card[data-popular="true"] {
-  border-color: rgba(47, 217, 244, 0.42) !important;
+  border-color: rgba(188, 218, 203, 0.7) !important;
 }

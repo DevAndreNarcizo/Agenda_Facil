@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
+import { normalizeCustomerInput } from "@/lib/customer-normalizers";
+import { getSupabaseErrorMessage, isMissingRelationError } from "@/lib/supabase-errors";
 
 export interface Customer {
   id: string;
@@ -22,20 +24,18 @@ export function useCustomers() {
     queryFn: async () => {
       if (!profile?.organization_id) return [];
 
-      // Buscar clientes com dados do último agendamento
       const { data, error } = await supabase
         .from("customers")
         .select("*")
         .eq("organization_id", profile.organization_id)
         .order("name");
 
-      // Se a tabela não existir (404), retornar vazio
-      if (error?.code === "PGRST116" || error?.code === "42P01" || error?.message?.includes("not found")) {
-        return [];
+      if (error && isMissingRelationError(error)) {
+        throw new Error(getSupabaseErrorMessage(error));
       }
+
       if (error) throw error;
 
-      // Buscar último agendamento e total para cada cliente
       const customerIds = (data || []).map((c: { id: string }) => c.id);
 
       if (customerIds.length === 0) return data as Customer[];
@@ -71,16 +71,34 @@ export function useCustomers() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (customer: { name: string; phone: string; email?: string }) => {
+    mutationFn: async (customer: { name: string; phone: string; email?: string | null }) => {
+      if (!profile?.organization_id) {
+        throw new Error("Organização não encontrada. Faça login novamente.");
+      }
+
+      const normalizedCustomer = normalizeCustomerInput(customer);
+
+      if (!normalizedCustomer.name) {
+        throw new Error("Informe o nome do cliente.");
+      }
+
+      if (!normalizedCustomer.phone) {
+        throw new Error("Informe o telefone do cliente.");
+      }
+
       const { data, error } = await supabase
         .from("customers")
         .insert({
-          ...customer,
-          organization_id: profile?.organization_id,
+          ...normalizedCustomer,
+          organization_id: profile.organization_id,
         })
         .select()
         .single();
-      if (error) throw error;
+
+      if (error) {
+        throw new Error(getSupabaseErrorMessage(error));
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -89,14 +107,24 @@ export function useCustomers() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: { name?: string; phone?: string; email?: string } }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: { name?: string; phone?: string; email?: string | null } }) => {
+      const normalizedUpdates = {
+        ...(updates.name !== undefined ? { name: updates.name.trim() } : {}),
+        ...(updates.phone !== undefined ? { phone: updates.phone.replace(/\D/g, "") } : {}),
+        ...(updates.email !== undefined ? { email: updates.email?.trim().toLowerCase() || null } : {}),
+      };
+
       const { data, error } = await supabase
         .from("customers")
-        .update(updates)
+        .update(normalizedUpdates)
         .eq("id", id)
         .select()
         .single();
-      if (error) throw error;
+
+      if (error) {
+        throw new Error(getSupabaseErrorMessage(error));
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -110,7 +138,10 @@ export function useCustomers() {
         .from("customers")
         .delete()
         .eq("id", id);
-      if (error) throw error;
+
+      if (error) {
+        throw new Error(getSupabaseErrorMessage(error));
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers", profile?.organization_id] });
@@ -131,8 +162,8 @@ export function useCustomers() {
     newThisMonth,
     returnRate,
     totalCustomers: customers.length,
-    createCustomer: (customer: { name: string; phone: string; email?: string }) => createMutation.mutateAsync(customer),
-    updateCustomer: (id: string, updates: { name?: string; phone?: string; email?: string }) => updateMutation.mutateAsync({ id, updates }),
+    createCustomer: (customer: { name: string; phone: string; email?: string | null }) => createMutation.mutateAsync(customer),
+    updateCustomer: (id: string, updates: { name?: string; phone?: string; email?: string | null }) => updateMutation.mutateAsync({ id, updates }),
     deleteCustomer: (id: string) => deleteMutation.mutateAsync(id),
   };
 }

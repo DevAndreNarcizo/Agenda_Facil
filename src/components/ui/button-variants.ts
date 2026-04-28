@@ -5,13 +5,13 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-stitch-primary text-stitch-on-primary hover:bg-stitch-on-primary-fixed-variant shadow-md",
+        default: "bg-stitch-primary text-stitch-on-primary hover:bg-stitch-primary/90 shadow-none",
         destructive: "bg-stitch-error text-stitch-on-error hover:bg-stitch-error/90",
-        outline: "border-2 border-stitch-outline-variant bg-transparent text-stitch-on-surface-variant hover:bg-stitch-surface-container hover:text-stitch-on-surface",
+        outline: "border border-stitch-outline-variant bg-transparent text-stitch-on-surface-variant hover:bg-stitch-surface-container hover:text-stitch-on-surface",
         secondary: "bg-stitch-secondary-container text-stitch-on-secondary-container hover:bg-stitch-secondary-container/80",
         ghost: "hover:bg-stitch-surface-container hover:text-stitch-on-surface",
         link: "text-stitch-primary underline-offset-4 hover:underline",
-        premium: "bg-stitch-primary-container text-stitch-on-primary-container font-black hover:scale-105 shadow-lg",
+        premium: "bg-stitch-primary-container text-stitch-on-primary-container font-black hover:bg-stitch-primary-container/90 shadow-none",
       },
       size: {
         default: "h-12 px-6 py-3",
