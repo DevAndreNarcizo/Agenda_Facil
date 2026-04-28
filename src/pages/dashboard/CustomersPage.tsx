@@ -127,7 +127,7 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="space-y-12 p-8 max-w-7xl mx-auto">
+    <div className="dashboard-flat space-y-12 p-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <p className="text-stitch-on-surface-variant text-sm font-medium mb-1 uppercase tracking-wider">Relacionamento</p>

@@ -104,7 +104,7 @@ export default function SubscriptionPage() {
   };
 
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000 pb-20 max-w-7xl mx-auto p-8">
+    <div className="dashboard-flat space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000 pb-20 max-w-7xl mx-auto p-8">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 px-4">
         <div className="space-y-2">

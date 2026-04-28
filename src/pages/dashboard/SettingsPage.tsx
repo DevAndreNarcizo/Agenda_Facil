@@ -60,7 +60,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-10 p-8 max-w-[1600px] mx-auto animate-in fade-in duration-700">
+    <div className="dashboard-flat space-y-10 p-8 max-w-[1600px] mx-auto animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 bg-stitch-surface-container/50 p-10 rounded-[3rem] border border-stitch-outline-variant/20 relative overflow-hidden group">
         <div className="relative z-10">
           <Badge className="bg-stitch-primary/10 text-stitch-primary border-0 px-4 py-1 rounded-full mb-4 font-black uppercase tracking-[0.2em] text-[10px]">Painel de Gestão</Badge>

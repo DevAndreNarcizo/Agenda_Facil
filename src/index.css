@@ -169,3 +169,43 @@ input:-webkit-autofill:active{
   -webkit-box-shadow: 0 0 0 40px #1a1c1e inset !important;
   -webkit-text-fill-color: white !important;
 }
+
+/* Remove bordas e sombras das telas operacionais que usam layout plano. */
+.dashboard-flat,
+.dashboard-flat * {
+  box-shadow: none !important;
+  outline-color: transparent !important;
+  --tw-ring-color: transparent !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-shadow: 0 0 #0000 !important;
+  --tw-shadow-colored: 0 0 #0000 !important;
+}
+
+.dashboard-flat :where(.border, [class*="border-"]) {
+  border-color: transparent !important;
+}
+
+.dashboard-flat :where(.rbc-time-view, .rbc-month-view, .rbc-toolbar button, .rbc-event) {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.dashboard-flat .rbc-header,
+.dashboard-flat .rbc-time-content,
+.dashboard-flat .rbc-time-header,
+.dashboard-flat .rbc-time-header-content,
+.dashboard-flat .rbc-time-header-gutter,
+.dashboard-flat .rbc-time-gutter,
+.dashboard-flat .rbc-day-slot,
+.dashboard-flat .rbc-time-slot,
+.dashboard-flat .rbc-month-row,
+.dashboard-flat .rbc-day-bg,
+.dashboard-flat .rbc-date-cell,
+.dashboard-flat .rbc-row,
+.dashboard-flat .rbc-row-bg,
+.dashboard-flat .rbc-toolbar button,
+.dashboard-flat .rbc-event {
+  border: 0 !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
