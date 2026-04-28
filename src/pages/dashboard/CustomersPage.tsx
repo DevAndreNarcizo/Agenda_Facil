@@ -88,7 +88,7 @@ export default function CustomersPage() {
       }
       setIsModalOpen(false);
       resetForm();
-    } catch (error) {
+    } catch {
       toast.error("Erro ao salvar cliente. Tente novamente.");
     } finally {
       setSaving(false);
@@ -100,7 +100,7 @@ export default function CustomersPage() {
     try {
       await deleteCustomer(id);
       toast.success("Cliente excluído com sucesso!");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao excluir cliente. Verifique se não há agendamentos vinculados.");
     }
   };

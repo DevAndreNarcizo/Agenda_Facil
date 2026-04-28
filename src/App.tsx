@@ -11,7 +11,7 @@ import EmployeesPage from "./pages/dashboard/EmployeesPage";
 import CustomersPage from "./pages/dashboard/CustomersPage";
 import ServicesPage from "./pages/dashboard/ServicesPage";
 import SettingsPage from "./pages/dashboard/SettingsPage";
-import ThemeCustomization from "./pages/dashboard/ThemeCustomization";
+
 import AnalyticsPage from "./pages/dashboard/AnalyticsPage";
 import SubscriptionPage from "./pages/dashboard/SubscriptionPage";
 import CalendarPage from "./pages/dashboard/CalendarPage";
@@ -20,6 +20,7 @@ import PortalLayout from "./pages/portal/PortalLayout";
 import PortalHome from "./pages/portal/PortalHome";
 import PortalBooking from "./pages/portal/PortalBooking";
 import OnboardingPage from "./pages/onboarding/OnboardingPage";
+import PublicPortal from "./pages/portal/PublicPortal";
 import { Toaster } from "@/components/ui/sonner";
 
 // Componente Principal da Aplicação
@@ -67,8 +68,8 @@ function App() {
             {/* Rota: Configurações (/dashboard/settings) */}
             <Route path="settings" element={<SettingsPage />} />
             
-            {/* Rota: Personalização de Tema (/dashboard/theme) */}
-            <Route path="theme" element={<ThemeCustomization />} />
+            {/* Redireciona /dashboard/theme para /dashboard/settings (aba aparência) */}
+            <Route path="theme" element={<Navigate to="/dashboard/settings" replace />} />
             
             {/* Rota: Analytics (/dashboard/analytics) */}
             <Route path="analytics" element={<AnalyticsPage />} />
@@ -79,6 +80,9 @@ function App() {
             {/* Rota: Calendário (/dashboard/calendar) */}
             <Route path="calendar" element={<CalendarPage />} />
           </Route>
+
+          {/* Rota: Portal Público do Negócio (/p/:slug) */}
+          <Route path="/p/:slug" element={<PublicPortal />} />
 
           {/* Rotas do Portal do Cliente */}
           <Route path="/portal/login" element={<PortalLogin />} />

@@ -89,7 +89,7 @@ export default function EmployeesPage() {
       setIsEditDialogOpen(false);
       setEditingEmployee(null);
       toast.success("Profissional atualizado com sucesso!");
-    } catch (err) {
+    } catch {
       toast.error("Erro ao atualizar profissional.");
     }
   };
@@ -99,7 +99,7 @@ export default function EmployeesPage() {
     try {
       await deleteEmployee(id);
       toast.success("Profissional removido com sucesso!");
-    } catch (err) {
+    } catch {
       toast.error("Erro ao remover profissional. Verifique se não há agendamentos vinculados.");
     }
   };

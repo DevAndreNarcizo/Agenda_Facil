@@ -13,6 +13,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NotificationsPanel } from "@/components/dashboard/notifications-panel";
 import { cn } from "@/lib/utils";
 
 interface NavigationItem {
@@ -94,8 +95,8 @@ const SidebarContent = ({ navigation, profile, location, setIsMobileMenuOpen, on
           <DropdownMenuItem onClick={() => window.location.href = '/dashboard/analytics'} className="gap-3 font-bold cursor-pointer py-3 px-4 focus:bg-stitch-primary/5 focus:text-stitch-primary">
             <span className="material-symbols-outlined text-lg">insights</span> Analytics
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => window.location.href = '/dashboard/theme'} className="gap-3 font-bold cursor-pointer py-3 px-4 focus:bg-stitch-primary/5 focus:text-stitch-primary">
-            <span className="material-symbols-outlined text-lg">palette</span> Customizar Cores
+          <DropdownMenuItem onClick={() => window.location.href = '/dashboard/settings'} className="gap-3 font-bold cursor-pointer py-3 px-4 focus:bg-stitch-primary/5 focus:text-stitch-primary">
+            <span className="material-symbols-outlined text-lg">palette</span> Aparência
           </DropdownMenuItem>
           <div className="h-px bg-stitch-outline-variant/10 my-1 mx-2" />
           <DropdownMenuItem 
@@ -112,7 +113,7 @@ const SidebarContent = ({ navigation, profile, location, setIsMobileMenuOpen, on
 
 // Layout Principal do Dashboard
 export function DashboardLayout() {
-  const { signOut, profile, loading, refreshProfile } = useAuth();
+  const { signOut, profile, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -181,10 +182,7 @@ export function DashboardLayout() {
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <div className="h-6 w-[1px] bg-stitch-outline-variant/20 mx-1"></div>
-            <button className="p-2.5 text-stitch-on-surface-variant hover:bg-stitch-primary/10 hover:text-stitch-primary transition-all rounded-full relative group">
-              <span className="material-symbols-outlined font-black">notifications</span>
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-stitch-primary rounded-full border-2 border-stitch-background"></span>
-            </button>
+            <NotificationsPanel />
           </div>
         </header>
 
@@ -217,7 +215,11 @@ export function DashboardLayout() {
           <span className="material-symbols-outlined" style={{ fontVariationSettings: location.pathname.includes('customers') ? "'FILL' 1" : "" }}>groups</span>
           <span className="text-[10px] font-black mt-1 uppercase tracking-tighter">Clientes</span>
         </Link>
-        <button onClick={() => setIsMobileMenuOpen(true)} className="flex flex-col items-center justify-center p-2 text-stitch-on-surface-variant">
+        <button
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="flex flex-col items-center justify-center p-2 text-stitch-on-surface-variant"
+          aria-label="Abrir menu do dashboard"
+        >
           <span className="material-symbols-outlined">menu_open</span>
           <span className="text-[10px] font-black mt-1 uppercase tracking-tighter">Menu</span>
         </button>
@@ -240,6 +242,7 @@ export function DashboardLayout() {
       <button 
         onClick={() => navigate('/dashboard/employees')}
         className="fixed bottom-28 right-6 md:bottom-10 md:right-10 w-16 h-16 bg-stitch-primary text-stitch-on-primary rounded-full shadow-2xl shadow-stitch-primary/40 flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 group"
+        aria-label="Adicionar profissional"
       >
         <span className="material-symbols-outlined text-3xl group-hover:rotate-90 transition-transform duration-300 font-black">add</span>
       </button>

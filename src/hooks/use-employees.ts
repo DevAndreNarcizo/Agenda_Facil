@@ -82,7 +82,7 @@ export function useEmployees() {
           organization_id: profile.organization_id,
           full_name: data.fullName,
           role: data.role || "employee",
-        })
+        } as never)
         .eq("id", authData.user.id);
 
       // Se update falhar (profile ainda não criado pelo trigger), tentar insert
@@ -94,7 +94,7 @@ export function useEmployees() {
             organization_id: profile.organization_id,
             full_name: data.fullName,
             role: data.role || "employee",
-          });
+          } as never);
 
         if (insertError) throw new Error("Conta criada mas erro ao vincular à organização: " + insertError.message);
       }

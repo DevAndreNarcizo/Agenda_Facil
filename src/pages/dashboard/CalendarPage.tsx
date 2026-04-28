@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Calendar, dateFnsLocalizer, type View, Views } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
@@ -26,19 +26,12 @@ export default function CalendarPage() {
   const { employees } = useEmployees();
   const [searchParams] = useSearchParams();
   const [view, setView] = useState<View>(() => {
-    const v = new URLSearchParams(window.location.search).get("view");
+    const v = searchParams.get("view");
     if (v === "day") return Views.DAY;
     if (v === "month") return Views.MONTH;
     return Views.WEEK;
   });
   const [date, setDate] = useState(new Date());
-
-  useEffect(() => {
-    const v = searchParams.get("view");
-    if (v === "day") setView(Views.DAY);
-    if (v === "week") setView(Views.WEEK);
-    if (v === "month") setView(Views.MONTH);
-  }, [searchParams]);
 
   const events = appointments.map((apt) => ({
     id: apt.id,

@@ -40,18 +40,21 @@ export default function AnalyticsPage() {
 
   const fetchAnalytics = async () => {
     try {
-      const [revenueRes, servicesRes, hoursRes, statsRes] = await Promise.all([
-        supabase.rpc('get_monthly_revenue', { organization_id: profile?.organization_id }),
-        supabase.rpc('get_top_services', { organization_id: profile?.organization_id }),
-        supabase.rpc('get_peak_hours', { organization_id: profile?.organization_id }),
-        supabase.rpc('get_dashboard_stats', { organization_id: profile?.organization_id })
+      // Cada RPC é chamada individualmente para não bloquear as outras se uma falhar
+      const orgId = profile?.organization_id;
+
+      const [revenueRes, servicesRes, hoursRes, statsRes] = await Promise.allSettled([
+        supabase.rpc('get_monthly_revenue', { organization_id: orgId }),
+        supabase.rpc('get_top_services', { organization_id: orgId }),
+        supabase.rpc('get_peak_hours', { organization_id: orgId }),
+        supabase.rpc('get_dashboard_stats', { organization_id: orgId })
       ]);
 
-      if (revenueRes.data) setMonthlyRevenue(revenueRes.data);
-      if (servicesRes.data) setTopServices(servicesRes.data);
-      if (hoursRes.data) setPeakHours(hoursRes.data);
-      if (statsRes.data && statsRes.data[0]) setStats(statsRes.data[0]);
-    } catch (error) {
+      if (revenueRes.status === 'fulfilled' && revenueRes.value.data) setMonthlyRevenue(revenueRes.value.data);
+      if (servicesRes.status === 'fulfilled' && servicesRes.value.data) setTopServices(servicesRes.value.data);
+      if (hoursRes.status === 'fulfilled' && hoursRes.value.data) setPeakHours(hoursRes.value.data);
+      if (statsRes.status === 'fulfilled' && statsRes.value.data?.[0]) setStats(statsRes.value.data[0]);
+    } catch {
       toast.error('Erro ao carregar dados de analytics.');
     } finally {
       setLoading(false);

@@ -71,6 +71,12 @@ export default function SubscriptionPage() {
       return;
     }
 
+    // Verificar se os Price IDs foram configurados
+    if (planId.includes("placeholder")) {
+      toast.error("Os planos ainda estão sendo configurados. Tente novamente em breve.");
+      return;
+    }
+
     setLoadingPlan(planId);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {

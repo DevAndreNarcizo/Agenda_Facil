@@ -12,7 +12,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 const WHATSAPP_FUNCTION_URL = Deno.env.get('WHATSAPP_FUNCTION_URL') || `${supabaseUrl}/functions/v1/send-whatsapp`
 
-serve(async (req) => {
+serve(async () => {
   try {
     // Buscar agendamentos que começam exatamente daqui a 24 horas (janela de 1 hora)
     const now = new Date();

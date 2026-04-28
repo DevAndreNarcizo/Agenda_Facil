@@ -141,7 +141,8 @@ USING ( id = public.get_user_organization_id() );
 -- =====================================================
 DO $$ BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'services') THEN
-    EXECUTE 'CREATE POLICY "services_select" ON public.services FOR SELECT USING ( organization_id = public.get_user_organization_id() )';
+    -- SELECT: membros da org OU acesso público ao portal (anon pode ver serviços)
+    EXECUTE 'CREATE POLICY "services_select" ON public.services FOR SELECT USING ( organization_id = public.get_user_organization_id() OR public.get_user_organization_id() IS NULL )';
     EXECUTE 'CREATE POLICY "services_insert" ON public.services FOR INSERT WITH CHECK ( organization_id = public.get_user_organization_id() )';
     EXECUTE 'CREATE POLICY "services_update" ON public.services FOR UPDATE USING ( organization_id = public.get_user_organization_id() )';
     EXECUTE 'CREATE POLICY "services_delete" ON public.services FOR DELETE USING ( organization_id = public.get_user_organization_id() )';
