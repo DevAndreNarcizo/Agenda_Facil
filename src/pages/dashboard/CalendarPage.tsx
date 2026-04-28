@@ -72,11 +72,26 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <Card className="rounded-[2.5rem] border-none shadow-2xl overflow-hidden bg-stitch-surface-container-low/30 backdrop-blur-xl p-6 border border-white/5 min-h-[700px]">
+      <Card className="rounded-[2.5rem] shadow-2xl overflow-hidden bg-stitch-surface-container-low/30 backdrop-blur-xl p-6 border border-stitch-primary/20 min-h-[700px]">
         <style>{`
           .rbc-calendar {
             color: #e2e2e2 !important;
             font-family: inherit !important;
+          }
+          .rbc-time-content,
+          .rbc-time-header,
+          .rbc-time-header-content,
+          .rbc-time-header-gutter,
+          .rbc-time-gutter,
+          .rbc-day-slot,
+          .rbc-time-slot,
+          .rbc-month-row,
+          .rbc-day-bg,
+          .rbc-date-cell,
+          .rbc-row,
+          .rbc-row-bg,
+          .rbc-header + .rbc-header {
+            border-color: rgba(139, 92, 246, 0.24) !important;
           }
           .rbc-header {
             padding: 12px !important;
@@ -84,33 +99,38 @@ export default function CalendarPage() {
             text-transform: uppercase !important;
             font-size: 11px !important;
             letter-spacing: 0.1em !important;
-            color: #8c8c8c !important;
-            border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+            color: #c4b5fd !important;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.35) !important;
           }
           .rbc-today {
-            background-color: rgba(83, 67, 212, 0.05) !important;
+            background-color: rgba(83, 67, 212, 0.12) !important;
           }
           .rbc-off-range-bg {
-            background-color: rgba(0,0,0,0.1) !important;
+            background-color: rgba(83, 67, 212, 0.04) !important;
           }
           .rbc-time-view, .rbc-month-view {
-            border: 1px solid rgba(255,255,255,0.05) !important;
+            border: 1px solid rgba(139, 92, 246, 0.28) !important;
             border-radius: 20px !important;
+            box-shadow: inset 0 0 0 1px rgba(34, 211, 238, 0.08) !important;
           }
           .rbc-time-header-content {
-            border-left: 1px solid rgba(255,255,255,0.05) !important;
+            border-left: 1px solid rgba(139, 92, 246, 0.24) !important;
           }
           .rbc-timeslot-group {
-            border-bottom: 1px solid rgba(255,255,255,0.03) !important;
+            border-bottom: 1px solid rgba(34, 211, 238, 0.1) !important;
             min-height: 60px !important;
           }
           .rbc-day-slot .rbc-time-slot {
-            border-top: 1px solid rgba(255,255,255,0.02) !important;
+            border-top: 1px solid rgba(34, 211, 238, 0.08) !important;
+          }
+          .rbc-current-time-indicator {
+            background-color: #a3e635 !important;
+            height: 2px !important;
           }
           .rbc-toolbar button {
             color: #fff !important;
-            border: 1px solid rgba(255,255,255,0.1) !important;
-            background: rgba(255,255,255,0.05) !important;
+            border: 1px solid rgba(139, 92, 246, 0.28) !important;
+            background: rgba(83, 67, 212, 0.08) !important;
             border-radius: 8px !important;
             margin: 0 2px !important;
             padding: 8px 16px !important;
@@ -120,9 +140,11 @@ export default function CalendarPage() {
           }
           .rbc-toolbar button:hover {
             background: rgba(83, 67, 212, 0.2) !important;
+            border-color: rgba(34, 211, 238, 0.35) !important;
           }
           .rbc-toolbar button.rbc-active {
             background: #5343d4 !important;
+            border-color: #8b5cf6 !important;
             box-shadow: 0 4px 12px rgba(83, 67, 212, 0.3) !important;
           }
           .rbc-event {
