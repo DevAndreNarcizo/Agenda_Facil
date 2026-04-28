@@ -119,8 +119,9 @@ export default function SubscriptionPage() {
         {PLANS.map((plan) => (
           <Card 
             key={plan.name}
+            data-popular={plan.popular ? "true" : "false"}
             className={cn(
-              "relative rounded-[2rem] border-none shadow-none hover:shadow-none transition-all duration-500 hover:scale-[1.02] bg-stitch-surface-container-low/30 flex flex-col backdrop-blur-xl",
+              "subscription-plan-card relative rounded-[2rem] border-none shadow-none hover:shadow-none transition-all duration-500 hover:scale-[1.02] bg-stitch-surface-container-low/30 flex flex-col backdrop-blur-xl",
               plan.popular && "scale-[1.05] z-10"
             )}
           >

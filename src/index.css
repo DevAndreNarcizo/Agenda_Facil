@@ -209,3 +209,29 @@ input:-webkit-autofill:active{
   border-color: transparent !important;
   box-shadow: none !important;
 }
+
+.dashboard-flat table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.dashboard-flat table :where(th, td) {
+  border-right: 4px solid rgba(158, 145, 255, 0.16) !important;
+  border-bottom: 4px solid rgba(158, 145, 255, 0.16) !important;
+}
+
+.dashboard-flat table :where(th:last-child, td:last-child) {
+  border-right: 0 !important;
+}
+
+.dashboard-flat table tbody tr:last-child td {
+  border-bottom: 0 !important;
+}
+
+.dashboard-flat .subscription-plan-card {
+  border: 4px solid rgba(158, 145, 255, 0.28) !important;
+}
+
+.dashboard-flat .subscription-plan-card[data-popular="true"] {
+  border-color: rgba(47, 217, 244, 0.42) !important;
+}
