@@ -218,9 +218,9 @@ export default function SettingsPage() {
 
         <TabsContent value="billing" className="animate-in fade-in slide-in-from-bottom-2 duration-500">
            <Link to="/dashboard/subscription" className="block outline-none">
-            <Card className="rounded-[3rem] bg-stitch-surface-container-highest dark:bg-[#0f1113] p-12 shadow-2xl relative overflow-hidden group border border-stitch-outline-variant/20 transition-all hover:scale-[1.01]">
+            <Card className="rounded-[3rem] bg-stitch-surface-container-highest dark:bg-[#0f1113] p-12 shadow-none hover:shadow-none relative overflow-hidden group border-none transition-all hover:scale-[1.01]">
               <div className="relative z-10 max-w-lg">
-                <Badge className="bg-stitch-primary text-stitch-on-primary border-0 px-6 py-1.5 rounded-full mb-8 font-black uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-stitch-primary/20">
+                <Badge className="bg-stitch-primary text-stitch-on-primary border-0 px-6 py-1.5 rounded-full mb-8 font-black uppercase tracking-[0.2em] text-[10px] shadow-none">
                     {company?.plan_name ? company.plan_name.toUpperCase() : "FREE TRIAL"}
                 </Badge>
                 <h3 className="text-5xl font-black font-headline mb-4 tracking-tighter text-stitch-on-surface">Assinatura Premium</h3>
@@ -228,7 +228,7 @@ export default function SettingsPage() {
                   Gerencie seu plano, faturas e métodos de pagamento com segurança através do Stripe.
                 </p>
                 <div className="flex gap-4">
-                  <Button className="bg-stitch-primary text-stitch-on-primary h-16 px-10 rounded-2xl font-black text-lg hover:scale-105 transition-all shadow-xl">
+                  <Button className="bg-stitch-primary text-stitch-on-primary h-16 px-10 rounded-2xl font-black text-lg hover:scale-105 transition-all shadow-none">
                     {company?.subscription_status === 'active' ? "Gerenciar Assinatura" : "Ver Planos & Ativar"}
                   </Button>
                 </div>

@@ -265,19 +265,19 @@ export default function ServicesPage() {
           <div className="relative group">
             <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-stitch-primary opacity-50 group-focus-within:opacity-100 transition-opacity text-2xl">search</span>
             <Input 
-              className="h-16 pl-14 text-lg bg-[#1a1c1e] text-white border-none rounded-2xl shadow-xl font-bold placeholder:text-white/20"
+              className="h-16 pl-14 text-lg bg-[#1a1c1e] text-white border-none rounded-2xl shadow-none font-bold placeholder:text-white/20"
               placeholder="Nome ou descrição do serviço..."
             />
           </div>
         </div>
-        <Card className="p-6 rounded-2xl bg-stitch-surface-container-low/30 border border-white/5 flex items-center justify-between h-16">
+        <Card className="p-6 rounded-2xl bg-stitch-surface-container-low/30 border-none shadow-none hover:shadow-none flex items-center justify-between h-16">
            <span className="text-xs font-black uppercase tracking-widest text-stitch-on-surface-variant">Ativos:</span>
            <span className="text-2xl font-black font-headline text-stitch-primary">{services.length}</span>
         </Card>
       </section>
 
       {/* Services Grid/Table */}
-      <div className="bg-stitch-surface-container-low/30 backdrop-blur-xl rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/5">
+      <div className="bg-stitch-surface-container-low/30 backdrop-blur-xl rounded-[2.5rem] overflow-hidden shadow-none border-none">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>

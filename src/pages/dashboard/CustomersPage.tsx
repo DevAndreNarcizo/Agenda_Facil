@@ -142,7 +142,7 @@ export default function CustomersPage() {
           <div className="relative group">
             <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-stitch-primary opacity-50 group-focus-within:opacity-100 transition-opacity text-2xl">search</span>
             <Input
-              className="h-16 pl-14 text-lg bg-[#1a1c1e] text-white border-none rounded-2xl shadow-xl font-bold placeholder:text-white/20"
+              className="h-16 pl-14 text-lg bg-[#1a1c1e] text-white border-none rounded-2xl shadow-none font-bold placeholder:text-white/20"
               placeholder="Nome, telefone ou email..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
@@ -242,7 +242,7 @@ export default function CustomersPage() {
       </section>
 
       {/* CRM Data Table Section */}
-      <div className="bg-stitch-surface-container-low/30 backdrop-blur-xl rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/5">
+      <div className="bg-stitch-surface-container-low/30 backdrop-blur-xl rounded-[2.5rem] overflow-hidden shadow-none border-none">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>

@@ -120,13 +120,13 @@ export default function SubscriptionPage() {
           <Card 
             key={plan.name}
             className={cn(
-              "relative rounded-[2rem] border-stitch-outline-variant/10 shadow-2xl transition-all duration-500 hover:scale-[1.02] bg-stitch-surface-container-low/30 border-stitch-outline-variant/10 flex flex-col backdrop-blur-xl",
-              plan.popular && "ring-2 ring-stitch-primary scale-[1.05] z-10"
+              "relative rounded-[2rem] border-none shadow-none hover:shadow-none transition-all duration-500 hover:scale-[1.02] bg-stitch-surface-container-low/30 flex flex-col backdrop-blur-xl",
+              plan.popular && "scale-[1.05] z-10"
             )}
           >
             {plan.popular && (
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
-                <Badge className="bg-stitch-primary text-white border-0 px-6 py-1.5 rounded-xl font-black uppercase tracking-widest text-[10px] whitespace-nowrap shadow-lg shadow-stitch-primary/20">
+                <Badge className="bg-stitch-primary text-white border-0 px-6 py-1.5 rounded-xl font-black uppercase tracking-widest text-[10px] whitespace-nowrap shadow-none">
                   MAIS POPULAR
                 </Badge>
               </div>
@@ -176,8 +176,8 @@ export default function SubscriptionPage() {
                 className={cn(
                   "w-full h-14 rounded-2xl text-[10px] tracking-widest uppercase font-black transition-all mt-8",
                   plan.popular 
-                    ? "bg-stitch-primary text-white hover:bg-stitch-primary/90 shadow-lg shadow-stitch-primary/20" 
-                    : "bg-stitch-surface-container-lowest/10 text-stitch-on-surface hover:bg-stitch-surface-container-lowest/20 border border-stitch-outline-variant/10"
+                    ? "bg-stitch-primary text-white hover:bg-stitch-primary/90 shadow-none" 
+                    : "bg-stitch-surface-container-lowest/10 text-stitch-on-surface hover:bg-stitch-surface-container-lowest/20 border-none"
                 )}
               >
                 {loadingPlan === plan.id ? (
