@@ -72,7 +72,7 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <Card className="rounded-[2.5rem] shadow-2xl overflow-hidden bg-stitch-surface-container-low/30 backdrop-blur-xl p-6 border border-stitch-primary/20 min-h-[700px]">
+      <Card className="rounded-[2.5rem] shadow-2xl overflow-hidden bg-stitch-surface-container-low/30 backdrop-blur-xl p-6 border-none min-h-[700px]">
         <style>{`
           .rbc-calendar {
             color: #e2e2e2 !important;
@@ -109,9 +109,9 @@ export default function CalendarPage() {
             background-color: rgba(83, 67, 212, 0.04) !important;
           }
           .rbc-time-view, .rbc-month-view {
-            border: 1px solid rgba(139, 92, 246, 0.28) !important;
+            border: 0 !important;
             border-radius: 20px !important;
-            box-shadow: inset 0 0 0 1px rgba(34, 211, 238, 0.08) !important;
+            box-shadow: none !important;
           }
           .rbc-time-header-content {
             border-left: 1px solid rgba(139, 92, 246, 0.24) !important;
