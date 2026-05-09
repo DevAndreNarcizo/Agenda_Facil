@@ -8,6 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  normalizeSlug,
+  SLUG_UNAVAILABLE_MESSAGE,
+  SLUG_VALIDATION_MESSAGE,
+  validateOrganizationSlugAvailability,
+} from "@/lib/slug";
 
 const registerSchema = z.object({
   fullName: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
@@ -18,25 +24,74 @@ const registerSchema = z.object({
 });
 
 type RegisterForm = z.infer<typeof registerSchema>;
+type SlugAvailability = "idle" | "checking" | "available" | "unavailable";
 
 export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [slugAvailability, setSlugAvailability] = useState<SlugAvailability>("idle");
   const navigate = useNavigate();
 
   const {
     register,
     handleSubmit,
+    clearErrors,
+    setError: setFieldError,
     formState: { errors },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
   });
+
+  const orgSlugField = register("orgSlug");
+
+  const validateSlugAvailability = async (slug: string) => {
+    const normalizedSlug = normalizeSlug(slug);
+    setSlugAvailability("checking");
+
+    const result = await validateOrganizationSlugAvailability(normalizedSlug, async (organizationSlug) => {
+      const { data: existingOrganization, error: slugError } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("slug", organizationSlug)
+        .maybeSingle();
+
+      if (slugError) throw slugError;
+
+      return existingOrganization;
+    });
+
+    switch (result.status) {
+      case "available":
+        setSlugAvailability("available");
+        clearErrors("orgSlug");
+        return true;
+      case "unavailable":
+        setSlugAvailability("unavailable");
+        setFieldError("orgSlug", { type: "validate", message: SLUG_UNAVAILABLE_MESSAGE });
+        return false;
+      case "error":
+        setSlugAvailability("idle");
+        setFieldError("orgSlug", { type: "validate", message: SLUG_VALIDATION_MESSAGE });
+        return false;
+      case "invalid":
+      default:
+        setSlugAvailability("idle");
+        return false;
+    }
+  };
 
   const onSubmit = async (data: RegisterForm) => {
     setLoading(true);
     setError(null);
 
     try {
+      const normalizedOrgSlug = normalizeSlug(data.orgSlug);
+      const slugIsAvailable = await validateSlugAvailability(normalizedOrgSlug);
+
+      if (!slugIsAvailable) {
+        return;
+      }
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -44,7 +99,7 @@ export default function RegisterPage() {
           data: {
             full_name: data.fullName,
             org_name: data.orgName,
-            org_slug: data.orgSlug,
+            org_slug: normalizedOrgSlug,
             role: 'admin',
           },
         },
@@ -134,11 +189,28 @@ export default function RegisterPage() {
                   className="w-full h-18 pl-14 pr-6 bg-[#1a1c1e]/50 border-white/5 rounded-2xl text-white placeholder:text-white/10 focus:ring-2 focus:ring-stitch-primary/50 focus:bg-[#1a1c1e] transition-all outline-none font-black text-lg shadow-inner"
                   id="orgSlug"
                   placeholder="barbearia-premium"
-                  {...register("orgSlug")}
+                  name={orgSlugField.name}
+                  ref={orgSlugField.ref}
+                  onChange={(event) => {
+                    event.target.value = normalizeSlug(event.target.value);
+                    setSlugAvailability("idle");
+                    clearErrors("orgSlug");
+                    void orgSlugField.onChange(event);
+                  }}
+                  onBlur={(event) => {
+                    void orgSlugField.onBlur(event);
+                    void validateSlugAvailability(event.target.value);
+                  }}
                 />
               </div>
               {errors.orgSlug && (
                 <p className="text-[10px] text-stitch-error font-black uppercase tracking-wider ml-2 animate-in fade-in slide-in-from-left-2">{errors.orgSlug.message}</p>
+              )}
+              {!errors.orgSlug && slugAvailability === "checking" && (
+                <p className="text-[10px] text-white/40 font-black uppercase tracking-wider ml-2 animate-in fade-in slide-in-from-left-2">Validando disponibilidade...</p>
+              )}
+              {!errors.orgSlug && slugAvailability === "available" && (
+                <p className="text-[10px] text-stitch-secondary font-black uppercase tracking-wider ml-2 animate-in fade-in slide-in-from-left-2">URL disponível.</p>
               )}
             </div>
 
@@ -191,7 +263,7 @@ export default function RegisterPage() {
 
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || slugAvailability === "checking"}
               className="w-full h-20 bg-stitch-primary text-white font-black rounded-[2rem] shadow-[0_20px_40px_rgba(var(--primary-rgb),0.3)] hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-3 text-xl group/btn overflow-hidden relative"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_2s_infinite] pointer-events-none" />
