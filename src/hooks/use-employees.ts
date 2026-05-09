@@ -7,6 +7,7 @@ export interface Employee {
   id: string;
   full_name: string;
   email?: string;
+  photo_url?: string | null;
   role: "admin" | "owner" | "employee" | "staff";
   created_at?: string;
   organization_id?: string;
@@ -37,7 +38,7 @@ export function useEmployees() {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, role, created_at, organization_id")
+        .select("id, full_name, role, photo_url, created_at, organization_id")
         .eq("organization_id", profile.organization_id)
         .order("full_name");
 
@@ -48,7 +49,7 @@ export function useEmployees() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: { fullName: string; email: string; password: string; role?: Employee["role"] }) => {
+    mutationFn: async (data: { fullName: string; email: string; password: string; role?: Employee["role"]; photo_url?: string | null }) => {
       if (!profile?.organization_id) throw new Error("Organização não encontrada");
 
       const tempSupabase = getAdminClient();
@@ -82,6 +83,7 @@ export function useEmployees() {
           organization_id: profile.organization_id,
           full_name: data.fullName,
           role: data.role || "employee",
+          photo_url: data.photo_url || null,
         } as never)
         .eq("id", authData.user.id);
 
@@ -94,6 +96,7 @@ export function useEmployees() {
             organization_id: profile.organization_id,
             full_name: data.fullName,
             role: data.role || "employee",
+            photo_url: data.photo_url || null,
           } as never);
 
         if (insertError) throw new Error("Conta criada mas erro ao vincular à organização: " + insertError.message);
@@ -107,7 +110,7 @@ export function useEmployees() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: { full_name?: string; role?: Employee["role"] } }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: { full_name?: string; role?: Employee["role"]; photo_url?: string | null } }) => {
       const { error } = await supabase
         .from("profiles")
         .update(updates)
@@ -137,7 +140,7 @@ export function useEmployees() {
     loading,
     error: error ? (error as Error).message : null,
     createEmployee: createMutation.mutateAsync,
-    updateEmployee: (id: string, updates: { full_name?: string; role?: Employee["role"] }) => updateMutation.mutateAsync({ id, updates }),
+    updateEmployee: (id: string, updates: { full_name?: string; role?: Employee["role"]; photo_url?: string | null }) => updateMutation.mutateAsync({ id, updates }),
     deleteEmployee: (id: string) => deleteMutation.mutateAsync(id),
   };
 }

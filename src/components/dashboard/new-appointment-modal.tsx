@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,16 +21,52 @@ import { toast } from "sonner";
 
 interface NewAppointmentModalProps {
   onAppointmentCreated: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  defaultDate?: Date;
+  trigger?: ReactNode;
+  hideTrigger?: boolean;
 }
 
-export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModalProps) {
-  const [open, setOpen] = useState(false);
+const toLocalDateInput = (value: Date) => {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const toLocalTimeInput = (value: Date) => {
+  const hours = value.getHours();
+  const minutes = value.getMinutes();
+
+  if (hours === 0 && minutes === 0) {
+    return "09:00";
+  }
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+};
+
+export function NewAppointmentModal({
+  onAppointmentCreated,
+  open: controlledOpen,
+  onOpenChange,
+  defaultDate,
+  trigger,
+  hideTrigger = false,
+}: NewAppointmentModalProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [services, setServices] = useState<{ id: string; name: string; price: number; duration_minutes: number }[]>([]);
   const { profile } = useAuth();
   const { checkAvailability } = useAvailability();
   const { employees } = useEmployees();
   const { promotions } = usePromotions();
+  const open = controlledOpen ?? internalOpen;
+
+  const setOpen = (nextOpen: boolean) => {
+    setInternalOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+  };
 
   // Form State
   const [customerId, setCustomerId] = useState("");
@@ -51,6 +87,13 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, profile?.organization_id]);
+
+  useEffect(() => {
+    if (!open || !defaultDate) return;
+
+    setDate(toLocalDateInput(defaultDate));
+    setTime(toLocalTimeInput(defaultDate));
+  }, [defaultDate, open]);
 
   const fetchServices = async () => {
     const { data } = await supabase
@@ -150,6 +193,7 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
       onAppointmentCreated();
       // Reset form
       setCustomerId("");
+      setCustomerName("");
       setServiceId("");
       setEmployeeId("");
       setPromotionId(null);
@@ -173,12 +217,16 @@ export function NewAppointmentModal({ onAppointmentCreated }: NewAppointmentModa
       />
       
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button className="h-14 px-8 rounded-2xl font-black text-lg gap-2 shadow-xl shadow-stitch-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
-            <span className="material-symbols-outlined font-black">add_circle</span>
-            Novo Agendamento
-          </Button>
-        </DialogTrigger>
+        {!hideTrigger && (
+          <DialogTrigger asChild>
+            {trigger || (
+              <Button className="h-14 px-8 rounded-2xl font-black text-lg gap-2 shadow-xl shadow-stitch-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                <span className="material-symbols-outlined font-black">add_circle</span>
+                Novo Agendamento
+              </Button>
+            )}
+          </DialogTrigger>
+        )}
         <DialogContent className="sm:max-w-[700px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden font-sans">
           <DialogHeader className="p-10 pb-6 bg-stitch-surface-container-low/30">
             <div className="flex items-center gap-4 mb-2">

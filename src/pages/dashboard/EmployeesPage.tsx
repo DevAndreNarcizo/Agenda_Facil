@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useEmployees } from "@/hooks/use-employees";
+import { useEmployees, type Employee } from "@/hooks/use-employees";
 import { useAppointments } from "@/hooks/use-appointments";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,27 +32,46 @@ const addEmployeeSchema = z.object({
 });
 
 type AddEmployeeForm = z.infer<typeof addEmployeeSchema>;
+const EMPLOYEE_PHOTO_BUCKET = "employee-photos";
+
+const revokeObjectPreview = (previewUrl: string) => {
+  if (previewUrl.startsWith("blob:")) {
+    URL.revokeObjectURL(previewUrl);
+  }
+};
 
 export default function EmployeesPage() {
   const { employees, loading, createEmployee, updateEmployee, deleteEmployee } = useEmployees();
   const { appointments } = useAppointments();
+  const { profile } = useAuth();
   const [creating, setCreating] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const createPhotoInputRef = useRef<HTMLInputElement>(null);
+  const editPhotoInputRef = useRef<HTMLInputElement>(null);
+  const [createPhotoFile, setCreatePhotoFile] = useState<File | null>(null);
+  const [createPhotoPreview, setCreatePhotoPreview] = useState("");
 
   // Edit state
-  const [editingEmployee, setEditingEmployee] = useState<{ id: string; full_name: string } | null>(null);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [editName, setEditName] = useState("");
+  const [editPhotoFile, setEditPhotoFile] = useState<File | null>(null);
+  const [editPhotoPreview, setEditPhotoPreview] = useState("");
+  const [editPhotoRemoved, setEditPhotoRemoved] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<AddEmployeeForm>({
     resolver: zodResolver(addEmployeeSchema),
   });
+
+  useEffect(() => () => revokeObjectPreview(createPhotoPreview), [createPhotoPreview]);
+  useEffect(() => () => revokeObjectPreview(editPhotoPreview), [editPhotoPreview]);
 
   const filteredEmployees = employees.filter(e =>
     e.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -67,11 +88,78 @@ export default function EmployeesPage() {
     return todayAppointments.filter(a => a.employee_id === empId).length;
   };
 
+  const validatePhotoFile = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecione uma imagem válida.");
+      return false;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("A foto deve ter no máximo 5MB.");
+      return false;
+    }
+
+    return true;
+  };
+
+  const uploadEmployeePhoto = async (file: File, ownerId: string) => {
+    if (!profile?.organization_id) {
+      throw new Error("Organização não encontrada.");
+    }
+
+    const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+    const safeOwnerId = ownerId.replace(/[^a-zA-Z0-9_-]/g, "");
+    const filePath = `${profile.organization_id}/${safeOwnerId}-${Date.now()}.${ext}`;
+
+    const { error } = await supabase.storage
+      .from(EMPLOYEE_PHOTO_BUCKET)
+      .upload(filePath, file, { upsert: true });
+
+    if (error) {
+      if (error.message?.includes("not found") || error.message?.includes("Bucket")) {
+        throw new Error('Bucket "employee-photos" não encontrado no Supabase Storage.');
+      }
+      throw error;
+    }
+
+    const { data } = supabase.storage
+      .from(EMPLOYEE_PHOTO_BUCKET)
+      .getPublicUrl(filePath);
+
+    return data.publicUrl ? `${data.publicUrl}?t=${Date.now()}` : "";
+  };
+
+  const handleCreatePhotoChange = (file?: File) => {
+    if (!file || !validatePhotoFile(file)) return;
+
+    setCreatePhotoFile(file);
+    setCreatePhotoPreview(URL.createObjectURL(file));
+  };
+
+  const handleEditPhotoChange = (file?: File) => {
+    if (!file || !validatePhotoFile(file)) return;
+
+    setEditPhotoFile(file);
+    setEditPhotoPreview(URL.createObjectURL(file));
+    setEditPhotoRemoved(false);
+  };
+
+  const resetCreatePhoto = () => {
+    setCreatePhotoFile(null);
+    setCreatePhotoPreview("");
+    if (createPhotoInputRef.current) createPhotoInputRef.current.value = "";
+  };
+
   const onSubmit = async (data: AddEmployeeForm) => {
     setCreating(true);
     try {
-      await createEmployee(data);
+      const photoUrl = createPhotoFile
+        ? await uploadEmployeePhoto(createPhotoFile, `new-${Date.now()}`)
+        : null;
+
+      await createEmployee({ ...data, photo_url: photoUrl });
       reset();
+      resetCreatePhoto();
       setIsDialogOpen(false);
       toast.success("Profissional adicionado com sucesso!");
     } catch (err: unknown) {
@@ -85,12 +173,23 @@ export default function EmployeesPage() {
   const handleEditEmployee = async () => {
     if (!editingEmployee || !editName.trim()) return;
     try {
-      await updateEmployee(editingEmployee.id, { full_name: editName });
+      const photoUrl = editPhotoFile
+        ? await uploadEmployeePhoto(editPhotoFile, editingEmployee.id)
+        : editPhotoRemoved
+          ? null
+          : editingEmployee.photo_url || null;
+
+      await updateEmployee(editingEmployee.id, { full_name: editName, photo_url: photoUrl });
       setIsEditDialogOpen(false);
       setEditingEmployee(null);
+      setEditPhotoFile(null);
+      setEditPhotoPreview("");
+      setEditPhotoRemoved(false);
+      if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
       toast.success("Profissional atualizado com sucesso!");
-    } catch {
-      toast.error("Erro ao atualizar profissional.");
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(error.message || "Erro ao atualizar profissional.");
     }
   };
 
@@ -104,9 +203,13 @@ export default function EmployeesPage() {
     }
   };
 
-  const openEditDialog = (employee: { id: string; full_name: string }) => {
+  const openEditDialog = (employee: Employee) => {
     setEditingEmployee(employee);
     setEditName(employee.full_name);
+    setEditPhotoFile(null);
+    setEditPhotoPreview(employee.photo_url || "");
+    setEditPhotoRemoved(false);
+    if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
     setIsEditDialogOpen(true);
   };
 
@@ -127,7 +230,13 @@ export default function EmployeesPage() {
           <h1 className="font-headline text-4xl font-black tracking-tight text-stitch-on-surface">Gerenciar Profissionais</h1>
         </div>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            reset();
+            resetCreatePhoto();
+          }
+        }}>
           <DialogTrigger asChild>
             <Button className="h-16 px-10 rounded-2xl font-black text-lg gap-3 shadow-lg shadow-stitch-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
               <span className="material-symbols-outlined text-2xl">person_add</span>
@@ -150,6 +259,39 @@ export default function EmployeesPage() {
             </DialogHeader>
 
             <form onSubmit={handleSubmit(onSubmit)} className="px-10 pb-10 space-y-6 mt-6">
+              <div className="flex flex-col gap-4 rounded-2xl bg-[#1a1c1e] p-5 sm:flex-row sm:items-center">
+                <Avatar className="h-24 w-24 border-4 border-white/5">
+                  <AvatarImage src={createPhotoPreview} />
+                  <AvatarFallback className="bg-stitch-primary/10 text-2xl font-black text-stitch-primary">
+                    {watch("fullName")?.substring(0, 2).toUpperCase() || "FT"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <Label className="text-sm font-bold text-white/70">Foto do Profissional</Label>
+                    <p className="mt-1 text-xs font-medium text-white/35">PNG, JPG ou WEBP até 5MB.</p>
+                  </div>
+                  <input
+                    ref={createPhotoInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(event) => handleCreatePhotoChange(event.target.files?.[0])}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" className="h-11 rounded-xl font-bold" onClick={() => createPhotoInputRef.current?.click()}>
+                      <span className="material-symbols-outlined text-lg mr-2">add_a_photo</span>
+                      Escolher foto
+                    </Button>
+                    {createPhotoPreview && (
+                      <Button type="button" variant="ghost" className="h-11 rounded-xl font-bold text-stitch-error hover:text-stitch-error" onClick={resetCreatePhoto}>
+                        Remover
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="fullName" className="text-sm font-bold ml-1 text-white/70">Nome Completo</Label>
                 <div className="relative group">
@@ -279,7 +421,7 @@ export default function EmployeesPage() {
                 <CardContent className="p-8 flex flex-col items-center text-center">
                   <div className="relative mb-6">
                     <Avatar className="w-28 h-28 border-4 border-stitch-surface-container-low shadow-sm scale-110 group-hover:scale-125 transition-transform duration-500">
-                      <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${employee.full_name}`} />
+                      <AvatarImage src={employee.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${employee.full_name}`} />
                       <AvatarFallback className="bg-stitch-primary/10 text-stitch-primary font-bold text-2xl">
                         {employee.full_name.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
@@ -344,7 +486,16 @@ export default function EmployeesPage() {
       )}
 
       {/* Edit Employee Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+        setIsEditDialogOpen(open);
+        if (!open) {
+          setEditingEmployee(null);
+          setEditPhotoFile(null);
+          setEditPhotoPreview("");
+          setEditPhotoRemoved(false);
+          if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
+        }
+      }}>
         <DialogContent className="sm:max-w-[500px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden font-sans bg-[#0f1113]">
           <DialogHeader className="p-10 pb-6 bg-[#1a1c1e]/50 backdrop-blur-xl border-b border-white/5">
             <div className="flex items-center gap-4 mb-2">
@@ -360,6 +511,47 @@ export default function EmployeesPage() {
             </div>
           </DialogHeader>
           <div className="px-10 pb-10 space-y-6 mt-6">
+            <div className="flex flex-col items-center gap-4 rounded-2xl bg-[#1a1c1e] p-5 text-center">
+              <Avatar className="h-28 w-28 border-4 border-white/5">
+                <AvatarImage src={editPhotoPreview} />
+                <AvatarFallback className="bg-stitch-primary/10 text-2xl font-black text-stitch-primary">
+                  {editName.substring(0, 2).toUpperCase() || "FT"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="space-y-1">
+                <Label className="text-sm font-bold text-white/70">Foto do Profissional</Label>
+                <p className="text-xs font-medium text-white/35">Atualize ou remova a foto exibida no perfil.</p>
+              </div>
+              <input
+                ref={editPhotoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => handleEditPhotoChange(event.target.files?.[0])}
+              />
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button type="button" variant="outline" className="h-11 rounded-xl font-bold" onClick={() => editPhotoInputRef.current?.click()}>
+                  <span className="material-symbols-outlined text-lg mr-2">add_a_photo</span>
+                  Escolher foto
+                </Button>
+                {editPhotoPreview && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-11 rounded-xl font-bold text-stitch-error hover:text-stitch-error"
+                    onClick={() => {
+                      setEditPhotoFile(null);
+                      setEditPhotoPreview("");
+                      setEditPhotoRemoved(true);
+                      if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
+                    }}
+                  >
+                    Remover
+                  </Button>
+                )}
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label className="text-sm font-bold ml-1 text-white/70">Nome Completo</Label>
               <div className="relative group">
