@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
+import { applyOrganizationBrandTheme } from '@/lib/theme';
 
 export function ThemeCustomizationContent() {
   const { profile } = useAuth();
@@ -43,6 +44,11 @@ export function ThemeCustomizationContent() {
           setAccentColor(data.accent_color || '#ae5b70');
           setLogoUrl(data.logo_url || '');
           setSlug(data.slug || '');
+          applyOrganizationBrandTheme({
+            primaryColor: data.primary_color,
+            secondaryColor: data.secondary_color,
+            accentColor: data.accent_color,
+          });
         }
       } catch {
         toast.error('Erro ao carregar tema.');
@@ -129,10 +135,11 @@ export function ThemeCustomizationContent() {
 
       if (error) throw error;
 
-      const root = document.documentElement;
-      root.style.setProperty('--primary', primaryColor);
-      root.style.setProperty('--secondary', secondaryColor);
-      root.style.setProperty('--accent', accentColor);
+      applyOrganizationBrandTheme({
+        primaryColor,
+        secondaryColor,
+        accentColor,
+      });
 
       toast.success('Identidade visual atualizada!');
     } catch {

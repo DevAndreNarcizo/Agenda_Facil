@@ -1,4 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block");
 
 @tailwind base;
 @tailwind components;
@@ -6,8 +7,8 @@
 
 @layer base {
   :root {
-    /* Base Colors - Slate/Zinc for a premium feel */
-    --background: 210 40% 98%;
+    /* Agenda Facil redesign tokens */
+    --background: 220 20% 95%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 210 17% 98%;
@@ -16,8 +17,7 @@
     --popover: 210 17% 98%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Primary - ToShop inspired green */
-    --primary: 156 31% 25%;
+    --primary: 246 62% 55%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -34,38 +34,86 @@
 
     --border: 215 20% 85%; /* Darker division borders */
     --input: 215 20% 85%;
-    --ring: 156 31% 25%;
+    --ring: 246 62% 55%;
 
     --radius: 0.75rem;
 
-    /* Google Stitch Tokens - Light Mode (Refined Darker White) */
-    --stitch-primary: #2b5244;
+    /* Agenda Facil design system */
+    --af-primary: #5343d4;
+    --af-primary-hover: #6d5fef;
+    --af-primary-deep: #3d28bf;
+    --af-on-primary: #ffffff;
+    --af-primary-soft: rgba(83, 67, 212, 0.08);
+    --af-primary-glow: rgba(83, 67, 212, 0.30);
+    --af-secondary: #006877;
+    --af-on-secondary: #ffffff;
+    --af-secondary-container: #3fe1fd;
+    --af-tertiary: #904358;
+    --af-on-tertiary: #ffffff;
+    --af-background: #f0f2f5;
+    --af-surface: #f0f2f5;
+    --af-on-surface: #191c1e;
+    --af-on-surface-variant: #474554;
+    --af-surface-variant: #e0e3e5;
+    --af-surface-lowest: #f8f9fa;
+    --af-surface-low: #eceef0;
+    --af-surface-med: #e2e4e7;
+    --af-surface-high: #dadce0;
+    --af-surface-highest: #d2d4d8;
+    --af-outline: #787586;
+    --af-outline-variant: #b8b4c7;
+    --af-divider: rgba(184, 180, 199, 0.16);
+    --af-success: #16a34a;
+    --af-success-bg: #dcfce7;
+    --af-warning: #f59e0b;
+    --af-warning-bg: #fef3c7;
+    --af-error: #dc2626;
+    --af-error-bg: #fee2e2;
+    --af-canvas-dark: #050505;
+    --af-canvas-dark-input: #1a1c1e;
+    --af-font-headline: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --af-font-body: 'Inter', system-ui, sans-serif;
+    --af-radius-xs: 4px;
+    --af-radius-sm: 8px;
+    --af-radius-md: 12px;
+    --af-radius-lg: 16px;
+    --af-radius-xl: 24px;
+    --af-radius-2xl: 32px;
+    --af-shadow-xs: 0 1px 2px rgba(15,17,19,0.04);
+    --af-shadow-sm: 0 2px 4px rgba(15,17,19,0.05);
+    --af-shadow-md: 0 8px 18px rgba(15,17,19,0.06);
+    --af-shadow-lg: 0 20px 40px rgba(15,17,19,0.08);
+    --af-shadow-glow: 0 20px 40px rgba(83,67,212,0.30);
+    --af-shadow-inner: inset 0 1px 2px rgba(15,17,19,0.04);
+
+    /* Tailwind compatibility tokens */
+    --stitch-primary: var(--af-primary);
     --stitch-on-primary: #ffffff;
-    --stitch-primary-container: #bcdacb;
-    --stitch-on-primary-container: #17362b;
-    --stitch-secondary: #006877;
+    --stitch-primary-container: var(--af-primary-hover);
+    --stitch-on-primary-container: #fffbff;
+    --stitch-secondary: var(--af-secondary);
     --stitch-on-secondary: #ffffff;
-    --stitch-secondary-container: #fffce2;
-    --stitch-on-secondary-container: #2b5244;
-    --stitch-tertiary: #904358;
+    --stitch-secondary-container: var(--af-secondary-container);
+    --stitch-on-secondary-container: #00616f;
+    --stitch-tertiary: var(--af-tertiary);
     --stitch-on-tertiary: #ffffff;
-    --stitch-tertiary-container: #198754;
-    --stitch-on-tertiary-container: #ffffff;
-    --stitch-error: #dc3545;
+    --stitch-tertiary-container: #ae5b70;
+    --stitch-on-tertiary-container: #fffbff;
+    --stitch-error: var(--af-error);
     --stitch-on-error: #ffffff;
-    --stitch-background: #f8f9fa;
-    --stitch-on-background: #191c1e;
-    --stitch-surface: #f8f9fa;
-    --stitch-on-surface: #191c1e;
-    --stitch-surface-variant: #e7ece9;
-    --stitch-on-surface-variant: #4f5d55;
-    --stitch-outline: #738178;
-    --stitch-outline-variant: #cfd8d3;
-    --stitch-surface-container-lowest: #ffffff;
-    --stitch-surface-container-low: #f3f6f4;
-    --stitch-surface-container: #e9efec;
-    --stitch-surface-container-high: #dde7e2;
-    --stitch-surface-container-highest: #d2ddd8;
+    --stitch-background: var(--af-background);
+    --stitch-on-background: var(--af-on-surface);
+    --stitch-surface: var(--af-surface);
+    --stitch-on-surface: var(--af-on-surface);
+    --stitch-surface-variant: var(--af-surface-variant);
+    --stitch-on-surface-variant: var(--af-on-surface-variant);
+    --stitch-outline: var(--af-outline);
+    --stitch-outline-variant: var(--af-outline-variant);
+    --stitch-surface-container-lowest: var(--af-surface-lowest);
+    --stitch-surface-container-low: var(--af-surface-low);
+    --stitch-surface-container: var(--af-surface-med);
+    --stitch-surface-container-high: var(--af-surface-high);
+    --stitch-surface-container-highest: var(--af-surface-highest);
   }
 
   .dark {
@@ -98,34 +146,54 @@
     --input: 217.2 32.6% 20%;
     --ring: 149 29% 73%;
 
-    /* Google Stitch Tokens - Dark Mode */
-    --stitch-primary: #bcdacb;
-    --stitch-on-primary: #10291f;
-    --stitch-primary-container: #2b5244;
-    --stitch-on-primary-container: #eef8f2;
-    --stitch-secondary: #fffce2;
-    --stitch-on-secondary: #2b5244;
-    --stitch-secondary-container: #36473f;
-    --stitch-on-secondary-container: #fffce2;
-    --stitch-tertiary: #7dd9a4;
-    --stitch-on-tertiary: #0d2a1b;
-    --stitch-tertiary-container: #20583b;
-    --stitch-on-tertiary-container: #e8fff1;
+    --af-primary: #9e91ff;
+    --af-primary-hover: #3d28bf;
+    --af-on-primary: #150067;
+    --af-primary-soft: rgba(158,145,255,0.10);
+    --af-secondary: #2fd9f4;
+    --af-secondary-container: #004e5a;
+    --af-tertiary: #ffb1c2;
+    --af-background: #0f1113;
+    --af-surface: #0f1113;
+    --af-on-surface: #e2e2e6;
+    --af-on-surface-variant: #c8c4d7;
+    --af-surface-variant: #474554;
+    --af-surface-lowest: #0a0c0e;
+    --af-surface-low: #191c1e;
+    --af-surface-med: #1d2023;
+    --af-surface-high: #282a2d;
+    --af-surface-highest: #333538;
+    --af-outline: #928f9e;
+    --af-outline-variant: #474554;
+    --af-divider: rgba(71,69,84,0.42);
+
+    --stitch-primary: var(--af-primary);
+    --stitch-on-primary: var(--af-on-primary);
+    --stitch-primary-container: var(--af-primary-hover);
+    --stitch-on-primary-container: #e4dfff;
+    --stitch-secondary: var(--af-secondary);
+    --stitch-on-secondary: #00363e;
+    --stitch-secondary-container: var(--af-secondary-container);
+    --stitch-on-secondary-container: #a2eeff;
+    --stitch-tertiary: var(--af-tertiary);
+    --stitch-on-tertiary: #56122b;
+    --stitch-tertiary-container: #762e43;
+    --stitch-on-tertiary-container: #ffd9e0;
     --stitch-error: #ff8a8a;
     --stitch-on-error: #3b0808;
-    --stitch-background: #0f1113;
-    --stitch-on-background: #e2e2e6;
-    --stitch-surface: #0f1113;
-    --stitch-on-surface: #e2e2e6;
-    --stitch-surface-variant: #474554;
-    --stitch-on-surface-variant: #c8c4d7;
-    --stitch-outline: #928f9e;
-    --stitch-outline-variant: #474554;
-    --stitch-surface-container-lowest: #0a0c0e;
-    --stitch-surface-container-low: #191c1e;
-    --stitch-surface-container: #1d2023;
-    --stitch-surface-container-high: #282a2d;
-    --stitch-surface-container-highest: #333538;
+    --stitch-background: var(--af-background);
+    --stitch-on-background: var(--af-on-surface);
+    --stitch-surface: var(--af-surface);
+    --stitch-on-surface: var(--af-on-surface);
+    --stitch-surface-variant: var(--af-surface-variant);
+    --stitch-on-surface-variant: var(--af-on-surface-variant);
+    --stitch-outline: var(--af-outline);
+    --stitch-outline-variant: var(--af-outline-variant);
+    --stitch-surface-container-lowest: var(--af-surface-lowest);
+    --stitch-surface-container-low: var(--af-surface-low);
+    --stitch-surface-container: var(--af-surface-med);
+    --stitch-surface-container-high: var(--af-surface-high);
+    --stitch-surface-container-highest: var(--af-surface-highest);
   }
 }
 
@@ -135,6 +203,7 @@
   }
   body {
     @apply bg-stitch-background text-stitch-on-surface font-body antialiased transition-colors duration-300;
+    color: var(--af-on-surface);
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -143,6 +212,7 @@
 
   /* Material Symbols Helper */
   .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     display: inline-block;
     line-height: 1;
@@ -163,6 +233,194 @@
 }
 ::-webkit-scrollbar-thumb {
   @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/40 transition-colors;
+}
+
+.af-card {
+  background: var(--af-surface-lowest);
+  border: 1px solid var(--af-divider);
+  border-radius: var(--af-radius-xl);
+  box-shadow: var(--af-shadow-xs);
+  color: var(--af-on-surface);
+}
+
+.af-card-hover {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.af-card-hover:hover {
+  box-shadow: var(--af-shadow-md);
+  transform: translateY(-2px);
+}
+
+.af-btn {
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--af-font-body);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 11px 18px;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
+}
+
+.af-btn:active {
+  transform: scale(0.98);
+}
+
+.af-btn-primary {
+  background: var(--af-primary);
+  box-shadow: 0 8px 18px rgba(83, 67, 212, 0.18);
+  color: var(--af-on-primary);
+}
+
+.af-btn-primary:hover {
+  background: var(--af-primary-hover);
+  box-shadow: var(--af-shadow-glow);
+}
+
+.af-btn-ghost {
+  background: transparent;
+  color: var(--af-on-surface-variant);
+}
+
+.af-btn-ghost:hover {
+  background: var(--af-primary-soft);
+  color: var(--af-primary);
+}
+
+.af-btn-soft {
+  background: var(--af-primary-soft);
+  color: var(--af-primary);
+  font-weight: 900;
+}
+
+.af-btn-outline {
+  background: var(--af-surface-lowest);
+  border: 1px solid var(--af-outline-variant);
+  color: var(--af-on-surface);
+}
+
+.af-btn-tiny {
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  padding: 8px 12px;
+  text-transform: uppercase;
+}
+
+.af-eb,
+.af-eyebrow {
+  font-family: var(--af-font-body);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.af-badge {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-family: var(--af-font-body);
+  font-size: 11px;
+  font-weight: 800;
+  gap: 6px;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+}
+
+.af-badge-success { background: var(--af-success-bg); color: var(--af-success); }
+.af-badge-warn { background: var(--af-warning-bg); color: #92400e; }
+.af-badge-error { background: var(--af-error-bg); color: var(--af-error); }
+.af-badge-primary { background: var(--af-primary-soft); color: var(--af-primary); }
+.af-badge-neutral { background: var(--af-surface-low); color: var(--af-on-surface-variant); }
+
+.af-avatar {
+  align-items: center;
+  background: var(--af-primary-soft);
+  border-radius: 999px;
+  color: var(--af-primary);
+  display: inline-flex;
+  flex-shrink: 0;
+  font-family: var(--af-font-headline);
+  font-size: 13px;
+  font-weight: 900;
+  justify-content: center;
+}
+
+.af-section-h {
+  align-items: end;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.af-nav-item {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  color: var(--af-on-surface-variant);
+  cursor: pointer;
+  display: flex;
+  font-family: var(--af-font-body);
+  font-size: 13.5px;
+  font-weight: 700;
+  gap: 14px;
+  padding: 11px 14px;
+  text-align: left;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.af-nav-item:hover,
+.af-nav-item.active {
+  background: var(--af-primary-soft);
+  color: var(--af-primary);
+}
+
+.af-nav-item.active {
+  font-weight: 900;
+  position: relative;
+}
+
+.af-nav-item.active::before {
+  background: var(--af-primary);
+  border-radius: 0 4px 4px 0;
+  content: "";
+  height: 22px;
+  left: -16px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+}
+
+.af-nav-item.active .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1, 'wght' 600;
+}
+
+.af-num {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes af-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+.af-pulse-dot {
+  animation: af-pulse 2s ease-in-out infinite;
+  border-radius: 999px;
+  height: 8px;
+  width: 8px;
 }
 
 /* Fix Autofill background in dark mode */
