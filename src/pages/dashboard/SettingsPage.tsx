@@ -10,6 +10,13 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { ThemeCustomizationContent } from "@/components/dashboard/settings/theme-customization-content";
+import {
+  isDuplicateSlugError,
+  normalizeSlug,
+  SLUG_UNAVAILABLE_MESSAGE,
+  SLUG_VALIDATION_MESSAGE,
+  validateOrganizationSlugAvailability,
+} from "@/lib/slug";
 
 export default function SettingsPage() {
   const { profile } = useAuth();
@@ -18,6 +25,7 @@ export default function SettingsPage() {
   const [company, setCompany] = useState<{ name: string; slug: string; plan_name: string; subscription_status: string } | null>(null);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [slugError, setSlugError] = useState("");
 
   useEffect(() => {
     if (profile?.organization_id) {
@@ -42,17 +50,62 @@ export default function SettingsPage() {
   };
 
   const handleUpdateCompany = async () => {
+    if (!profile?.organization_id) {
+      toast.error("Organização não encontrada.");
+      return;
+    }
+
     setLoading(true);
+    setSlugError("");
+
     try {
+      const normalizedSlug = normalizeSlug(slug);
+      const slugValidation = await validateOrganizationSlugAvailability(
+        normalizedSlug,
+        async (organizationSlug) => {
+          const { data: existingOrganization, error: lookupError } = await supabase
+            .from("organizations")
+            .select("id")
+            .eq("slug", organizationSlug)
+            .maybeSingle();
+
+          if (lookupError) throw lookupError;
+
+          return existingOrganization;
+        },
+        profile.organization_id,
+      );
+
+      if (slugValidation.status === "invalid") {
+        setSlugError("Use pelo menos 3 caracteres, apenas letras minúsculas, números e hífens.");
+        return;
+      }
+
+      if (slugValidation.status === "unavailable") {
+        setSlugError(SLUG_UNAVAILABLE_MESSAGE);
+        return;
+      }
+
+      if (slugValidation.status === "error") {
+        setSlugError(SLUG_VALIDATION_MESSAGE);
+        return;
+      }
+
       const { error } = await supabase
         .from("organizations")
-        .update({ name, slug })
-        .eq("id", profile?.organization_id);
+        .update({ name, slug: normalizedSlug })
+        .eq("id", profile.organization_id);
 
       if (error) throw error;
       toast.success("Configurações salvas com sucesso!");
+      setSlug(normalizedSlug);
       fetchCompanyDetails();
-    } catch {
+    } catch (error) {
+      if (isDuplicateSlugError(error)) {
+        setSlugError(SLUG_UNAVAILABLE_MESSAGE);
+        return;
+      }
+
       toast.error("Erro ao salvar configurações.");
     } finally {
       setLoading(false);
@@ -129,10 +182,16 @@ export default function SettingsPage() {
                           id="orgSlug"
                           className="h-16 flex-1 px-6 rounded-2xl border border-stitch-outline-variant/20 bg-stitch-surface-container text-stitch-on-surface font-black text-lg placeholder:text-stitch-on-surface-variant/30 shadow-inner focus-visible:ring-2 focus-visible:ring-stitch-primary/50 transition-all min-w-0"
                           value={slug}
-                          onChange={(e) => setSlug(e.target.value)}
+                          onChange={(e) => {
+                            setSlug(normalizeSlug(e.target.value));
+                            setSlugError("");
+                          }}
                           placeholder="studio-alessa"
                         />
                       </div>
+                      {slugError && (
+                        <p className="text-[11px] font-black uppercase tracking-wider text-stitch-error ml-2">{slugError}</p>
+                      )}
                     </div>
                   </div>
 

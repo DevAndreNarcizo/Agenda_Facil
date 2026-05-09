@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
+import { isDuplicateSlugError, normalizeSlug } from "@/lib/slug";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -60,6 +61,7 @@ const INITIAL_DATA: OnboardingData = {
 };
 
 const STEP_LABELS = ["Boas-vindas", "Perfil", "Endereço", "Serviço", "Horários", "Finalizar"];
+const SLUG_UNAVAILABLE_MESSAGE = "Esta URL de agendamento já está em uso. Escolha outra no cadastro.";
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(0);
@@ -70,10 +72,25 @@ export default function OnboardingPage() {
   const totalSteps = 6;
   const progress = ((step + 1) / totalSteps) * 100;
 
+  useEffect(() => {
+    const organizationName = user?.user_metadata?.org_name;
 
-  const updateData = (partial: Partial<OnboardingData>) => {
+    if (typeof organizationName !== "string" || !organizationName.trim()) {
+      return;
+    }
+
+    setData((prev) => {
+      if (prev.businessName.trim()) {
+        return prev;
+      }
+
+      return { ...prev, businessName: organizationName };
+    });
+  }, [user?.user_metadata?.org_name]);
+
+  const updateData = useCallback((partial: Partial<OnboardingData>) => {
     setData((prev) => ({ ...prev, ...partial }));
-  };
+  }, []);
 
   const nextStep = () => setStep((s) => Math.min(s + 1, totalSteps - 1));
   const prevStep = () => setStep((s) => Math.max(s - 1, 0));
@@ -88,18 +105,26 @@ export default function OnboardingPage() {
 
     try {
       // 1. Create the organization
-      const slug = data.businessName
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "");
+      const metadataSlug = user.user_metadata?.org_slug;
+      const slugSource = typeof metadataSlug === "string" && metadataSlug.trim()
+        ? metadataSlug
+        : data.businessName;
+      const slug = normalizeSlug(slugSource, "minha-empresa");
+
+      const { data: existingOrganization, error: slugError } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("slug", slug)
+        .maybeSingle();
+
+      if (slugError) throw slugError;
+      if (existingOrganization) throw new Error(SLUG_UNAVAILABLE_MESSAGE);
 
       const { data: org, error: orgError } = await supabase
         .from("organizations")
         .insert({
           name: data.businessName || "Minha Empresa",
-          slug: slug || "minha-empresa",
+          slug,
         })
         .select("id")
         .single();
@@ -138,7 +163,7 @@ export default function OnboardingPage() {
       nextStep(); // Go to success step
     } catch (error) {
       const err = error as Error;
-      toast.error(err.message || "Erro ao criar empresa. Tente novamente.");
+      toast.error(isDuplicateSlugError(error) ? SLUG_UNAVAILABLE_MESSAGE : err.message || "Erro ao criar empresa. Tente novamente.");
     } finally {
       setSaving(false);
     }
