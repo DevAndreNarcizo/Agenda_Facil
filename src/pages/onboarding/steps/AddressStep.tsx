@@ -1,7 +1,19 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatCep, getCepDigits } from "@/lib/cep";
 import type { OnboardingData } from "../OnboardingPage";
+
+type CepLookupStatus = "idle" | "loading" | "found" | "not-found" | "error";
+
+interface ViaCepResponse {
+  cep?: string;
+  logradouro?: string;
+  localidade?: string;
+  uf?: string;
+  erro?: boolean;
+}
 
 interface AddressStepProps {
   data: OnboardingData;
@@ -11,6 +23,69 @@ interface AddressStepProps {
 }
 
 export function AddressStep({ data, updateData, onNext, onBack }: AddressStepProps) {
+  const [cepStatus, setCepStatus] = useState<CepLookupStatus>("idle");
+
+  useEffect(() => {
+    const cepDigits = getCepDigits(data.cep);
+
+    if (cepDigits.length !== 8) {
+      setCepStatus("idle");
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const lookupCep = async () => {
+      setCepStatus("loading");
+
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cepDigits}/json/`, {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error("Erro ao consultar CEP.");
+        }
+
+        const result = (await response.json()) as ViaCepResponse;
+
+        if (result.erro) {
+          setCepStatus("not-found");
+          return;
+        }
+
+        updateData({
+          ...(result.logradouro ? { address: result.logradouro } : {}),
+          ...(result.localidade ? { city: result.localidade } : {}),
+          ...(result.uf ? { state: result.uf } : {}),
+        });
+        setCepStatus("found");
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        setCepStatus("error");
+      }
+    };
+
+    void lookupCep();
+
+    return () => controller.abort();
+  }, [data.cep, updateData]);
+
+  const handleCepChange = (value: string) => {
+    updateData({ cep: formatCep(value) });
+  };
+
+  const cepHelpMessage = {
+    idle: "Digite 8 números para buscar o endereço.",
+    loading: "Buscando endereço pelo CEP...",
+    found: "Endereço identificado automaticamente.",
+    "not-found": "CEP não encontrado. Preencha o endereço manualmente.",
+    error: "Não foi possível consultar o CEP agora. Preencha manualmente.",
+  }[cepStatus];
+
   return (
     <div className="bg-stitch-surface-container-low/30 backdrop-blur-md rounded-[3rem] p-8 md:p-12 shadow-2xl border border-white/5 relative overflow-hidden">
       {/* Decorative glow */}
@@ -31,12 +106,34 @@ export function AddressStep({ data, updateData, onNext, onBack }: AddressStepPro
       <div className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
         <div className="space-y-3 md:col-span-1">
           <Label className="text-xs font-black uppercase tracking-widest text-stitch-on-surface-variant ml-1">CEP</Label>
-          <Input
-            className="w-full h-14 rounded-2xl border-none bg-[#1a1c1e] text-white font-bold placeholder:text-white/20 shadow-inner focus-visible:ring-2 focus-visible:ring-stitch-primary/50 transition-all px-5"
-            placeholder="00000-000"
-            value={data.cep}
-            onChange={(e) => updateData({ cep: e.target.value })}
-          />
+          <div className="relative">
+            <Input
+              className="w-full h-14 rounded-2xl border-none bg-[#1a1c1e] text-white font-bold placeholder:text-white/20 shadow-inner focus-visible:ring-2 focus-visible:ring-stitch-primary/50 transition-all px-5 pr-12"
+              placeholder="00000-000"
+              inputMode="numeric"
+              autoComplete="postal-code"
+              maxLength={9}
+              value={data.cep}
+              onChange={(e) => handleCepChange(e.target.value)}
+            />
+            {cepStatus === "loading" ? (
+              <span className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 rounded-full border-2 border-stitch-primary/30 border-t-stitch-primary animate-spin" />
+            ) : cepStatus === "found" ? (
+              <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-stitch-secondary text-xl">check_circle</span>
+            ) : null}
+          </div>
+          <p
+            className={`text-[11px] font-bold ml-1 ${
+              cepStatus === "found"
+                ? "text-stitch-secondary"
+                : cepStatus === "not-found" || cepStatus === "error"
+                  ? "text-stitch-tertiary"
+                  : "text-stitch-on-surface-variant opacity-50"
+            }`}
+            aria-live="polite"
+          >
+            {cepHelpMessage}
+          </p>
         </div>
 
         <div className="space-y-3 md:col-span-3">
