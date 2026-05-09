@@ -36,15 +36,30 @@ export default function ServicesPage() {
   const { profile } = useAuth();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   
   // Edit/Create Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
-  const [formData, setFormData] = useState({ 
+  const [formData, setFormData] = useState<{
+    name: string;
+    duration_minutes: number;
+    price: string;
+    description: string;
+  }>({ 
     name: "", 
     duration_minutes: 30, 
-    price: 0,
+    price: "",
     description: "" 
+  });
+
+  const filteredServices = services.filter((service) => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return true;
+
+    return [service.name, service.description || ""].some((value) =>
+      value.toLowerCase().includes(query)
+    );
   });
 
   useEffect(() => {
@@ -85,7 +100,7 @@ export default function ServicesPage() {
           .update({
             name: formData.name,
             duration_minutes: Number(formData.duration_minutes),
-            price: Number(formData.price),
+            price: Number(formData.price || 0),
             description: formData.description,
           })
           .eq("id", editingService.id);
@@ -98,7 +113,7 @@ export default function ServicesPage() {
             organization_id: profile?.organization_id,
             name: formData.name,
             duration_minutes: Number(formData.duration_minutes),
-            price: Number(formData.price),
+            price: Number(formData.price || 0),
             description: formData.description,
           });
         if (error) throw error;
@@ -133,7 +148,7 @@ export default function ServicesPage() {
     setFormData({ 
       name: "", 
       duration_minutes: 30, 
-      price: 0,
+      price: "",
       description: "" 
     });
   };
@@ -143,10 +158,21 @@ export default function ServicesPage() {
     setFormData({
       name: service.name,
       duration_minutes: service.duration_minutes,
-      price: service.price,
+      price: String(service.price),
       description: service.description || "",
     });
     setIsModalOpen(true);
+  };
+
+  const handlePriceChange = (value: string) => {
+    const normalizedValue = value.replace(",", ".");
+
+    if (!/^\d*\.?\d{0,2}$/.test(normalizedValue)) return;
+
+    setFormData({
+      ...formData,
+      price: normalizedValue.replace(/^0+(?=\d)/, ""),
+    });
   };
 
   return (
@@ -206,11 +232,11 @@ export default function ServicesPage() {
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stitch-on-surface-variant font-black text-sm">R$</span>
                     <Input
                       id="price"
-                      type="number"
-                      step="0.01"
+                      type="text"
+                      inputMode="decimal"
                       className="pl-12 h-14 rounded-xl border-none !bg-[#1a1c1e] text-white font-bold transition-all focus-visible:ring-stitch-primary"
                       value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                      onChange={(e) => handlePriceChange(e.target.value)}
                       required
                       placeholder="0.00"
                     />
@@ -267,6 +293,8 @@ export default function ServicesPage() {
             <Input 
               className="h-16 pl-14 text-lg bg-[#1a1c1e] text-white border-none rounded-2xl shadow-none font-bold placeholder:text-white/20"
               placeholder="Nome ou descrição do serviço..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
@@ -298,7 +326,7 @@ export default function ServicesPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : services.length === 0 ? (
+              ) : filteredServices.length === 0 ? (
                 <TableRow className="hover:bg-transparent">
                   <TableCell colSpan={4} className="text-center py-32 bg-transparent border-0">
                     <div className="flex flex-col items-center gap-6">
@@ -306,17 +334,21 @@ export default function ServicesPage() {
                         <span className="material-symbols-outlined text-5xl">inventory_2</span>
                       </div>
                       <div className="space-y-1 text-center">
-                        <p className="font-black text-2xl text-stitch-on-surface">Nenhum serviço disponível</p>
-                        <p className="text-stitch-on-surface-variant font-medium opacity-60 max-w-xs mx-auto">Comece cadastrando seus serviços para abrir sua agenda ao seu público.</p>
+                        <p className="font-black text-2xl text-stitch-on-surface">{searchTerm ? "Nenhum resultado" : "Nenhum serviço disponível"}</p>
+                        <p className="text-stitch-on-surface-variant font-medium opacity-60 max-w-xs mx-auto">
+                          {searchTerm ? "Tente buscar por outro nome ou descrição." : "Comece cadastrando seus serviços para abrir sua agenda ao seu público."}
+                        </p>
                       </div>
-                      <Button onClick={() => setIsModalOpen(true)} className="rounded-xl h-12 px-8 font-black shadow-lg shadow-stitch-primary/20">
-                        Cadastrar Primeiro Serviço
-                      </Button>
+                      {!searchTerm && (
+                        <Button onClick={() => setIsModalOpen(true)} className="rounded-xl h-12 px-8 font-black shadow-lg shadow-stitch-primary/20">
+                          Cadastrar Primeiro Serviço
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
               ) : (
-                services.map((service) => (
+                filteredServices.map((service) => (
                   <TableRow key={service.id} className="bg-stitch-surface-container-lowest hover:bg-stitch-primary/5 transition-colors border-b border-stitch-outline-variant/10">
                     <TableCell className="px-8 py-6">
                       <div className="flex items-center gap-4">

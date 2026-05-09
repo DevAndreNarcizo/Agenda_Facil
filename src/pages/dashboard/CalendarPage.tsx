@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Calendar, dateFnsLocalizer, type View, Views } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { useAppointments } from "@/hooks/use-appointments";
 import { useEmployees } from "@/hooks/use-employees";
+import { useAuth } from "@/hooks/use-auth";
+import { NewAppointmentModal } from "@/components/dashboard/new-appointment-modal";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -24,6 +27,8 @@ const localizer = dateFnsLocalizer({
 export default function CalendarPage() {
   const { appointments } = useAppointments();
   const { employees } = useEmployees();
+  const { profile } = useAuth();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const [view, setView] = useState<View>(() => {
     const v = searchParams.get("view");
@@ -32,6 +37,8 @@ export default function CalendarPage() {
     return Views.WEEK;
   });
   const [date, setDate] = useState(new Date());
+  const [newAppointmentOpen, setNewAppointmentOpen] = useState(false);
+  const [selectedSlotDate, setSelectedSlotDate] = useState<Date | undefined>(undefined);
 
   const events = appointments.map((apt) => ({
     id: apt.id,
@@ -150,6 +157,10 @@ export default function CalendarPage() {
           .rbc-event {
             box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important;
           }
+          .rbc-day-bg,
+          .rbc-time-slot {
+            cursor: ${view === Views.MONTH || view === Views.WEEK ? "pointer" : "default"} !important;
+          }
         `}</style>
         <Calendar
           localizer={localizer}
@@ -176,8 +187,26 @@ export default function CalendarPage() {
           date={date}
           onNavigate={(d) => setDate(d)}
           eventPropGetter={eventStyleGetter}
+          selectable={view === Views.MONTH || view === Views.WEEK}
+          onSelectSlot={(slotInfo) => {
+            if (view !== Views.MONTH && view !== Views.WEEK) return;
+
+            setSelectedSlotDate(slotInfo.start as Date);
+            setNewAppointmentOpen(true);
+          }}
+          popup
         />
       </Card>
+
+      <NewAppointmentModal
+        open={newAppointmentOpen}
+        onOpenChange={setNewAppointmentOpen}
+        defaultDate={selectedSlotDate}
+        hideTrigger
+        onAppointmentCreated={() => {
+          queryClient.invalidateQueries({ queryKey: ["appointments", profile?.organization_id] });
+        }}
+      />
     </div>
   );
 }

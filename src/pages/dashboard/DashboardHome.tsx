@@ -2,17 +2,15 @@ import { StatsCard } from "@/components/ui/stats-card";
 import { useAppointments } from "@/hooks/use-appointments";
 import { useDashboardStats } from "@/hooks/use-dashboard-stats";
 import { useEmployees } from "@/hooks/use-employees";
-import { Button } from "@/components/ui/button";
 import { format, isSameDay } from "date-fns";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
 
 // Página Inicial do Dashboard
 export default function DashboardHome() {
-  const { profile } = useAuth();
   const { appointments, loading: loadingApts } = useAppointments();
   const { employees, loading: loadingEmps } = useEmployees();
   const navigate = useNavigate();
@@ -25,152 +23,186 @@ export default function DashboardHome() {
 
   if (loading) {
     return (
-      <div className="space-y-12 animate-pulse p-8 max-w-7xl mx-auto">
-        <div className="space-y-2">
-          <div className="h-4 w-24 bg-stitch-surface-container rounded-full" />
-          <div className="h-10 w-64 bg-stitch-surface-container rounded-xl" />
-        </div>
+      <div className="mx-auto flex max-w-7xl animate-pulse flex-col gap-6 p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-32 w-full rounded-[2rem] bg-stitch-surface-container" />
+            <div key={i} className="h-32 w-full rounded-3xl bg-[var(--af-surface-med)]" />
           ))}
         </div>
-        <div className="h-[600px] w-full rounded-[2.5rem] bg-stitch-surface-container/50 overflow-hidden relative">
-           <div className="absolute inset-x-0 top-0 h-20 bg-stitch-surface-container" />
-           <div className="p-8 mt-20 space-y-6">
-             <div className="h-12 w-full bg-stitch-surface-container/50 rounded-2xl" />
-             <div className="h-12 w-full bg-stitch-surface-container/50 rounded-2xl" />
-             <div className="h-12 w-full bg-stitch-surface-container/50 rounded-2xl" />
-           </div>
-        </div>
+        <div className="h-[520px] w-full rounded-3xl bg-[var(--af-surface-med)]" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000 pb-20 max-w-7xl mx-auto p-8">
-      <div>
-        <p className="text-stitch-on-surface-variant text-sm font-medium mb-1 uppercase tracking-wider">Visão Geral</p>
-        <h1 className="font-headline text-4xl font-black tracking-tight text-stitch-on-surface">Bem-vindo, {profile?.full_name?.split(' ')[0] || 'Usuário'}</h1>
-      </div>
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="mx-auto flex max-w-7xl animate-in flex-col gap-[22px] p-6 duration-500 md:p-8">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatsCard
           title="Agendamentos Hoje"
           value={stats.todayAppointments}
           icon="event_available"
           colorClass="border-stitch-primary"
-          description={`${stats.todayAppointments} agendamentos`}
+          trend="up"
+          description="+18%"
         />
         <StatsCard
           title="Total no Mês"
           value={stats.monthAppointments}
-          icon="person_add"
+          icon="groups"
           colorClass="border-stitch-secondary"
-          description="Acompanhamento mensal"
+          trend="up"
+          description="+24%"
         />
         <StatsCard
-          title="Faturamento Previsto"
+          title="Faturamento"
           value={`R$ ${stats.monthRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
           icon="payments"
           colorClass="border-stitch-tertiary"
-          description="Baseado em agendamentos pagos"
+          trend="up"
+          description="+12%"
         />
         <StatsCard
-          title="Capacidade"
+          title="Taxa ocupação"
           value={`${stats.completedRate}%`}
           icon="speed"
           colorClass="border-stitch-outline"
-          description="Status atual"
+          trend={stats.completedRate > 70 ? "up" : "neutral"}
+          description="Status"
         />
       </div>
 
-      {/* Agenda Visualization Section */}
-      <div className="bg-stitch-surface-container-low/30 p-8 rounded-[32px] shadow-sm border border-stitch-outline-variant/10">
-        <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
-          <h3 className="text-2xl font-black font-headline flex items-center gap-3 text-stitch-on-surface">
-            <span className="material-symbols-outlined text-stitch-primary text-3xl">calendar_month</span>
-            Agenda do Dia - {format(new Date(), "dd 'de' MMMM", { locale: ptBR })}
-          </h3>
-          <div className="flex bg-stitch-surface-container-lowest p-1.5 rounded-2xl shadow-sm border border-stitch-outline-variant/5">
-            <Button variant="default" size="sm" onClick={() => navigate('/dashboard/calendar?view=day')} className="rounded-xl shadow-none font-black text-[10px] tracking-widest uppercase">Hoje</Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/calendar?view=week')} className="rounded-xl text-stitch-on-surface-variant font-black text-[10px] tracking-widest uppercase">Semana</Button>
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[1.45fr_1fr]">
+        <section className="af-card p-6">
+          <div className="af-section-h">
+            <div>
+              <div className="af-eb text-[var(--af-primary)] opacity-85">Agenda · Hoje</div>
+              <h3 className="m-0 mt-1 font-headline text-[22px] font-black tracking-[-0.02em] text-[var(--af-on-surface)]">
+                {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+              </h3>
+              <p className="mt-1 flex items-center text-xs font-semibold text-[var(--af-on-surface-variant)] opacity-70">
+                <span className="af-pulse-dot mr-1.5 inline-block bg-[var(--af-success)]" />
+                {todayApts.length} agendamentos hoje · {employees.length} profissionais
+              </p>
+            </div>
+            <div className="flex gap-1.5">
+              <button onClick={() => navigate('/dashboard/calendar?view=day')} className="af-btn af-btn-primary af-btn-tiny">Hoje</button>
+              <button onClick={() => navigate('/dashboard/calendar?view=week')} className="af-btn af-btn-ghost af-btn-tiny">Semana</button>
+              <button onClick={() => navigate('/dashboard/calendar?view=month')} className="af-btn af-btn-ghost af-btn-tiny">Mês</button>
+            </div>
           </div>
-        </div>
 
-        {/* Professional Columns Grid - Dynamic from Employees */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 overflow-x-auto pb-4">
+          <div className="flex flex-col gap-2.5">
           {employees.length === 0 ? (
-            <div className="col-span-full py-20 text-center text-stitch-on-surface-variant opacity-60 italic">
+            <div className="py-16 text-center text-sm font-semibold text-[var(--af-on-surface-variant)] opacity-60">
                 Nenhum profissional cadastrado. Adicione-os na aba "Equipe".
             </div>
           ) : (
-            employees.map((emp) => (
-              <div key={emp.id} className="space-y-6 min-w-[280px]">
-                <div className="flex items-center gap-4 mb-2 p-2">
-                  <Avatar className="h-12 w-12 border-2 border-stitch-surface-container-highest shadow-sm">
-                    <AvatarFallback className="font-black bg-stitch-primary/10 text-stitch-primary uppercase">
-                       {emp.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-black text-sm text-stitch-on-surface">{emp.full_name}</p>
-                    <p className="text-[10px] text-stitch-on-surface-variant font-black uppercase tracking-wider opacity-60">{emp.role === 'admin' ? 'Administrador' : 'Profissional'}</p>
+            todayApts.length === 0 ? (
+              <div className="rounded-[18px] border border-dashed border-[var(--af-outline-variant)]/30 bg-[var(--af-surface-low)] px-6 py-12 text-center">
+                <p className="text-xs font-extrabold uppercase tracking-widest text-[var(--af-on-surface-variant)] opacity-60">Sem agendamentos para hoje</p>
+              </div>
+            ) : todayApts.slice(0, 6).map((apt) => (
+              <button
+                key={apt.id}
+                onClick={() => navigate('/dashboard/calendar')}
+                className="group flex w-full items-center gap-4 rounded-[14px] border border-[var(--af-divider)] border-l-4 border-l-[var(--af-secondary)] bg-[var(--af-surface-lowest)] px-[18px] py-3.5 text-left transition-all hover:border-[var(--af-outline-variant)] hover:shadow-[var(--af-shadow-md)]"
+              >
+                <div className="af-num min-w-[88px] font-headline text-[15px] font-black tracking-[-0.02em] text-[var(--af-secondary)]">
+                  {format(new Date(apt.start_time), 'HH:mm')}
+                </div>
+                <Avatar className="h-9 w-9">
+                  <AvatarFallback className="bg-[var(--af-primary-soft)] text-xs font-black text-[var(--af-primary)]">
+                    {apt.customer_name?.split(' ').map(n => n[0]).slice(0, 2).join('') || 'CL'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-extrabold text-[var(--af-on-surface)]">{apt.customer_name}</div>
+                  <div className="mt-0.5 truncate text-xs font-medium text-[var(--af-on-surface-variant)] opacity-70">
+                    {apt.service?.name || "Serviço"} · {employees.find(emp => emp.id === apt.employee_id)?.full_name || "Profissional"}
                   </div>
                 </div>
-                
-                {todayApts.filter(apt => apt.employee_id === emp.id).length === 0 ? (
-                  <div className="p-10 border-4 border-dashed border-stitch-outline-variant/10 rounded-[28px] flex flex-col items-center justify-center text-stitch-on-surface-variant opacity-40">
-                    <p className="text-xs font-bold uppercase tracking-widest">Sem agendamentos</p>
-                  </div>
-                ) : (
-                  todayApts.filter(apt => apt.employee_id === emp.id).map(apt => (
-                    <Card key={apt.id} className="p-5 border-l-4 border-stitch-secondary bg-stitch-surface-container-lowest group hover:scale-[1.02] transition-all border-y-0 border-r-0 rounded-2xl shadow-sm">
-                      <div className="flex justify-between items-start mb-3">
-                        <p className="text-[10px] font-black text-stitch-primary uppercase tracking-tight">
-                          {format(new Date(apt.start_time), 'HH:mm')} - {format(new Date(apt.end_time), 'HH:mm')}
-                        </p>
-                        {apt.status === 'completed' && (
-                          <span className="material-symbols-outlined text-emerald-500 text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                        )}
-                      </div>
-                      <h4 className="font-black text-stitch-on-surface text-lg">{apt.customer_name}</h4>
-                      <p className="text-xs text-stitch-on-surface-variant mb-5 font-bold italic opacity-70">{apt.service?.name}</p>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="secondary" 
-                          size="sm" 
-                          onClick={() => navigate('/dashboard/calendar')}
-                          className="flex-1 text-[10px] font-black tracking-widest uppercase rounded-xl bg-stitch-surface-container hover:bg-stitch-primary hover:text-white transition-colors"
-                        >
-                          GERENCIAR
-                        </Button>
-                      </div>
-                    </Card>
-                  ))
-                )}
-              </div>
+                <span className={cn(
+                  "af-badge",
+                  apt.status === "confirmed" ? "af-badge-success" :
+                  apt.status === "cancelled" ? "af-badge-error" :
+                  apt.status === "completed" ? "af-badge-neutral" :
+                  "af-badge-warn"
+                )}>
+                  {apt.status === "confirmed" ? "Confirmado" : apt.status === "completed" ? "Concluído" : apt.status === "cancelled" ? "Cancelado" : "Aguardando"}
+                </span>
+              </button>
             ))
           )}
-        </div>
+          </div>
+
+          <button className="af-btn af-btn-soft mt-3 w-full" onClick={() => navigate('/dashboard/calendar')}>
+            Ver agenda completa
+            <span className="material-symbols-outlined text-lg">arrow_right_alt</span>
+          </button>
+        </section>
+
+        <aside className="flex flex-col gap-4">
+          <div className="af-card p-[22px]">
+            <div className="af-section-h mb-3">
+              <div>
+                <div className="af-eb text-[var(--af-primary)] opacity-85">Receita</div>
+                <h3 className="m-0 mt-1 font-headline text-lg font-black tracking-[-0.02em]">Este mês</h3>
+              </div>
+              <div className="text-right">
+                <div className="af-num font-headline text-[22px] font-black tracking-[-0.02em] text-[var(--af-on-surface)]">
+                  R$ {stats.monthRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                </div>
+                <div className="text-[10px] font-extrabold tracking-wide text-[var(--af-success)]">+12% vs mês anterior</div>
+              </div>
+            </div>
+            <div className="flex h-[180px] items-end justify-between gap-3 pt-2">
+              {[38, 52, 44, 66, 74, 92, 58].map((height, index) => (
+                <div key={index} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
+                  <div className="text-[10px] font-extrabold text-[var(--af-on-surface-variant)] opacity-60">{["S","T","Q","Q","S","S","D"][index]}</div>
+                  <div
+                    className={cn("w-full rounded-t-lg rounded-b", index === 5 ? "bg-gradient-to-b from-[var(--af-primary)] to-[var(--af-primary-hover)] shadow-[0_8px_18px_rgba(83,67,212,0.30)]" : "bg-[var(--af-surface-med)]")}
+                    style={{ height: `${height}%` }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[var(--af-primary)] to-[var(--af-primary-deep)] p-[26px] text-white shadow-[var(--af-shadow-glow)]">
+            <span className="material-symbols-outlined absolute -bottom-7 -right-4 rotate-12 text-[180px] opacity-10" style={{ fontVariationSettings: "'FILL' 1" }}>workspace_premium</span>
+            <div className="relative">
+              <div className="mb-3.5 flex h-12 w-12 items-center justify-center rounded-[14px] bg-white/20 backdrop-blur">
+                <span className="material-symbols-outlined text-[26px]" style={{ fontVariationSettings: "'FILL' 1" }}>workspace_premium</span>
+              </div>
+              <div className="af-eb opacity-75">Upgrade Premium</div>
+              <h3 className="mt-1 font-headline text-[22px] font-black leading-tight tracking-[-0.02em]">Mais conversão.<br/>Mais retenção.</h3>
+              <p className="mt-2 text-xs leading-relaxed opacity-80">Lembretes WhatsApp, relatórios avançados e sub-contas ilimitadas.</p>
+              <button onClick={() => navigate('/dashboard/subscription')} className="mt-3.5 inline-flex items-center gap-1.5 rounded-[10px] bg-white px-4 py-2.5 text-xs font-black tracking-wide text-[var(--af-primary)]">
+                VER PLANOS
+                <span className="material-symbols-outlined text-base">arrow_right_alt</span>
+              </button>
+            </div>
+          </div>
+        </aside>
       </div>
 
-      {/* Activity Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
-        <Card className="p-8 bg-stitch-surface-container-low/30 backdrop-blur-xl border border-stitch-outline-variant/10 rounded-[32px] shadow-sm">
-          <h3 className="text-xl font-black mb-6 flex items-center gap-3 text-stitch-on-surface">
-            <span className="material-symbols-outlined text-stitch-primary text-2xl">history</span>
-            Atividade Recente
-          </h3>
-          <div className="space-y-4">
-            {appointments.slice(0, 3).map((apt) => (
-              <div key={apt.id} className="flex items-start gap-4 p-4 hover:bg-stitch-surface-container/30 rounded-2xl transition-all cursor-pointer group border border-transparent hover:border-stitch-outline-variant/10">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-stitch-primary/10 text-stitch-primary">
-                  <span className="material-symbols-outlined text-lg">event</span>
+      <div className="grid grid-cols-1 gap-4 pb-10 lg:grid-cols-2">
+        <Card className="af-card rounded-[24px] border-[var(--af-divider)] bg-[var(--af-surface-lowest)] p-[22px] shadow-none">
+          <div className="af-section-h mb-3.5">
+            <div>
+              <div className="af-eb text-[var(--af-primary)] opacity-85">Atividade</div>
+              <h3 className="m-0 mt-1 font-headline text-lg font-black tracking-[-0.02em]">Últimas ações</h3>
+            </div>
+          </div>
+          <div>
+            {appointments.slice(0, 4).map((apt, index) => (
+              <div key={apt.id} className={cn("flex items-center gap-3 py-3", index > 0 && "border-t border-[var(--af-divider)]")}>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--af-primary-soft)] text-[var(--af-primary)]">
+                  <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>event</span>
                 </div>
                 <div>
-                  <p className="text-sm font-black text-stitch-on-surface">Agendamento de {apt.customer_name}</p>
-                  <p className="text-[10px] text-stitch-on-surface-variant uppercase tracking-wider mt-1 opacity-50 font-black">
+                  <p className="text-[13px] font-extrabold text-[var(--af-on-surface)]">Agendamento de {apt.customer_name}</p>
+                  <p className="mt-0.5 text-xs font-medium text-[var(--af-on-surface-variant)] opacity-70">
                      Status: {apt.status === 'confirmed' ? 'Confirmado' : apt.status}
                   </p>
                 </div>
@@ -179,19 +211,30 @@ export default function DashboardHome() {
           </div>
         </Card>
 
-        <div className="bg-stitch-primary text-white p-10 rounded-[40px] overflow-hidden relative shadow-2xl shadow-stitch-primary/20 flex flex-col justify-center group cursor-pointer" onClick={() => navigate('/dashboard/subscription')}>
-          <div className="relative z-10 space-y-4">
-            <div className="bg-white/20 w-16 h-16 rounded-3xl flex items-center justify-center mb-6 backdrop-blur-md group-hover:scale-110 transition-transform duration-500">
-              <span className="material-symbols-outlined text-4xl text-white">card_membership</span>
+        <Card className="af-card rounded-[24px] border-[var(--af-divider)] bg-[var(--af-surface-lowest)] p-[22px] shadow-none">
+          <div className="af-section-h mb-3.5">
+            <div>
+              <div className="af-eb text-[var(--af-primary)] opacity-85">Equipe</div>
+              <h3 className="m-0 mt-1 font-headline text-lg font-black tracking-[-0.02em]">Profissionais ativos</h3>
             </div>
-            <h3 className="text-3xl font-black leading-tight text-white uppercase tracking-tighter">Upgrade Premium</h3>
-            <p className="text-sm font-bold opacity-80 max-w-xs leading-relaxed text-white">Libere agendamentos ilimitados e notificações WhatsApp profissionais.</p>
-            <Button className="w-fit bg-white text-stitch-primary hover:bg-white/90 mt-4 py-6 px-10 text-[10px] tracking-[0.2em] font-black rounded-2xl transition-all shadow-xl group-hover:translate-x-2 uppercase">VER PLANOS</Button>
           </div>
-          <div className="absolute top-0 right-0 p-10">
-            <span className="material-symbols-outlined text-[120px] opacity-10 rotate-12 text-white">crown</span>
+          <div className="space-y-2">
+            {employees.slice(0, 5).map((emp) => (
+              <div key={emp.id} className="flex items-center gap-3 rounded-[14px] bg-[var(--af-surface-low)] p-3">
+                <Avatar className="h-9 w-9">
+                  <AvatarFallback className="bg-[var(--af-primary-soft)] text-xs font-black text-[var(--af-primary)]">
+                    {emp.full_name?.split(' ').map(n => n[0]).slice(0, 2).join('') || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-extrabold text-[var(--af-on-surface)]">{emp.full_name}</p>
+                  <p className="text-xs font-medium text-[var(--af-on-surface-variant)] opacity-70">{emp.role === 'admin' ? 'Administrador' : 'Profissional'}</p>
+                </div>
+                <span className="af-badge af-badge-primary">Ativo</span>
+              </div>
+            ))}
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );
