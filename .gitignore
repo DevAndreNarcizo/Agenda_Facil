@@ -60,3 +60,13 @@ coverage/
 
 # Production
 build/
+
+# Agent / AI generated files
+.agents/
+skills-lock.json
+
+# Documentation drafts
+docs/
+
+# Supabase temporary files
+supabase/.temp/
