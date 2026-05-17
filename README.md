@@ -1,218 +1,215 @@
-# 📅 Agenda Fácil
+# Agenda Facil — Micro-SaaS Appointment Management
 
-Sistema completo de gestão e agendamento para pequenas e médias empresas (salões, clínicas, barbearias, consultórios).
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=flat-square&logo=vite)](https://vitejs.dev)
+[![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?style=flat-square&logo=supabase)](https://supabase.com)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker)](https://www.docker.com)
+[![CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=flat-square&logo=github-actions)](https://github.com/DevAndreNarcizo/Agenda_Facil/actions)
+[![Tests](https://img.shields.io/badge/tests-42_passing-27d39f?style=flat-square)](https://github.com/DevAndreNarcizo/Agenda_Facil)
+[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](./LICENSE)
 
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy)
-
----
-
-## ✨ Features
-
-### 🔐 Segurança
-
-- Login seguro com OTP via WhatsApp
-- Recuperação de senha por email
-- Autenticação multi-tenant (organizações isoladas)
-- Logs de auditoria completos
-
-### 📊 Analytics
-
-- Faturamento mensal
-- Serviços mais vendidos
-- Horários de pico
-- Estatísticas em tempo real
-
-### 🎨 Personalização
-
-- Tema customizável por organização
-- Cores da marca
-- Upload de logo
-
-### 🌍 Internacionalização
-
-- Suporte a múltiplos idiomas
-- PT-BR e EN-US incluídos
-
-### 📱 Portal do Cliente
-
-- Login com OTP
-- Agendamento self-service
-- Histórico de agendamentos
-
-### 🚫 Prevenção de Conflitos
-
-- Constraints no banco de dados
-- Impossível fazer double booking
+A complete multi-tenant appointment and business management system for small and medium businesses — salons, clinics, barbershops, and professional offices. Production SaaS with real users.
 
 ---
 
-## 🚀 Tech Stack
+## Features
 
-- **Frontend:** React 19 + TypeScript + Vite
-- **UI:** Tailwind CSS + Shadcn/ui
-- **Backend:** Supabase (PostgreSQL + Auth + Realtime)
-- **Charts:** Recharts
-- **i18n:** react-i18next
-- **WhatsApp:** whatsapp-web.js (opcional)
+### Security
+- OTP authentication via WhatsApp
+- Email-based password recovery
+- Multi-tenant with organization isolation
+- Complete audit logs
 
----
+### Analytics
+- Monthly revenue dashboards
+- Top-selling services
+- Peak hour analysis
+- Real-time statistics via Supabase RPC
 
-## 📦 Instalação
+### Customization
+- Per-organization theme engine
+- Brand colors (primary, secondary, accent)
+- Logo upload
 
-### Pré-requisitos
+### Client Portal
+- OTP login for end customers
+- Self-service booking
+- Appointment history
 
-- Node.js 18+
-- Conta no Supabase
-- Git
-
-### Passo a Passo
-
-1. **Clone o repositório:**
-
-   ```bash
-   git clone https://github.com/seu-usuario/agenda-facil.git
-   cd agenda-facil
-   ```
-
-2. **Instale as dependências:**
-
-   ```bash
-   npm install
-   ```
-
-3. **Configure as variáveis de ambiente:**
-
-   ```bash
-   cp .env.example .env
-   ```
-
-   Edite `.env` e adicione suas credenciais do Supabase:
-
-   ```env
-   VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-   VITE_SUPABASE_ANON_KEY=sua-chave-anon-key
-   ```
-
-4. **Execute as migrações SQL:**
-
-   - Acesse o [Supabase Dashboard](https://supabase.com/dashboard)
-   - Vá em **SQL Editor**
-   - Execute os arquivos em `src/database/` na ordem:
-     - `01_otp_system.sql`
-     - `02_prevent_double_booking.sql`
-     - `03_password_recovery.sql`
-     - `04_audit_logs.sql`
-     - `06_custom_themes.sql`
-     - `07_analytics_functions.sql`
-
-5. **Inicie o servidor de desenvolvimento:**
-
-   ```bash
-   npm run dev
-   ```
-
-6. **Acesse:** `http://localhost:5173`
+### Conflict Prevention
+- Database-level exclusion constraints
+- Double-booking impossible by design
 
 ---
 
-## 🌐 Deploy
+## Tech Stack
 
-### Netlify (Recomendado)
-
-1. **Push para GitHub:**
-
-   ```bash
-   git add .
-   git commit -m "Initial commit"
-   git push origin main
-   ```
-
-2. **Deploy na Netlify:**
-   - Acesse [netlify.com](https://www.netlify.com/)
-   - Conecte seu repositório GitHub
-   - Configure as variáveis de ambiente
-   - Deploy automático! 🚀
-
-**Guia completo:** [DEPLOY.md](./DEPLOY.md)
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React 19, TypeScript 5.9, Vite 6 |
+| **UI** | Tailwind CSS 3, Shadcn/ui (Radix) |
+| **Backend** | Supabase (PostgreSQL, Auth, Realtime, Edge Functions) |
+| **State** | TanStack React Query v5 |
+| **Forms** | React Hook Form + Zod |
+| **Charts** | Recharts |
+| **i18n** | react-i18next (pt-BR, en-US) |
+| **Testing** | Vitest |
+| **CI/CD** | GitHub Actions |
+| **Containers** | Docker, Docker Compose |
 
 ---
 
-## 📱 WhatsApp Service (Opcional)
+## Quick Start
 
-Para envio de códigos OTP via WhatsApp:
+### With Docker (recommended)
 
 ```bash
-cd whatsapp-service
-npm install
-npm start
+git clone https://github.com/DevAndreNarcizo/Agenda_Facil.git
+cd Agenda_Facil
+cp .env.example .env
+# Edit .env with your Supabase credentials
+docker compose up dev
 ```
 
-Escaneie o QR Code com seu WhatsApp e pronto!
+Open `http://localhost:5173`
 
-**Documentação:** [whatsapp-service/README.md](./whatsapp-service/README.md)
+### Without Docker
+
+**Prerequisites:** Node.js 22+, Supabase account
+
+```bash
+git clone https://github.com/DevAndreNarcizo/Agenda_Facil.git
+cd Agenda_Facil
+npm install
+cp .env.example .env
+# Edit .env with your Supabase credentials
+npm run dev
+```
+
+### Environment Variables
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+```
+
+### Database Setup
+
+Run migrations from `src/database/` in order via Supabase SQL Editor:
+
+1. `01_otp_system.sql` — OTP authentication
+2. `02_prevent_double_booking.sql` — Conflict prevention
+3. `03_password_recovery.sql` — Password recovery
+4. `04_audit_logs.sql` — Audit logging
+5. `05_update_otp_with_whatsapp.sql` — WhatsApp OTP integration
+6. `06_custom_themes.sql` — Theme customization
+7. `07_analytics_functions.sql` — Analytics RPC functions
 
 ---
 
-## 📚 Documentação
+## Production Deployment
 
-- [Guia de Deploy](./DEPLOY.md)
-- [Migrações SQL](./src/database/README.md)
-- [WhatsApp Service](./whatsapp-service/README.md)
+### Docker Production Build
+
+```bash
+docker compose up app --build -d
+```
+
+Serves on port `8080` via Nginx with gzip and cache headers.
+
+### Netlify
+
+See [DEPLOY.md](./DEPLOY.md) for the complete Netlify deployment guide.
 
 ---
 
-## 🗂️ Estrutura do Projeto
+## Testing
+
+```bash
+npm run test           # Run all tests (Vitest)
+npm run test -- --watch # Watch mode
+```
+
+### Test Coverage
+
+| Area | Tests |
+|------|-------|
+| CEP utilities | 3 |
+| Slug validation | 9 |
+| Customer normalizers | 7 |
+| Supabase error handling | 10 |
+| Phone formatting | 5 |
+| Class merging (cn) | 4 |
+| Holiday database | 2 |
+
+---
+
+## CI/CD Pipeline
+
+GitHub Actions runs on every push to `main` and `develop`, and on PRs to `main`:
+
+| Job | Steps |
+|-----|-------|
+| **Lint** | ESLint type-checked rules |
+| **Test** | Vitest suite (42 tests) |
+| **Build** | TypeScript compile + Vite production build |
+
+Secrets required in GitHub: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPABASE_PUBLISHABLE_KEY`
+
+---
+
+## Project Structure
 
 ```
 agenda-facil/
 ├── src/
-│   ├── components/      # Componentes React
-│   ├── pages/          # Páginas
-│   ├── hooks/          # Custom hooks
-│   ├── context/        # Context providers
-│   ├── lib/            # Bibliotecas e configs
-│   ├── database/       # Migrações SQL
-│   └── i18n/           # Traduções
-├── whatsapp-service/   # Serviço WhatsApp (opcional)
-├── supabase/           # Edge Functions
-├── public/             # Assets públicos
-├── netlify.toml        # Config Netlify
-└── DEPLOY.md           # Guia de deploy
+│   ├── components/
+│   │   ├── dashboard/       # Dashboard-specific components
+│   │   └── ui/              # Reusable UI primitives (shadcn)
+│   ├── pages/
+│   │   ├── auth/            # Login, register, password reset
+│   │   ├── dashboard/       # Admin dashboard pages
+│   │   ├── onboarding/      # Multi-step setup wizard
+│   │   └── portal/          # Client-facing booking portal
+│   ├── hooks/               # 11 custom React hooks
+│   ├── context/             # Auth context provider
+│   ├── lib/                 # Utility libraries
+│   ├── database/            # SQL migrations
+│   └── i18n/                # PT-BR / EN-US translations
+├── supabase/
+│   ├── functions/           # Edge Functions (Stripe, WhatsApp, reminders)
+│   └── migrations/          # Supabase CLI migrations
+├── whatsapp-service/        # Standalone WhatsApp bot (optional)
+├── Dockerfile               # Production multi-stage build
+├── Dockerfile.dev           # Development container
+├── docker-compose.yml       # Full environment orchestration
+├── nginx.conf               # Production Nginx config
+└── .github/workflows/ci.yml # CI/CD pipeline
 ```
 
 ---
 
-## 🔒 Segurança
+## Security
 
-- ✅ Autenticação JWT via Supabase
-- ✅ Row Level Security (RLS) no PostgreSQL
-- ✅ Variáveis de ambiente para dados sensíveis
-- ✅ HTTPS obrigatório em produção
-- ✅ Logs de auditoria
-
----
-
-## 📝 Licença
-
-MIT License - veja [LICENSE](./LICENSE) para detalhes.
+- JWT authentication via Supabase Auth
+- Row-Level Security (RLS) on all PostgreSQL tables
+- Environment variables for all secrets
+- HTTPS enforced in production
+- Audit logs on critical operations
 
 ---
 
-## 🤝 Contribuindo
+## Roadmap
 
-Contribuições são bem-vindas! Sinta-se à vontade para abrir issues e pull requests.
+- [x] Docker + Docker Compose
+- [x] CI/CD (GitHub Actions)
+- [x] Test suite (42 tests)
+- [ ] E2E tests with Playwright
+- [ ] Stripe subscription management
+- [ ] Mobile PWA enhancements
 
 ---
 
-## 📧 Contato
-
-Desenvolvido por [André Narcizo](https://github.com/DevAndreNarcizo)
-
----
-
-## 🙏 Agradecimentos
-
-- [Supabase](https://supabase.com/) - Backend as a Service
-- [Shadcn/ui](https://ui.shadcn.com/) - Componentes UI
-- [Recharts](https://recharts.org/) - Gráficos
-- [Netlify](https://www.netlify.com/) - Hosting
+**Built by [Andre Narcizo](https://github.com/DevAndreNarcizo)** — MIT License

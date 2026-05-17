@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.git
+.gitignore
+*.md
+!README.md
+.DS_Store
+supabase/.temp
+whatsapp-service/node_modules
