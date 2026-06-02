@@ -7,22 +7,18 @@ import { useAppointments } from "@/hooks/use-appointments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import { EmployeeForm } from "./components/EmployeeForm";
+import { EmployeesTable } from "./components/EmployeesTable";
 
-// Schema for adding an employee
 const addEmployeeSchema = z.object({
   fullName: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
   email: z.string().email("Email inválido"),
@@ -37,41 +33,32 @@ export default function EmployeesPage() {
   const [creating, setCreating] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-
-  // Edit state
   const [editingEmployee, setEditingEmployee] = useState<{ id: string; full_name: string } | null>(null);
   const [editName, setEditName] = useState("");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<AddEmployeeForm>({
+  const form = useForm<AddEmployeeForm>({
     resolver: zodResolver(addEmployeeSchema),
   });
 
-  const filteredEmployees = employees.filter(e =>
+  const filteredEmployees = employees.filter((e) =>
     e.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     e.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Calcular agendamentos de hoje por profissional
   const today = new Date().toISOString().split("T")[0];
-  const todayAppointments = appointments.filter(a =>
-    a.start_time.startsWith(today) && a.status !== "cancelled"
+  const todayAppointments = appointments.filter(
+    (a) => a.start_time.startsWith(today) && a.status !== "cancelled"
   );
 
-  const getEmployeeTodayCount = (empId: string) => {
-    return todayAppointments.filter(a => a.employee_id === empId).length;
-  };
+  const getEmployeeTodayCount = (empId: string) =>
+    todayAppointments.filter((a) => a.employee_id === empId).length;
 
   const onSubmit = async (data: AddEmployeeForm) => {
     setCreating(true);
     try {
       await createEmployee(data);
-      reset();
+      form.reset();
       setIsDialogOpen(false);
       toast.success("Profissional adicionado com sucesso!");
     } catch (err: unknown) {
@@ -89,7 +76,7 @@ export default function EmployeesPage() {
       setIsEditDialogOpen(false);
       setEditingEmployee(null);
       toast.success("Profissional atualizado com sucesso!");
-    } catch (err) {
+    } catch {
       toast.error("Erro ao atualizar profissional.");
     }
   };
@@ -99,7 +86,7 @@ export default function EmployeesPage() {
     try {
       await deleteEmployee(id);
       toast.success("Profissional removido com sucesso!");
-    } catch (err) {
+    } catch {
       toast.error("Erro ao remover profissional. Verifique se não há agendamentos vinculados.");
     }
   };
@@ -111,12 +98,12 @@ export default function EmployeesPage() {
   };
 
   const getRoleLabel = (role: string) => {
-    switch (role) {
-      case "owner": return "Proprietário";
-      case "admin": return "Administrador";
-      case "staff": return "Staff";
-      default: return "Profissional";
-    }
+    const labels: Record<string, string> = {
+      owner: "Proprietário",
+      admin: "Administrador",
+      staff: "Staff",
+    };
+    return labels[role] ?? "Profissional";
   };
 
   return (
@@ -126,98 +113,13 @@ export default function EmployeesPage() {
           <p className="text-stitch-on-surface-variant text-sm font-medium mb-1 uppercase tracking-wider">Equipe Studio</p>
           <h1 className="font-headline text-4xl font-black tracking-tight text-stitch-on-surface">Gerenciar Profissionais</h1>
         </div>
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="h-16 px-10 rounded-2xl font-black text-lg gap-3 shadow-lg shadow-stitch-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
-              <span className="material-symbols-outlined text-2xl">person_add</span>
-              Novo Profissional
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[750px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden font-sans bg-[#0f1113]">
-            <DialogHeader className="p-10 pb-6 bg-[#1a1c1e]/50 backdrop-blur-xl border-b border-white/5">
-              <div className="flex items-center gap-4 mb-2">
-                <div className="w-14 h-14 rounded-2xl bg-stitch-primary/10 flex items-center justify-center text-stitch-primary">
-                  <span className="material-symbols-outlined text-3xl">person_add</span>
-                </div>
-                <div>
-                  <DialogTitle className="text-2xl font-black font-headline text-stitch-on-surface">Novo Profissional</DialogTitle>
-                  <DialogDescription className="text-sm font-bold text-stitch-on-surface-variant opacity-60">
-                    Cadastre um novo membro para sua equipe.
-                  </DialogDescription>
-                </div>
-              </div>
-            </DialogHeader>
-
-            <form onSubmit={handleSubmit(onSubmit)} className="px-10 pb-10 space-y-6 mt-6">
-              <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-sm font-bold ml-1 text-white/70">Nome Completo</Label>
-                <div className="relative group">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-primary opacity-50 group-focus-within:opacity-100 transition-opacity">person</span>
-                  <Input
-                    id="fullName"
-                    placeholder="Ex: Maria Oliveira"
-                    className="pl-12 h-14 rounded-xl border-none !bg-[#1a1c1e] text-white font-bold placeholder:text-white/20 transition-all focus-visible:ring-stitch-primary"
-                    {...register("fullName")}
-                  />
-                </div>
-                {errors.fullName && (
-                  <p className="text-xs font-medium text-stitch-error ml-1">{errors.fullName.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-bold ml-1 text-white/70">Email Profissional</Label>
-                <div className="relative group">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40 group-focus-within:opacity-100 transition-opacity">mail</span>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="maria@empresa.com"
-                    className="pl-12 h-14 rounded-xl border-none !bg-[#1a1c1e] text-white font-bold placeholder:text-white/20 transition-all focus-visible:ring-stitch-primary"
-                    {...register("email")}
-                  />
-                </div>
-                {errors.email && (
-                  <p className="text-xs font-medium text-stitch-error ml-1">{errors.email.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-bold ml-1 text-white/70">Senha de Acesso</Label>
-                <div className="relative group">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40 group-focus-within:opacity-100 transition-opacity">lock</span>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    className="pl-12 h-14 rounded-xl border-none !bg-[#1a1c1e] text-white font-bold placeholder:text-white/20 transition-all focus-visible:ring-stitch-primary"
-                    {...register("password")}
-                  />
-                </div>
-                {errors.password && (
-                  <p className="text-xs font-medium text-stitch-error ml-1">{errors.password.message}</p>
-                )}
-              </div>
-
-              <div className="pt-4">
-                <Button type="submit" className="w-full h-16 rounded-[1.5rem] font-black text-lg gap-2 shadow-xl shadow-stitch-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]" disabled={creating}>
-                  {creating ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Adicionando...
-                    </span>
-                  ) : (
-                    <>
-                      <span className="material-symbols-outlined font-black">check_circle</span>
-                      Criar Conta Profissional
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <EmployeeForm
+          isOpen={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          form={form}
+          onSubmit={onSubmit}
+          creating={creating}
+        />
       </div>
 
       {/* Search & Stats Bar */}
@@ -265,82 +167,23 @@ export default function EmployeesPage() {
             </p>
           </div>
           {!searchTerm && (
-            <Button onClick={() => setIsDialogOpen(true)} className="h-14 px-10 rounded-xl font-black text-lg shadow-xl shadow-stitch-primary/20 hover:scale-105 transition-all">
+            <Button
+              onClick={() => setIsDialogOpen(true)}
+              className="h-14 px-10 rounded-xl font-black text-lg shadow-xl shadow-stitch-primary/20 hover:scale-105 transition-all"
+            >
               Adicionar Primeiro Profissional
             </Button>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {filteredEmployees.map((employee) => {
-            const todayCount = getEmployeeTodayCount(employee.id);
-            return (
-              <Card key={employee.id} className="group overflow-hidden border-0 bg-stitch-surface-container-lowest hover:shadow-2xl hover:shadow-stitch-primary/10 transition-all duration-300">
-                <CardContent className="p-8 flex flex-col items-center text-center">
-                  <div className="relative mb-6">
-                    <Avatar className="w-28 h-28 border-4 border-stitch-surface-container-low shadow-sm scale-110 group-hover:scale-125 transition-transform duration-500">
-                      <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${employee.full_name}`} />
-                      <AvatarFallback className="bg-stitch-primary/10 text-stitch-primary font-bold text-2xl">
-                        {employee.full_name.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="absolute bottom-1 right-2 w-6 h-6 bg-green-500 border-4 border-stitch-surface-container-lowest rounded-full shadow-sm" />
-                  </div>
-
-                  <h3 className="font-headline text-xl font-bold text-stitch-on-surface mb-1 group-hover:text-stitch-primary transition-colors">
-                    {employee.full_name}
-                  </h3>
-                  <p className="text-stitch-primary font-semibold text-sm mb-2">{getRoleLabel(employee.role)}</p>
-
-                  {todayCount > 0 && (
-                    <p className="text-xs font-bold text-stitch-on-surface-variant opacity-60 mb-4">
-                      {todayCount} agendamento{todayCount > 1 ? "s" : ""} hoje
-                    </p>
-                  )}
-
-                  <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-stitch-secondary-container text-stitch-on-secondary-container text-xs font-black uppercase tracking-widest shadow-sm">
-                    Ativo
-                  </div>
-
-                  <div className="w-full flex gap-3 border-t border-stitch-surface-container mt-8 pt-6">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 rounded-xl h-11 font-bold border-2"
-                      onClick={() => openEditDialog(employee)}
-                    >
-                      <span className="material-symbols-outlined text-lg mr-2">edit</span>
-                      Editar
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex-1 rounded-xl h-11 font-bold text-stitch-error hover:bg-stitch-error/10 hover:text-stitch-error"
-                      onClick={() => handleDeleteEmployee(employee.id, employee.full_name)}
-                    >
-                      <span className="material-symbols-outlined text-lg mr-2">delete</span>
-                      Remover
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-
-          {/* Add New Card Placeholder */}
-          <button
-            onClick={() => setIsDialogOpen(true)}
-            className="group bg-stitch-surface-container-low border-2 border-dashed border-stitch-outline-variant/30 rounded-stitch-lg p-8 flex flex-col items-center justify-center text-center gap-4 cursor-pointer hover:bg-stitch-primary/5 hover:border-stitch-primary/50 transition-all duration-300"
-          >
-            <div className="w-20 h-20 rounded-full bg-stitch-surface-container flex items-center justify-center text-stitch-on-surface-variant group-hover:bg-stitch-primary group-hover:text-white transition-all duration-300 transform group-hover:rotate-90">
-              <span className="material-symbols-outlined text-4xl">add</span>
-            </div>
-            <div>
-              <p className="font-headline font-black text-stitch-on-surface text-lg">Adicionar Novo</p>
-              <p className="text-sm font-medium text-stitch-on-surface-variant opacity-60">Amplie sua equipe</p>
-            </div>
-          </button>
-        </div>
+        <EmployeesTable
+          employees={filteredEmployees}
+          getTodayCount={getEmployeeTodayCount}
+          getRoleLabel={getRoleLabel}
+          onEdit={openEditDialog}
+          onDelete={handleDeleteEmployee}
+          onAdd={() => setIsDialogOpen(true)}
+        />
       )}
 
       {/* Edit Employee Dialog */}
@@ -391,7 +234,9 @@ export default function EmployeesPage() {
           </div>
           <div>
             <p className="text-xs font-black uppercase tracking-widest text-stitch-primary opacity-60 mb-1">Total Equipe</p>
-            <p className="text-3xl font-black text-stitch-on-surface leading-none">{employees.length} Membro{employees.length !== 1 ? "s" : ""}</p>
+            <p className="text-3xl font-black text-stitch-on-surface leading-none">
+              {employees.length} Membro{employees.length !== 1 ? "s" : ""}
+            </p>
           </div>
         </div>
 
@@ -401,7 +246,9 @@ export default function EmployeesPage() {
           </div>
           <div>
             <p className="text-xs font-black uppercase tracking-widest text-stitch-secondary opacity-60 mb-1">Atendimentos Hoje</p>
-            <p className="text-3xl font-black text-stitch-on-surface leading-none">{todayAppointments.length} agendamento{todayAppointments.length !== 1 ? "s" : ""}</p>
+            <p className="text-3xl font-black text-stitch-on-surface leading-none">
+              {todayAppointments.length} agendamento{todayAppointments.length !== 1 ? "s" : ""}
+            </p>
           </div>
         </div>
 
@@ -412,7 +259,8 @@ export default function EmployeesPage() {
           <div>
             <p className="text-xs font-black uppercase tracking-widest text-stitch-tertiary opacity-60 mb-1">Roles</p>
             <p className="text-3xl font-black text-stitch-on-surface leading-none">
-              {employees.filter(e => e.role === "admin" || e.role === "owner").length} Admin{employees.filter(e => e.role === "admin" || e.role === "owner").length !== 1 ? "s" : ""}
+              {employees.filter((e) => e.role === "admin" || e.role === "owner").length} Admin
+              {employees.filter((e) => e.role === "admin" || e.role === "owner").length !== 1 ? "s" : ""}
             </p>
           </div>
         </div>
