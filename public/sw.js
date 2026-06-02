@@ -1,3 +1,4 @@
+// fallow-ignore-file unused-file
 const CACHE_NAME = 'agenda-facil-v2';
 const ASSETS_TO_CACHE = [
   '/',

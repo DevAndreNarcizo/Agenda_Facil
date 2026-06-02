@@ -17,4 +17,5 @@ i18n
     }
   });
 
+// fallow-ignore-next-line unused-export
 export default i18n;

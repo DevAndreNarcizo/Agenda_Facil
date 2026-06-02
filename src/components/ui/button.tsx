@@ -7,7 +7,7 @@ import { buttonVariants } from "./button-variants"
 
 // Interface das Props do Botão
 // Extende as props nativas do HTMLButtonElement e as variantes definidas acima
-export interface ButtonProps
+interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean // Se true, renderiza o filho como elemento raiz (útil para Slots do Radix UI)

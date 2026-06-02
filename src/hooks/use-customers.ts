@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
 
-export interface Customer {
+interface Customer {
   id: string;
   name: string;
   phone: string;

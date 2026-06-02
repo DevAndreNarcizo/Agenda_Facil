@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
 
-export interface Employee {
+interface Employee {
   id: string;
   full_name: string;
   email?: string;
