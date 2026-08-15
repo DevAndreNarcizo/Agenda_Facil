@@ -19,6 +19,7 @@ import PortalLogin from "./pages/portal/PortalLogin";
 import PortalLayout from "./pages/portal/PortalLayout";
 import PortalHome from "./pages/portal/PortalHome";
 import PortalBooking from "./pages/portal/PortalBooking";
+import PublicBookingPage from "./pages/public-booking/PublicBookingPage";
 import OnboardingPage from "./pages/onboarding/OnboardingPage";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -79,6 +80,8 @@ function App() {
             {/* Rota: Calendário (/dashboard/calendar) */}
             <Route path="calendar" element={<CalendarPage />} />
           </Route>
+
+          <Route path="/reservar/:slug" element={<PublicBookingPage />} />
 
           {/* Rotas do Portal do Cliente */}
           <Route path="/portal/login" element={<PortalLogin />} />

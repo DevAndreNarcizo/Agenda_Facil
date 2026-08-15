@@ -1,6 +1,6 @@
 # SPEC-007 — Reserva pública e canais de aquisição
 
-**Status:** proposta
+**Status:** em implementação
 **Prioridade:** P1
 **Dependências:** SPEC-002, SPEC-003 e SPEC-004
 
@@ -26,7 +26,7 @@ Marketplace próprio, ranking público de empresas e integração certificada co
 ## Critérios de aceite
 - [ ] Um visitante reserva por URL pública sem informar `organization_id` manualmente.
 - [ ] QR Code e widget levam ao mesmo fluxo seguro.
-- [ ] Slots indisponíveis não podem ser confirmados por manipulação do navegador.
+- [x] Slots indisponíveis não podem ser confirmados por manipulação do navegador.
 - [ ] Dashboard mostra reservas por canal de origem.
 
 ## Métricas

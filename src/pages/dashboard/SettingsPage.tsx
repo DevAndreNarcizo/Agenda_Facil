@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { ThemeCustomizationContent } from "@/components/dashboard/settings/theme-customization-content";
+import { PublicBookingSettings } from "@/components/dashboard/settings/public-booking-settings";
 
 export default function SettingsPage() {
   const { profile } = useAuth();
@@ -167,6 +168,8 @@ export default function SettingsPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {profile?.organization_id && slug && <PublicBookingSettings organizationId={profile.organization_id} slug={slug} />}
 
               {/* Quick Actions Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

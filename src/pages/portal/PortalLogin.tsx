@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { requestPortalOtp, verifyPortalOtp } from "@/lib/portal-api";
+import { getPublicBookingReturnUrl, getPublicBookingSlug } from "@/lib/portal-return-url";
 import { toast } from "sonner";
 
 export default function PortalLogin() {
@@ -12,6 +13,9 @@ export default function PortalLogin() {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnUrl = getPublicBookingReturnUrl(location.search);
+  const organizationSlug = getPublicBookingSlug(returnUrl);
 
   /**
    * Formata o telefone brasileiro durante a digitação.
@@ -36,7 +40,7 @@ export default function PortalLogin() {
 
     try {
       const cleanPhone = phone.replace(/\D/g, '');
-      await requestPortalOtp(cleanPhone);
+      await requestPortalOtp(cleanPhone, organizationSlug);
       toast.success('Se o número estiver cadastrado, o código será enviado pelo WhatsApp.');
       setStep('otp');
     } catch (err: unknown) {
@@ -54,9 +58,9 @@ export default function PortalLogin() {
 
     try {
       const cleanPhone = phone.replace(/\D/g, '');
-      await verifyPortalOtp(cleanPhone, code);
+      await verifyPortalOtp(cleanPhone, code, organizationSlug);
       toast.success("Login realizado com sucesso!");
-      navigate("/portal");
+      navigate(returnUrl ?? "/portal", { replace: true });
 
     } catch (err: unknown) {
       const error = err as Error;

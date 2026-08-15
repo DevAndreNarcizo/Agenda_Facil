@@ -29,10 +29,13 @@ Deno.serve(async (request) => {
   }
 
   try {
-    const { phone } = await request.json();
+    const { organizationSlug, phone } = await request.json();
     const normalizedPhone = normalizePhone(phone);
+    const normalizedOrganizationSlug = typeof organizationSlug === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(organizationSlug)
+      ? organizationSlug
+      : null;
     const admin = createAdminClient();
-    if (!normalizedPhone || !admin) return jsonResponse(genericResponse, 202);
+    if (!normalizedPhone || !admin || (organizationSlug !== undefined && !normalizedOrganizationSlug)) return jsonResponse(genericResponse, 202);
 
     const phoneHash = await hashSecret(normalizedPhone);
     const ipHash = await hashSecret(getRequestIp(request));
@@ -59,11 +62,23 @@ Deno.serve(async (request) => {
       ip_hash: ipHash,
     });
 
-    const { data: customers } = await admin
-      .from("customers")
-      .select("id, organization_id")
-      .eq("phone_normalized", normalizedPhone)
-      .limit(2);
+    let organizationId: string | null = null;
+    if (normalizedOrganizationSlug) {
+      const { data: organization } = await admin
+        .from('organizations')
+        .select('id')
+        .eq('slug', normalizedOrganizationSlug)
+        .maybeSingle();
+      organizationId = organization?.id ?? null;
+      if (!organizationId) return jsonResponse(genericResponse, 202);
+    }
+
+    let customerQuery = admin
+      .from('customers')
+      .select('id, organization_id')
+      .eq('phone_normalized', normalizedPhone);
+    if (organizationId) customerQuery = customerQuery.eq('organization_id', organizationId);
+    const { data: customers } = await customerQuery.limit(2);
 
     if (!customers || customers.length !== 1) {
       return jsonResponse(genericResponse, 202);
@@ -78,11 +93,13 @@ Deno.serve(async (request) => {
       return jsonResponse(genericResponse, 202);
     }
 
-    await admin
-      .from("portal_otp_challenges")
+    let invalidateChallenges = admin
+      .from('portal_otp_challenges')
       .update({ consumed_at: new Date().toISOString() })
-      .eq("phone_hash", phoneHash)
-      .is("consumed_at", null);
+      .eq('phone_hash', phoneHash)
+      .is('consumed_at', null);
+    if (organizationId) invalidateChallenges = invalidateChallenges.eq('organization_id', organizationId);
+    await invalidateChallenges;
 
     await admin.from("portal_otp_challenges").insert({
       code_hash: codeHash,

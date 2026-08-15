@@ -27,7 +27,7 @@ Não envie nenhum valor por chat. Se precisar de apoio, abra a tela de cada serv
 | `PORTAL_TOKEN_PEPPER` | Gerado por você | Edge Function Secret | Sim para Portal do Cliente |
 | `WHATSAPP_FUNCTION_URL` | URL interna da função | Edge Function Secret | Opcional |
 | `REMINDERS_BATCH_SIZE` | Decisão operacional | Edge Function Secret | Opcional; padrão 25 |
-| `INTEGRATIONS_CLAIM_TTL_SECONDS` | Decisão operacional | Edge Function Secret | Opcional; padrão 600 |
+| `INTEGRATIONS_CLAIM_TTL_SECONDS` | Decisão operacional | Edge Function Secret | Opcional; 450 a 3600 segundos, padrão 600 |
 
 ## 3. Valores gerados por você
 

@@ -14,22 +14,38 @@ Deno.serve(async (request) => {
   if (request.method !== 'POST') return jsonResponse({ error: 'Método não permitido.' }, 405);
 
   try {
-    const { code, phone } = await request.json();
+    const { code, organizationSlug, phone } = await request.json();
     const normalizedPhone = normalizePhone(phone);
     const normalizedCode = typeof code === 'string' && /^\d{6}$/.test(code) ? code : null;
+    const normalizedOrganizationSlug = typeof organizationSlug === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(organizationSlug)
+      ? organizationSlug
+      : null;
     const admin = createAdminClient();
-    if (!normalizedPhone || !normalizedCode || !admin) return jsonResponse({ error: 'Código inválido ou expirado.' }, 401);
+    if (!normalizedPhone || !normalizedCode || !admin || (organizationSlug !== undefined && !normalizedOrganizationSlug)) return jsonResponse({ error: 'Código inválido ou expirado.' }, 401);
 
     const phoneHash = await hashSecret(normalizedPhone);
     const ipHash = await hashSecret(getRequestIp(request));
     const codeHash = await hashSecret(normalizedCode);
     if (!phoneHash || !ipHash || !codeHash) return jsonResponse({ error: 'Código inválido ou expirado.' }, 401);
 
-    const { data: challenge } = await admin
+    let organizationId: string | null = null;
+    if (normalizedOrganizationSlug) {
+      const { data: organization } = await admin
+        .from('organizations')
+        .select('id')
+        .eq('slug', normalizedOrganizationSlug)
+        .maybeSingle();
+      organizationId = organization?.id ?? null;
+      if (!organizationId) return jsonResponse({ error: 'Código inválido ou expirado.' }, 401);
+    }
+
+    let challengeQuery = admin
       .from('portal_otp_challenges')
       .select('id, attempts, code_hash, customer_id, expires_at, organization_id')
       .eq('phone_hash', phoneHash)
-      .is('consumed_at', null)
+      .is('consumed_at', null);
+    if (organizationId) challengeQuery = challengeQuery.eq('organization_id', organizationId);
+    const { data: challenge } = await challengeQuery
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -40,13 +56,15 @@ Deno.serve(async (request) => {
     }
 
     const validCode = challenge.code_hash === codeHash;
-    await admin
+    const { data: consumedChallenge, error: consumeError } = await admin
       .from('portal_otp_challenges')
       .update({ attempts: challenge.attempts + 1, consumed_at: validCode ? new Date().toISOString() : null, ip_hash: ipHash })
       .eq('id', challenge.id)
-      .is('consumed_at', null);
+      .is('consumed_at', null)
+      .select('id')
+      .maybeSingle();
 
-    if (!validCode) return jsonResponse({ error: 'Código inválido ou expirado.' }, 401);
+    if (!validCode || consumeError || !consumedChallenge) return jsonResponse({ error: 'Código inválido ou expirado.' }, 401);
 
     const token = createOpaqueToken();
     const tokenHash = await hashSecret(token);

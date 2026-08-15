@@ -62,6 +62,7 @@ export type Database = {
       appointments: {
         Row: {
           amount_paid: number
+          booking_source: string
           created_at: string | null
           customer_id: string | null
           customer_name: string | null
@@ -82,6 +83,7 @@ export type Database = {
         }
         Insert: {
           amount_paid?: number
+          booking_source?: string
           created_at?: string | null
           customer_id?: string | null
           customer_name?: string | null
@@ -102,6 +104,7 @@ export type Database = {
         }
         Update: {
           amount_paid?: number
+          booking_source?: string
           created_at?: string | null
           customer_id?: string | null
           customer_name?: string | null
@@ -715,6 +718,41 @@ export type Database = {
           },
         ]
       }
+      public_booking_settings: {
+        Row: {
+          allowed_employee_ids: string[]
+          allowed_service_ids: string[]
+          created_at: string
+          is_enabled: boolean
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_employee_ids?: string[]
+          allowed_service_ids?: string[]
+          created_at?: string
+          is_enabled?: boolean
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_employee_ids?: string[]
+          allowed_service_ids?: string[]
+          created_at?: string
+          is_enabled?: boolean
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_booking_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           appointment_id: string
@@ -1035,6 +1073,17 @@ export type Database = {
         }
         Returns: string
       }
+      create_public_booking: {
+        Args: {
+          p_employee_id?: string
+          p_service_id: string
+          p_session_id: string
+          p_slug: string
+          p_source?: string
+          p_start_time: string
+        }
+        Returns: Json
+      }
       get_customer_appointments: {
         Args: { p_customer_id: string }
         Returns: {
@@ -1070,6 +1119,16 @@ export type Database = {
           hour: string
         }[]
       }
+      get_public_available_slots: {
+        Args: {
+          p_date: string
+          p_employee_id?: string
+          p_service_id: string
+          p_slug: string
+        }
+        Returns: Json
+      }
+      get_public_booking_context: { Args: { p_slug: string }; Returns: Json }
       get_top_services: {
         Args: { organization_id: string }
         Returns: {

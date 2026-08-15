@@ -91,8 +91,8 @@ async function invokePortalFunction<T>(functionName: string, body: Record<string
  *
  * @author André Narcizo
  */
-export async function requestPortalOtp(phone: string): Promise<void> {
-  await invokePortalFunction('request-portal-otp', { phone });
+export async function requestPortalOtp(phone: string, organizationSlug?: string): Promise<void> {
+  await invokePortalFunction('request-portal-otp', { organizationSlug, phone });
 }
 
 /**
@@ -100,8 +100,8 @@ export async function requestPortalOtp(phone: string): Promise<void> {
  *
  * @author André Narcizo
  */
-export async function verifyPortalOtp(phone: string, code: string): Promise<void> {
-  const response = await invokePortalFunction<{ token?: unknown }>('verify-portal-otp', { code, phone });
+export async function verifyPortalOtp(phone: string, code: string, organizationSlug?: string): Promise<void> {
+  const response = await invokePortalFunction<{ token?: unknown }>('verify-portal-otp', { code, organizationSlug, phone });
   if (typeof response.token !== 'string' || !/^[a-f0-9]{64}$/i.test(response.token)) {
     throw new Error('Não foi possível concluir o acesso.');
   }
