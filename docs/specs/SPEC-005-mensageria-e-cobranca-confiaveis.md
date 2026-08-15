@@ -30,8 +30,9 @@ Operar Stripe e WhatsApp como integrações server-to-server, autenticadas, idem
 Concluídos no ambiente de teste:
 
 - outbox `message_deliveries` com RLS, unicidade por agendamento/template, claim concorrente, retry com backoff e estados rastreáveis;
-- recuperação de locks `processing` abandonados, com TTL configurável por `INTEGRATIONS_CLAIM_TTL_SECONDS` (60–3600 segundos);
+- recuperação de locks `processing` abandonados por lease/token, com TTL configurável por `INTEGRATIONS_CLAIM_TTL_SECONDS` (450–3600 segundos);
 - worker de lembretes restrito a `whatsapp` + `appointment_reminder`, que descarta agendamentos não confirmados sem chamar o provedor;
+- lease é renovado e validado antes do envio; a chamada ao WhatsApp expira em até 30 segundos, abaixo do TTL;
 - confirmação de lembrete por RPC transacional: entrega `sent` e `appointments.reminder_sent_at` são persistidos juntas;
 - ledger Stripe com claim atômico antes de atualizar assinatura, falha recuperável quando nenhuma organização é alterada e reconhecimento seguro de redelivery;
 - boundary interno de WhatsApp com segredo compartilhado, contrato de templates limitado e logs sem dados pessoais;

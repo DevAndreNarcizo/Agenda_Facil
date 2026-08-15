@@ -9,12 +9,18 @@ import {
   requirePost,
 } from "../_shared/integrations.ts";
 
-type Delivery = { appointment_id: string; id: string; organization_id: string };
+type Delivery = {
+  appointment_id: string;
+  id: string;
+  lock_token: string;
+  organization_id: string;
+};
 type DeliveryFinalStatus = "failed" | "skipped" | "unknown";
 type AppointmentContext = {
   customer_name: string | null;
   customer_phone: string | null;
   id: string;
+  organization_id: string;
   start_time: string;
   status: string;
   customer:
@@ -50,13 +56,31 @@ function getBatchSize(): number {
  *
  * @author André Narcizo
  */
-function getClaimStaleAfter(): string {
+function getLockTtlSeconds(): number {
   const seconds = Number(
     Deno.env.get("INTEGRATIONS_CLAIM_TTL_SECONDS") ?? "600",
   );
-  return Number.isInteger(seconds) && seconds >= 60 && seconds <= 3600
-    ? `${seconds} seconds`
-    : "10 minutes";
+  return Number.isInteger(seconds) && seconds >= 450 && seconds <= 3600
+    ? seconds
+    : 600;
+}
+
+/**
+ * Converte o TTL de lock em intervalo aceito pela RPC.
+ *
+ * @author André Narcizo
+ */
+function getLockTtlInterval(seconds: number): string {
+  return `${seconds} seconds`;
+}
+
+/**
+ * Mantém a chamada externa curta em relação ao lease da entrega.
+ *
+ * @author André Narcizo
+ */
+function getWhatsAppTimeoutMs(lockTtlSeconds: number): number {
+  return Math.min(30_000, Math.max(1_000, (lockTtlSeconds - 10) * 1_000));
 }
 
 /**
@@ -67,20 +91,21 @@ function getClaimStaleAfter(): string {
 async function markDelivery(
   supabase: SupabaseClient,
   deliveryId: string,
+  lockToken: string,
   status: DeliveryFinalStatus,
   errorCode: string,
 ): Promise<boolean> {
-  const { error } = await supabase.rpc("mark_message_delivery", {
+  const { data, error } = await supabase.rpc("mark_reminder_delivery", {
     p_delivery_id: deliveryId,
+    p_lock_token: lockToken,
     p_status: status,
     p_error_code: errorCode,
-    p_provider_message_id: null,
   });
 
-  if (!error) return true;
+  if (!error && data === true) return true;
 
   logIntegrationEvent("reminders.delivery", "error", {
-    errorCode: "delivery_mark_failed",
+    errorCode: error ? "delivery_mark_failed" : "delivery_lease_lost",
   });
   return false;
 }
@@ -115,6 +140,9 @@ Deno.serve(async (request) => {
   const from = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   const to = new Date(now.getTime() + 25 * 60 * 60 * 1000);
   const batchSize = getBatchSize();
+  const lockTtlSeconds = getLockTtlSeconds();
+  const lockTtlInterval = getLockTtlInterval(lockTtlSeconds);
+  const whatsappTimeoutMs = getWhatsAppTimeoutMs(lockTtlSeconds);
   const whatsappFunctionUrl = Deno.env.get("WHATSAPP_FUNCTION_URL") ??
     `${supabaseUrl}/functions/v1/send-whatsapp`;
 
@@ -124,7 +152,8 @@ Deno.serve(async (request) => {
     .eq("status", "confirmed")
     .is("reminder_sent_at", null)
     .gte("start_time", from.toISOString())
-    .lt("start_time", to.toISOString());
+    .lt("start_time", to.toISOString())
+    .limit(batchSize);
 
   if (candidatesError) {
     logIntegrationEvent("reminders.run", "error", {
@@ -167,7 +196,7 @@ Deno.serve(async (request) => {
     "claim_reminder_deliveries",
     {
       p_limit: batchSize,
-      p_stale_after: getClaimStaleAfter(),
+      p_lock_ttl: lockTtlInterval,
     },
   );
   if (claimError) {
@@ -180,27 +209,51 @@ Deno.serve(async (request) => {
     );
   }
 
+  const claimedDeliveries = (deliveries ?? []) as Delivery[];
+  const appointmentIds = [
+    ...new Set(claimedDeliveries.map((delivery) => delivery.appointment_id)),
+  ];
+  const { data: appointments, error: appointmentsError } =
+    appointmentIds.length === 0
+      ? { data: [] as AppointmentContext[], error: null }
+      : await supabase
+        .from("appointments")
+        .select(
+          "customer_name, customer_phone, id, organization_id, start_time, status, customer:customers(name, phone), organization:organizations(name)",
+        )
+        .in("id", appointmentIds);
+
+  if (appointmentsError) {
+    logIntegrationEvent("reminders.run", "error", {
+      errorCode: "appointment_context_lookup_failed",
+    });
+    return jsonResponse(
+      { error: "Não foi possível processar lembretes." },
+      500,
+    );
+  }
+
+  const appointmentsById = new Map(
+    (appointments ?? []).map((appointment) => [
+      appointment.id,
+      appointment as unknown as AppointmentContext,
+    ]),
+  );
   let sent = 0;
   let failed = 0;
   let skipped = 0;
   let unknown = 0;
   let persistenceFailures = 0;
 
-  for (const delivery of (deliveries ?? []) as Delivery[]) {
-    const { data: appointment, error: appointmentError } = await supabase
-      .from("appointments")
-      .select(
-        "customer_name, customer_phone, id, start_time, status, customer:customers(name, phone), organization:organizations(name)",
-      )
-      .eq("id", delivery.appointment_id)
-      .eq("organization_id", delivery.organization_id)
-      .maybeSingle();
+  for (const delivery of claimedDeliveries) {
+    const context = appointmentsById.get(delivery.appointment_id);
 
-    if (appointmentError || !appointment) {
+    if (!context || context.organization_id !== delivery.organization_id) {
       if (
         await markDelivery(
           supabase,
           delivery.id,
+          delivery.lock_token,
           "failed",
           "appointment_not_found",
         )
@@ -212,12 +265,12 @@ Deno.serve(async (request) => {
       continue;
     }
 
-    const context = appointment as unknown as AppointmentContext;
     if (context.status !== "confirmed") {
       if (
         await markDelivery(
           supabase,
           delivery.id,
+          delivery.lock_token,
           "skipped",
           "appointment_not_confirmed",
         )
@@ -239,6 +292,7 @@ Deno.serve(async (request) => {
         await markDelivery(
           supabase,
           delivery.id,
+          delivery.lock_token,
           "failed",
           "missing_recipient_context",
         )
@@ -259,11 +313,30 @@ Deno.serve(async (request) => {
       },
     );
 
+    const { data: leaseRenewed, error: leaseError } = await supabase.rpc(
+      "renew_reminder_delivery_lease",
+      {
+        p_delivery_id: delivery.id,
+        p_lock_token: delivery.lock_token,
+        p_lock_ttl: lockTtlInterval,
+      },
+    );
+    if (leaseError || leaseRenewed !== true) {
+      logIntegrationEvent("reminders.delivery", "error", {
+        errorCode: leaseError
+          ? "delivery_lease_renew_failed"
+          : "delivery_lease_lost",
+      });
+      persistenceFailures += 1;
+      continue;
+    }
+
     try {
       const response = await fetch(
         whatsappFunctionUrl,
         {
           method: "POST",
+          signal: AbortSignal.timeout(whatsappTimeoutMs),
           headers: {
             "Content-Type": "application/json",
             "x-internal-secret": internalSecret,
@@ -287,6 +360,7 @@ Deno.serve(async (request) => {
             p_delivery_id: delivery.id,
             p_appointment_id: context.id,
             p_organization_id: delivery.organization_id,
+            p_lock_token: delivery.lock_token,
             p_provider_message_id: body?.providerMessageId ?? null,
           },
         );
@@ -296,6 +370,7 @@ Deno.serve(async (request) => {
             const marked = await markDelivery(
               supabase,
               delivery.id,
+              delivery.lock_token,
               "unknown",
               "delivery_confirmation_failed",
             );
@@ -316,6 +391,7 @@ Deno.serve(async (request) => {
         await markDelivery(
           supabase,
           delivery.id,
+          delivery.lock_token,
           status,
           `whatsapp_${response.status}`,
         )
@@ -333,6 +409,7 @@ Deno.serve(async (request) => {
         await markDelivery(
           supabase,
           delivery.id,
+          delivery.lock_token,
           "unknown",
           "whatsapp_unreachable",
         )

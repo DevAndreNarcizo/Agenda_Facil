@@ -261,6 +261,8 @@ export type Database = {
           created_at: string
           id: string
           last_error_code: string | null
+          lock_expires_at: string | null
+          lock_token: string | null
           locked_at: string | null
           max_attempts: number
           next_attempt_at: string
@@ -279,6 +281,8 @@ export type Database = {
           created_at?: string
           id?: string
           last_error_code?: string | null
+          lock_expires_at?: string | null
+          lock_token?: string | null
           locked_at?: string | null
           max_attempts?: number
           next_attempt_at?: string
@@ -297,6 +301,8 @@ export type Database = {
           created_at?: string
           id?: string
           last_error_code?: string | null
+          lock_expires_at?: string | null
+          lock_token?: string | null
           locked_at?: string | null
           max_attempts?: number
           next_attempt_at?: string
@@ -953,6 +959,8 @@ export type Database = {
           created_at: string
           id: string
           last_error_code: string | null
+          lock_expires_at: string | null
+          lock_token: string | null
           locked_at: string | null
           max_attempts: number
           next_attempt_at: string
@@ -972,7 +980,7 @@ export type Database = {
         }
       }
       claim_reminder_deliveries: {
-        Args: { p_limit?: number; p_stale_after?: string }
+        Args: { p_limit?: number; p_lock_ttl?: string }
         Returns: {
           appointment_id: string
           attempts: number
@@ -980,6 +988,8 @@ export type Database = {
           created_at: string
           id: string
           last_error_code: string | null
+          lock_expires_at: string | null
+          lock_token: string | null
           locked_at: string | null
           max_attempts: number
           next_attempt_at: string
@@ -1019,6 +1029,7 @@ export type Database = {
         Args: {
           p_appointment_id: string
           p_delivery_id: string
+          p_lock_token: string
           p_organization_id: string
           p_provider_message_id?: string
         }
@@ -1072,14 +1083,14 @@ export type Database = {
         Args: { p_actor_id: string; p_payload: Json }
         Returns: Json
       }
-      mark_message_delivery: {
+      mark_reminder_delivery: {
         Args: {
           p_delivery_id: string
           p_error_code?: string
-          p_provider_message_id?: string
+          p_lock_token: string
           p_status: string
         }
-        Returns: undefined
+        Returns: boolean
       }
       mark_webhook_event: {
         Args: {
@@ -1089,6 +1100,14 @@ export type Database = {
           p_status: string
         }
         Returns: undefined
+      }
+      renew_reminder_delivery_lease: {
+        Args: {
+          p_delivery_id: string
+          p_lock_token: string
+          p_lock_ttl?: string
+        }
+        Returns: boolean
       }
       request_otp: { Args: { phone_number: string }; Returns: Json }
       request_password_reset: { Args: { user_email: string }; Returns: Json }
