@@ -1,25 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { createPortalBooking, getPortalServices, type PortalService } from "@/lib/portal-api";
 import { toast } from "sonner";
-
-interface Service {
-  id: string;
-  name: string;
-  price: number;
-  duration_minutes: number;
-}
 
 export default function PortalBooking() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [services, setServices] = useState<Service[]>([]);
+  const [services, setServices] = useState<PortalService[]>([]);
   
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedService, setSelectedService] = useState<PortalService | null>(null);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
 
@@ -27,73 +20,47 @@ export default function PortalBooking() {
     fetchServices();
   }, []);
 
-  const fetchServices = async () => {
-    const orgId = localStorage.getItem("portal_organization_id");
-    if (!orgId) return;
-
-    const { data } = await supabase
-      .from("services")
-      .select("*")
-      .eq("organization_id", orgId)
-      .order("name");
-    
-    setServices(data || []);
+  /**
+   * Lista serviços pelo gateway validado da sessão de portal.
+   *
+   * @author André Narcizo
+   */
+  const fetchServices = async (): Promise<void> => {
+    try {
+      setServices(await getPortalServices());
+    } catch (error: unknown) {
+      console.error("Error fetching services:", error);
+      toast.error("Não foi possível carregar os serviços.");
+    }
   };
 
-  const handleServiceSelect = (service: Service) => {
+  const handleServiceSelect = (service: PortalService): void => {
     setSelectedService(service);
     setStep(2);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleBooking = async () => {
-    const customerId = localStorage.getItem("portal_customer_id");
-    const customerName = localStorage.getItem("portal_customer_name");
-    const orgId = localStorage.getItem("portal_organization_id");
-
-    if (!customerId || !customerName || !orgId || !selectedService || !date || !time) return;
+  /**
+   * Solicita a reserva no servidor, que valida sessão, serviço e conflito de horário.
+   *
+   * @author André Narcizo
+   */
+  const handleBooking = async (): Promise<void> => {
+    if (!selectedService || !date || !time) return;
 
     setLoading(true);
     try {
-      const startDateTime = new Date(`${date}T${time}`);
-      const duration = selectedService.duration_minutes || 30;
-      const endDateTime = new Date(startDateTime.getTime() + duration * 60000);
-
-      // Check availability using RPC
-      const { data: isAvailable, error: availabilityError } = await supabase
-        .rpc("check_availability", {
-          p_start_time: startDateTime.toISOString(),
-          p_end_time: endDateTime.toISOString(),
-          p_organization_id: orgId
-        });
-
-      if (availabilityError) throw availabilityError;
-
-      if (!isAvailable) {
-        toast.error("Este horário não está disponível. Por favor, escolha outro.");
-        setLoading(false);
-        return;
-      }
-
-      const { error } = await supabase
-        .from("appointments")
-        .insert({
-          organization_id: orgId,
-          customer_id: customerId,
-          customer_name: customerName,
-          service_id: selectedService.id,
-          start_time: startDateTime.toISOString(),
-          end_time: endDateTime.toISOString(),
-          status: 'pending' // Default to pending for self-scheduling
-        });
-
-      if (error) throw error;
-
-      setStep(3); // Success step
+      await createPortalBooking(selectedService.id, date, time);
+      setStep(3);
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (error) {
-      console.error("Error booking:", error);
-      toast.error("Erro ao realizar agendamento. Tente novamente.");
+    } catch (error: unknown) {
+      const status = error && typeof error === 'object' && 'status' in error ? (error as { status?: unknown }).status : undefined;
+      if (status === 409) {
+        toast.error("Este horário não está disponível. Por favor, escolha outro.");
+      } else {
+        console.error("Error booking:", error);
+        toast.error("Erro ao realizar agendamento. Tente novamente.");
+      }
     } finally {
       setLoading(false);
     }

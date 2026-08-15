@@ -788,7 +788,7 @@ Depois da Fase 0 e da Fase 1, o projeto estará em condição muito melhor para 
 
 ### Riscos que continuam bloqueadores de produção
 
-1. **Portal do Cliente (AG-003/AG-005/AG-021)**: ainda usa `localStorage` como sessão e RPCs SQL legados. A interface não vaza o OTP, mas a sessão não é uma credencial confiável. Não publicar este fluxo antes da SPEC-002.
+1. **Portal do Cliente (AG-003/AG-005/AG-021)**: sessão opaca, OTP com hash e gateway de reservas foram aplicados no ambiente de teste. A liberação continua bloqueada até configurar `PORTAL_TOKEN_PEPPER`, os secrets de WhatsApp e executar o fluxo E2E com cliente real de teste.
 2. **Produção ainda não validada**: as migrations canônicas e a matriz RLS foram aprovadas apenas no projeto remoto de teste. O rollout produtivo exige backup, staging, janela de mudança e nova execução dos testes.
 3. **SQL legado**: `schema.sql`, `src/database/` e `supabase/fix_*.sql` preservam referências a `companies/company_id`; devem ser arquivados após inventário do banco e nunca executados como fonte de verdade.
 4. **WhatsApp e lembretes**: `send-whatsapp`, `send-reminders` e `whatsapp-service` ainda precisam ser substituídos pelo boundary interno da SPEC-005. Não exponha o endpoint de envio ao browser.
@@ -819,3 +819,10 @@ Foram gerados os tipos oficiais do banco em `src/lib/database.types.ts`; o Porta
 O script transacional `supabase/tests/rls-isolation.sql` foi executado com sucesso no projeto remoto de teste, sem persistir fixtures: confirmou isolamento de leitura para owner/admin/employee, bloqueou inserção entre organizações e bloqueou escalação de papel. O Security Advisor segue sem alertas. Os avisos restantes do Performance Advisor são exclusivamente de índices sem uso, esperados enquanto o banco não recebe carga real; nenhum índice deve ser removido antes de telemetria de uso.
 
 A proteção contra senhas vazadas foi verificada no painel do Supabase, mas está indisponível no plano Free. Não houve upgrade nem mudança de plano; isso requer decisão comercial específica antes de produção.
+
+
+### Progresso da SPEC-002 — 15/08/2026
+
+O Portal do Cliente não persiste mais `customer_id`, `organization_id` ou nome do cliente em `localStorage`. Ele usa apenas um token opaco de 256 bits, cuja versão em hash é armazenada com expiração de oito horas e revogação no servidor. As operações de sessão, serviços, agendamentos e reservas foram centralizadas em Edge Functions; a agenda possui também constraint de banco contra conflito de horários da mesma organização.
+
+As tabelas de OTP, rate limit e sessão possuem RLS, privilégios da Data API revogados e policies explícitas de negação. A verificação transacional para a role `authenticated` foi aprovada e o Security Advisor não reporta alertas. Ainda falta configurar o segredo `PORTAL_TOKEN_PEPPER` e o canal WhatsApp para validar o OTP de ponta a ponta; nenhum secret foi criado ou registrado.

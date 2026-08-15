@@ -1,85 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Json } from "@/lib/database.types";
+import { requestPortalOtp, verifyPortalOtp } from "@/lib/portal-api";
 import { toast } from "sonner";
-
-interface PortalCustomer {
-  id: string;
-  name: string;
-  organization_id: string;
-}
-
-interface OtpRequestResponse {
-  message?: string;
-}
-
-interface OtpVerificationResponse {
-  customer?: PortalCustomer;
-  message?: string;
-  success: boolean;
-}
-
-/**
- * Verifica se um valor JSON possui uma estrutura de objeto simples.
- *
- * @author André Narcizo
- */
-function isJsonRecord(value: Json | null): value is Record<string, Json> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/**
- * Converte com segurança a resposta não tipada do RPC de solicitação de OTP.
- *
- * @author André Narcizo
- */
-function parseOtpRequestResponse(data: Json | null): OtpRequestResponse {
-  if (!isJsonRecord(data)) {
-    return {};
-  }
-
-  return {
-    message: typeof data.message === "string" ? data.message : undefined,
-  };
-}
-
-/**
- * Converte com segurança a resposta não tipada do RPC legado de validação de OTP.
- *
- * @author André Narcizo
- */
-function parseOtpVerificationResponse(data: Json | null): OtpVerificationResponse {
-  if (!isJsonRecord(data)) {
-    return { success: false };
-  }
-
-  const customer = data.customer;
-  if (
-    isJsonRecord(customer) &&
-    typeof customer.id === "string" &&
-    typeof customer.name === "string" &&
-    typeof customer.organization_id === "string"
-  ) {
-    return {
-      customer: {
-        id: customer.id,
-        name: customer.name,
-        organization_id: customer.organization_id,
-      },
-      message: typeof data.message === "string" ? data.message : undefined,
-      success: data.success === true,
-    };
-  }
-
-  return {
-    message: typeof data.message === "string" ? data.message : undefined,
-    success: data.success === true,
-  };
-}
 
 export default function PortalLogin() {
   const [phone, setPhone] = useState("");
@@ -88,8 +13,12 @@ export default function PortalLogin() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Função para formatar telefone enquanto digita
-  const formatPhone = (value: string) => {
+  /**
+   * Formata o telefone brasileiro durante a digitação.
+   *
+   * @author André Narcizo
+   */
+  const formatPhone = (value: string): string => {
     const numbers = value.replace(/\D/g, '');
     if (numbers.length <= 2) return numbers;
     if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
@@ -106,19 +35,9 @@ export default function PortalLogin() {
     setLoading(true);
 
     try {
-      // Remove formatação para enviar apenas números
       const cleanPhone = phone.replace(/\D/g, '');
-      
-      // Chama a função RPC para gerar o código
-      const { data, error } = await supabase.rpc('request_otp', {
-        phone_number: cleanPhone
-      });
-
-      if (error) throw error;
-
-      const response = parseOtpRequestResponse(data);
-      toast.success(response.message || 'Se o número estiver cadastrado, o código será enviado pelo WhatsApp.');
-
+      await requestPortalOtp(cleanPhone);
+      toast.success('Se o número estiver cadastrado, o código será enviado pelo WhatsApp.');
       setStep('otp');
     } catch (err: unknown) {
       const error = err as Error;
@@ -135,29 +54,7 @@ export default function PortalLogin() {
 
     try {
       const cleanPhone = phone.replace(/\D/g, '');
-      
-      const { data, error } = await supabase.rpc('verify_otp', {
-        phone_number: cleanPhone,
-        input_code: code
-      });
-
-      if (error) throw error;
-
-      const response = parseOtpVerificationResponse(data);
-      if (!response.success) {
-        toast.error(response.message || "Código inválido");
-        return;
-      }
-
-      // Salva dados do cliente no localStorage
-      const customer = response.customer;
-      if (!customer) {
-        throw new Error('Não foi possível identificar o cliente.');
-      }
-      localStorage.setItem("portal_customer_id", customer.id);
-      localStorage.setItem("portal_customer_name", customer.name);
-      localStorage.setItem("portal_organization_id", customer.organization_id);
-      
+      await verifyPortalOtp(cleanPhone, code);
       toast.success("Login realizado com sucesso!");
       navigate("/portal");
 

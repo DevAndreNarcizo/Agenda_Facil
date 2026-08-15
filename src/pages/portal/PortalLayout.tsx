@@ -1,24 +1,49 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { getPortalSession, logoutPortalSession } from "@/lib/portal-api";
 
 export default function PortalLayout() {
   const navigate = useNavigate();
-  const customerName = localStorage.getItem("portal_customer_name");
+  const [customerName, setCustomerName] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const customerId = localStorage.getItem("portal_customer_id");
-    if (!customerId) {
-      navigate("/portal/login");
-    }
+    let isMounted = true;
+
+    /**
+     * Valida a sessão no servidor antes de renderizar qualquer conteúdo do portal.
+     *
+     * @author André Narcizo
+     */
+    const loadSession = async (): Promise<void> => {
+      try {
+        const customer = await getPortalSession();
+        if (isMounted) setCustomerName(customer.name);
+      } catch {
+        navigate("/portal/login", { replace: true });
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    void loadSession();
+    return () => {
+      isMounted = false;
+    };
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("portal_customer_id");
-    localStorage.removeItem("portal_customer_name");
-    localStorage.removeItem("portal_organization_id");
-    navigate("/portal/login");
+  /**
+   * Revoga a sessão no servidor antes de retornar ao login.
+   *
+   * @author André Narcizo
+   */
+  const handleLogout = async (): Promise<void> => {
+    await logoutPortalSession();
+    navigate("/portal/login", { replace: true });
   };
+
+  if (isLoading) return null;
 
   return (
     <div className="min-h-screen bg-stitch-surface text-stitch-on-surface font-body flex flex-col relative overflow-x-hidden">

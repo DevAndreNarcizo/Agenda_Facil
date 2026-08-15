@@ -1,64 +1,29 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
-
-interface Appointment {
-  id: string;
-  start_time: string;
-  end_time: string;
-  status: string;
-  service: {
-    name: string;
-    price: number;
-    duration_minutes: number;
-  };
-}
+import { getPortalAppointments, type PortalAppointment } from "@/lib/portal-api";
 
 export default function PortalHome() {
   const navigate = useNavigate();
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appointments, setAppointments] = useState<PortalAppointment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchAppointments();
   }, []);
 
-  const fetchAppointments = async () => {
-    const customerId = localStorage.getItem("portal_customer_id");
-    if (!customerId) return;
-
+  /**
+   * Carrega os agendamentos pelo gateway autenticado do portal.
+   *
+   * @author André Narcizo
+   */
+  const fetchAppointments = async (): Promise<void> => {
     try {
-      const { data, error } = await supabase
-        .rpc("get_customer_appointments", { p_customer_id: customerId });
-
-      if (error) throw error;
-      
-      const formattedData = (data || []).map((apt: { 
-        id: string; 
-        start_time: string; 
-        end_time: string; 
-        status: string; 
-        service_name: string; 
-        service_price: number; 
-        service_duration: number 
-      }) => ({
-        id: apt.id,
-        start_time: apt.start_time,
-        end_time: apt.end_time,
-        status: apt.status,
-        service: {
-          name: apt.service_name,
-          price: apt.service_price,
-          duration_minutes: apt.service_duration
-        }
-      }));
-
-      setAppointments(formattedData);
-    } catch (error) {
+      setAppointments(await getPortalAppointments());
+    } catch (error: unknown) {
       console.error("Error fetching appointments:", error);
     } finally {
       setLoading(false);
@@ -134,7 +99,7 @@ export default function PortalHome() {
                     <div className="space-y-1">
                       <span className="text-[10px] font-black uppercase tracking-widest text-stitch-primary opacity-60">Serviço</span>
                       <h3 className="font-headline font-black text-xl text-stitch-on-surface leading-tight">
-                        {apt.service?.name}
+                        {apt.services?.name}
                       </h3>
                     </div>
                     <Badge className="rounded-xl px-4 py-1 bg-stitch-primary/10 text-stitch-primary border-none font-bold text-[10px] uppercase tracking-widest">
@@ -181,7 +146,7 @@ export default function PortalHome() {
             pastAppointments.slice(0, 5).map((apt) => (
               <div key={apt.id} className="flex items-center justify-between p-6 hover:bg-white transition-colors first:rounded-t-[2.5rem] last:rounded-b-[2.5rem]">
                 <div className="space-y-1">
-                  <p className="font-black text-stitch-on-surface text-sm tracking-tight">{apt.service?.name}</p>
+                  <p className="font-black text-stitch-on-surface text-sm tracking-tight">{apt.services?.name}</p>
                   <p className="text-[10px] font-bold text-stitch-on-surface-variant opacity-50 uppercase tracking-widest">
                     {format(new Date(apt.start_time), "dd/MM/yy 'às' HH:mm")}
                   </p>

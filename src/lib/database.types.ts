@@ -166,6 +166,7 @@ export type Database = {
           name: string;
           organization_id: string;
           phone: string;
+          phone_normalized: string | null;
           updated_at: string;
         };
         Insert: {
@@ -176,6 +177,7 @@ export type Database = {
           name: string;
           organization_id: string;
           phone: string;
+          phone_normalized?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -186,6 +188,7 @@ export type Database = {
           name?: string;
           organization_id?: string;
           phone?: string;
+          phone_normalized?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -285,6 +288,129 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [];
+      };
+      portal_otp_challenges: {
+        Row: {
+          attempts: number;
+          code_hash: string;
+          consumed_at: string | null;
+          created_at: string;
+          customer_id: string;
+          expires_at: string;
+          id: string;
+          ip_hash: string;
+          organization_id: string;
+          phone_hash: string;
+        };
+        Insert: {
+          attempts?: number;
+          code_hash: string;
+          consumed_at?: string | null;
+          created_at?: string;
+          customer_id: string;
+          expires_at: string;
+          id?: string;
+          ip_hash: string;
+          organization_id: string;
+          phone_hash: string;
+        };
+        Update: {
+          attempts?: number;
+          code_hash?: string;
+          consumed_at?: string | null;
+          created_at?: string;
+          customer_id?: string;
+          expires_at?: string;
+          id?: string;
+          ip_hash?: string;
+          organization_id?: string;
+          phone_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "portal_otp_challenges_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "portal_otp_challenges_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      portal_otp_requests: {
+        Row: {
+          created_at: string;
+          id: string;
+          ip_hash: string;
+          phone_hash: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          ip_hash: string;
+          phone_hash: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          ip_hash?: string;
+          phone_hash?: string;
+        };
+        Relationships: [];
+      };
+      portal_sessions: {
+        Row: {
+          created_at: string;
+          customer_id: string;
+          expires_at: string;
+          id: string;
+          last_seen_at: string;
+          organization_id: string;
+          revoked_at: string | null;
+          token_hash: string;
+        };
+        Insert: {
+          created_at?: string;
+          customer_id: string;
+          expires_at: string;
+          id?: string;
+          last_seen_at?: string;
+          organization_id: string;
+          revoked_at?: string | null;
+          token_hash: string;
+        };
+        Update: {
+          created_at?: string;
+          customer_id?: string;
+          expires_at?: string;
+          id?: string;
+          last_seen_at?: string;
+          organization_id?: string;
+          revoked_at?: string | null;
+          token_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "portal_sessions_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "portal_sessions_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       profiles: {
         Row: {
