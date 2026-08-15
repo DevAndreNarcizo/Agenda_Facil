@@ -14,6 +14,51 @@ export type Database = {
   };
   public: {
     Tables: {
+      appointment_blocks: {
+        Row: {
+          created_at: string;
+          employee_id: string | null;
+          end_time: string;
+          id: string;
+          organization_id: string;
+          reason: string | null;
+          start_time: string;
+        };
+        Insert: {
+          created_at?: string;
+          employee_id?: string | null;
+          end_time: string;
+          id?: string;
+          organization_id: string;
+          reason?: string | null;
+          start_time: string;
+        };
+        Update: {
+          created_at?: string;
+          employee_id?: string | null;
+          end_time?: string;
+          id?: string;
+          organization_id?: string;
+          reason?: string | null;
+          start_time?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "appointment_blocks_employee_id_fkey";
+            columns: ["employee_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "appointment_blocks_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       appointments: {
         Row: {
           amount_paid: number;
@@ -864,6 +909,10 @@ export type Database = {
         }[];
       };
       get_user_organization_id: { Args: never; Returns: string };
+      manage_appointment_command: {
+        Args: { p_actor_id: string; p_payload: Json };
+        Returns: Json;
+      };
       request_otp: { Args: { phone_number: string }; Returns: Json };
       request_password_reset: { Args: { user_email: string }; Returns: Json };
       verify_otp: {

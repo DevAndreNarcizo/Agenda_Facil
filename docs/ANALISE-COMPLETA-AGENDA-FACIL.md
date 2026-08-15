@@ -841,3 +841,11 @@ A agenda deixou de depender de `insert`, `update` e `delete` diretos no browser.
 O calendário agora cria agendamentos pela seleção de um horário e abre detalhes para confirmar, concluir ou cancelar. Cancelados não entram no calendário ativo, no dashboard, nas métricas, na receita nem na carga diária por profissional. Datas de métricas e exibição operacional usam `America/Sao_Paulo`; dois testes Vitest cobrem o limite UTC e a exclusão de cancelados.
 
 A SPEC-004 permanece **em implementação**: reagendamento, duração derivada do serviço no servidor, expediente/pausas/bloqueios, filtros persistidos e um E2E autenticado com concorrência ainda são necessários antes de considerar a agenda pronta para produção.
+
+### Conclusão da SPEC-004 — etapa 2 — 15/08/2026
+
+A disponibilidade passou para uma RPC transacional privada chamada pela Edge Function `manage-appointment` (versão 4 no Supabase de teste). Ela usa lock por organização, calcula `end_time` a partir da duração do serviço, valida expediente em `America/Sao_Paulo`, profissional, estados e bloqueios antes de persistir. O acesso autenticado do browser às tabelas de agenda agora é somente leitura; inserções, atualizações, cancelamentos e bloqueios usam exclusivamente a Edge Function.
+
+O calendário consulta apenas o intervalo visível e pagina resultados. Filtros de data, visão, profissional, status, página e tamanho são persistidos na URL; há formulários para reagendar e criar/remover bloqueios. Foram adicionados testes Vitest dos filtros, Playwright para o ciclo autenticado de agenda e um runner de concorrência que valida simultaneamente uma resposta HTTP `200` e uma `409`.
+
+O teste SQL transacional e o Security Advisor foram aprovados no projeto remoto de teste. A execução E2E usou uma conta e uma organização temporárias, removidas após a validação; as credenciais não foram incluídas no repositório. Para repetir E2E em CI, configurar os secrets declarados em `.env.e2e.example`.

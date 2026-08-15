@@ -60,3 +60,9 @@ coverage/
 
 # Production
 build/
+
+# E2E credentials
+.env.e2e
+playwright-report/
+test-results/
+blob-report/

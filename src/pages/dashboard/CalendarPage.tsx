@@ -1,4 +1,5 @@
 import { type FormEvent, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import {
   Calendar,
@@ -12,10 +13,17 @@ import { toast } from "sonner";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import {
   type Appointment,
+  type AppointmentBlock,
   type AppointmentStatus,
   useAppointments,
 } from "@/hooks/use-appointments";
 import { useEmployees } from "@/hooks/use-employees";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  normalizeAppointmentFilters,
+  type AppointmentFilters,
+} from "@/lib/appointment-filters";
+import { supabase } from "@/lib/supabase";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,38 +36,61 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getCalendarView } from "@/lib/calendar-view";
-
-const locales = {
-  "pt-BR": ptBR,
-};
 
 const localizer = dateFnsLocalizer({
   format,
   parse,
   startOfWeek,
   getDay,
-  locales,
+  locales: { "pt-BR": ptBR },
 });
 
-interface AppointmentEvent extends CalendarEvent {
-  appointment: Appointment;
-  resource: string;
+interface ServiceOption {
+  id: string;
+  name: string;
+  duration_minutes: number;
 }
 
 interface AppointmentForm {
+  appointmentId?: string;
   customerName: string;
   customerPhone: string;
   employeeId: string;
-  durationMinutes: number;
   notes: string;
+  serviceId: string;
   startTime: Date;
 }
 
-const DEFAULT_DURATION_MINUTES = 30;
+interface BlockForm {
+  employeeId: string;
+  endTime: Date;
+  reason: string;
+  startTime: Date;
+}
+
+type AgendaEvent =
+  | (CalendarEvent & {
+      kind: "appointment";
+      appointment: Appointment;
+      resource: string | null;
+    })
+  | (CalendarEvent & {
+      kind: "block";
+      block: AppointmentBlock;
+      resource: string | null;
+    });
+
+const EMPTY_APPOINTMENT_FORM = (startTime: Date): AppointmentForm => ({
+  customerName: "",
+  customerPhone: "",
+  employeeId: "",
+  notes: "",
+  serviceId: "",
+  startTime,
+});
 
 /**
- * Formata um instante da agenda no fuso operacional padrão.
+ * Formata valores para o timezone operacional da agenda.
  *
  * @author André Narcizo
  */
@@ -74,77 +105,142 @@ function formatAgendaDate(
 }
 
 /**
- * Cria o estado inicial do formulário a partir de uma faixa do calendário.
+ * Extrai a data civil do calendário no timezone operacional.
  *
  * @author André Narcizo
  */
-function createFormFromSlot(startTime: Date, endTime?: Date): AppointmentForm {
-  const duration = endTime
-    ? Math.round((endTime.getTime() - startTime.getTime()) / 60_000)
-    : DEFAULT_DURATION_MINUTES;
+function getAgendaDateKey(date: Date): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value]),
+  );
 
-  return {
-    customerName: "",
-    customerPhone: "",
-    employeeId: "",
-    durationMinutes: duration > 0 ? duration : DEFAULT_DURATION_MINUTES,
-    notes: "",
-    startTime,
-  };
+  return `${values.year}-${values.month}-${values.day}`;
 }
 
 /**
- * Gerencia os agendamentos ativos pelo calendário, sempre usando a Edge Function autorizada.
+ * Converte a data persistida na URL em um instante seguro para navegação do calendário.
+ *
+ * @author André Narcizo
+ */
+function dateFromFilter(date: string): Date {
+  return new Date(`${date}T12:00:00.000Z`);
+}
+
+/**
+ * Gerencia agenda, filtros, reagendamentos e bloqueios pela Edge Function autorizada.
  *
  * @author André Narcizo
  */
 export default function CalendarPage() {
+  const { profile } = useAuth();
+  const { employees } = useEmployees();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filters = useMemo(
+    () => normalizeAppointmentFilters(searchParams),
+    [searchParams],
+  );
   const {
     appointments,
+    blocks,
+    totalAppointments,
     loading,
     error,
     createAppointment,
+    rescheduleAppointment,
     updateAppointmentStatus,
     cancelAppointment,
+    createAppointmentBlock,
+    deleteAppointmentBlock,
     creating,
+    rescheduling,
     updatingStatus,
     cancelling,
-  } = useAppointments();
-  const { employees } = useEmployees();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const view = getCalendarView(searchParams.get("view"));
-  const [date, setDate] = useState(new Date());
+    changingBlock,
+  } = useAppointments(filters);
   const [form, setForm] = useState<AppointmentForm | null>(null);
-  const [selectedAppointment, setSelectedAppointment] =
-    useState<Appointment | null>(null);
+  const [blockForm, setBlockForm] = useState<BlockForm | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<AgendaEvent | null>(null);
 
-  const events = useMemo<AppointmentEvent[]>(
-    () =>
-      appointments
-        .filter((appointment) => appointment.status !== "cancelled")
-        .map((appointment) => ({
-          id: appointment.id,
-          title: `${appointment.customer_name} - ${appointment.service?.name || "Serviço"}`,
-          start: new Date(appointment.start_time),
-          end: new Date(appointment.end_time),
-          appointment,
-          resource: appointment.employee_id,
-        })),
-    [appointments],
-  );
+  const servicesQuery = useQuery({
+    queryKey: ["appointment-services", profile?.organization_id],
+    queryFn: async () => {
+      if (!profile?.organization_id) return [];
+      const { data, error: queryError } = await supabase
+        .from("services")
+        .select("id, name, duration_minutes")
+        .eq("organization_id", profile.organization_id)
+        .eq("is_active", true)
+        .order("name");
+      if (queryError) throw queryError;
+      return (data ?? []) as ServiceOption[];
+    },
+    enabled: Boolean(profile?.organization_id),
+  });
+  const services = servicesQuery.data ?? [];
+
+  const events = useMemo<AgendaEvent[]>(() => {
+    const statuses =
+      filters.statuses.length > 0
+        ? filters.statuses
+        : (["pending", "confirmed", "completed"] as AppointmentStatus[]);
+
+    const appointmentEvents = appointments
+      .filter((appointment) => statuses.includes(appointment.status))
+      .map((appointment) => ({
+        id: appointment.id,
+        title: `${appointment.customer_name} - ${appointment.service?.name || "Serviço"}`,
+        start: new Date(appointment.start_time),
+        end: new Date(appointment.end_time),
+        appointment,
+        kind: "appointment" as const,
+        resource: appointment.employee_id ?? null,
+      }));
+
+    const blockEvents = blocks.map((block) => ({
+      id: `block-${block.id}`,
+      title: `Bloqueio${block.reason ? `: ${block.reason}` : ""}`,
+      start: new Date(block.start_time),
+      end: new Date(block.end_time),
+      block,
+      kind: "block" as const,
+      resource: block.employee_id,
+    }));
+
+    return [...appointmentEvents, ...blockEvents];
+  }, [appointments, blocks, filters.statuses]);
 
   /**
-   * Persiste a visualização escolhida na URL para navegação compartilhável.
+   * Atualiza filtros de URL sem perder a navegação compartilhável da agenda.
    *
    * @author André Narcizo
    */
-  const handleViewChange = (
-    nextView: import("react-big-calendar").View,
+  const updateFilters = (
+    changes: Partial<
+      Record<keyof AppointmentFilters, string | number | undefined>
+    >,
   ): void => {
     setSearchParams(
       (current) => {
         const next = new URLSearchParams(current);
-        next.set("view", nextView);
+        Object.entries(changes).forEach(([key, value]) => {
+          const param =
+            key === "employeeId"
+              ? "employee"
+              : key === "statuses"
+                ? "status"
+                : key;
+          if (value === undefined || value === "") next.delete(param);
+          else next.set(param, String(value));
+        });
+        if (!("page" in changes)) next.set("page", "1");
         return next;
       },
       { replace: true },
@@ -152,67 +248,103 @@ export default function CalendarPage() {
   };
 
   /**
-   * Abre o formulário de criação a partir de um intervalo selecionado no calendário.
+   * Abre a criação de um agendamento no intervalo selecionado.
    *
    * @author André Narcizo
    */
   const handleSelectSlot = (slot: SlotInfo): void => {
-    setForm(createFormFromSlot(slot.start, slot.end));
+    setForm(EMPTY_APPOINTMENT_FORM(slot.start));
   };
 
   /**
-   * Envia a criação com horários normalizados em UTC para a Edge Function.
+   * Cria ou reagenda usando duração derivada do serviço no servidor.
    *
    * @author André Narcizo
    */
-  const handleCreateAppointment = async (
+  const handleSaveAppointment = async (
     event: FormEvent<HTMLFormElement>,
   ): Promise<void> => {
     event.preventDefault();
     if (!form) return;
 
-    const endTime = new Date(form.startTime);
-    endTime.setMinutes(endTime.getMinutes() + form.durationMinutes);
-
     try {
-      await createAppointment({
-        customerName: form.customerName,
-        customerPhone: form.customerPhone || null,
-        employeeId: form.employeeId || null,
-        startTime: form.startTime.toISOString(),
-        endTime: endTime.toISOString(),
-        notes: form.notes || null,
-      });
-      toast.success("Agendamento criado com sucesso.");
+      if (form.appointmentId) {
+        await rescheduleAppointment({
+          appointmentId: form.appointmentId,
+          employeeId: form.employeeId || null,
+          serviceId: form.serviceId,
+          startTime: form.startTime.toISOString(),
+        });
+        toast.success("Agendamento reagendado.");
+      } else {
+        await createAppointment({
+          customerName: form.customerName,
+          customerPhone: form.customerPhone || null,
+          employeeId: form.employeeId || null,
+          notes: form.notes || null,
+          serviceId: form.serviceId,
+          startTime: form.startTime.toISOString(),
+        });
+        toast.success("Agendamento criado.");
+      }
       setForm(null);
+      setSelectedEvent(null);
     } catch (cause) {
       toast.error(
         cause instanceof Error
           ? cause.message
-          : "Não foi possível criar o agendamento.",
+          : "Não foi possível salvar o agendamento.",
       );
     }
   };
 
   /**
-   * Executa uma transição autorizada e fecha o detalhe somente após sucesso.
+   * Cria um bloqueio operacional sem gravar a tabela diretamente no browser.
+   *
+   * @author André Narcizo
+   */
+  const handleCreateBlock = async (
+    event: FormEvent<HTMLFormElement>,
+  ): Promise<void> => {
+    event.preventDefault();
+    if (!blockForm) return;
+
+    try {
+      await createAppointmentBlock({
+        employeeId: blockForm.employeeId || null,
+        startTime: blockForm.startTime.toISOString(),
+        endTime: blockForm.endTime.toISOString(),
+        reason: blockForm.reason || null,
+      });
+      toast.success("Bloqueio criado.");
+      setBlockForm(null);
+    } catch (cause) {
+      toast.error(
+        cause instanceof Error
+          ? cause.message
+          : "Não foi possível criar o bloqueio.",
+      );
+    }
+  };
+
+  /**
+   * Executa uma transição autorizada de status.
    *
    * @author André Narcizo
    */
   const handleStatusChange = async (
+    appointment: Appointment,
     status: AppointmentStatus,
   ): Promise<void> => {
-    if (!selectedAppointment) return;
-
     try {
-      if (status === "cancelled") {
-        await cancelAppointment(selectedAppointment.id);
-        toast.success("Agendamento cancelado.");
-      } else {
-        await updateAppointmentStatus(selectedAppointment.id, status);
-        toast.success("Status do agendamento atualizado.");
-      }
-      setSelectedAppointment(null);
+      if (status === "cancelled") await cancelAppointment(appointment.id);
+      else await updateAppointmentStatus(appointment.id, status);
+      toast.success(
+        status === "cancelled"
+          ? "Agendamento cancelado."
+          : "Status atualizado.",
+      );
+      setSelectedEvent(null);
     } catch (cause) {
       toast.error(
         cause instanceof Error
@@ -223,33 +355,54 @@ export default function CalendarPage() {
   };
 
   /**
-   * Define o estilo visual do evento conforme seu profissional e status.
+   * Remove bloqueio selecionado pelo comando autorizado do servidor.
    *
    * @author André Narcizo
    */
-  const eventStyleGetter = (event: AppointmentEvent) => {
-    const employee = employees.find((item) => item.id === event.resource);
-    const backgroundColor =
-      event.appointment.status === "confirmed"
-        ? "#5343d4"
-        : employee?.role === "admin"
-          ? "#5343d4"
-          : "#00616f";
-
-    return {
-      style: {
-        backgroundColor,
-        borderRadius: "8px",
-        opacity: 0.9,
-        color: "white",
-        border: "none",
-        display: "block",
-        fontSize: "12px",
-        fontWeight: "bold",
-        padding: "4px",
-      },
-    };
+  const handleDeleteBlock = async (block: AppointmentBlock): Promise<void> => {
+    try {
+      await deleteAppointmentBlock(block.id);
+      toast.success("Bloqueio removido.");
+      setSelectedEvent(null);
+    } catch (cause) {
+      toast.error(
+        cause instanceof Error
+          ? cause.message
+          : "Não foi possível remover o bloqueio.",
+      );
+    }
   };
+
+  /**
+   * Diferencia visualmente bloqueios, pendências e confirmações.
+   *
+   * @author André Narcizo
+   */
+  const eventStyleGetter = (event: AgendaEvent) => ({
+    style: {
+      backgroundColor:
+        event.kind === "block"
+          ? "#7c2d12"
+          : event.appointment.status === "confirmed"
+            ? "#5343d4"
+            : event.appointment.status === "completed"
+              ? "#047857"
+              : "#00616f",
+      border: "none",
+      borderRadius: "8px",
+      color: "white",
+      fontSize: "12px",
+      fontWeight: "bold",
+      opacity: 0.9,
+      padding: "4px",
+    },
+  });
+
+  const currentDate = dateFromFilter(filters.date);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(totalAppointments / filters.pageSize),
+  );
 
   return (
     <div className="space-y-8 p-8 max-w-7xl mx-auto animate-in fade-in duration-700">
@@ -262,25 +415,85 @@ export default function CalendarPage() {
             Calendário Mestre
           </h1>
         </div>
-        <div className="flex items-center gap-3 bg-stitch-surface-container-low/30 p-2 rounded-2xl border border-white/5">
+        <div className="flex flex-wrap items-center gap-3">
           <Badge
             variant="outline"
             className="border-stitch-primary text-stitch-primary px-3 py-1 font-black"
           >
             PRO
           </Badge>
-          <p className="text-sm font-bold text-stitch-on-surface-variant opacity-60">
-            Visão Geral da Equipe
-          </p>
           <Button
             type="button"
-            onClick={() => setForm(createFormFromSlot(date))}
-            aria-label="Criar novo agendamento"
+            onClick={() => setForm(EMPTY_APPOINTMENT_FORM(currentDate))}
           >
             Novo agendamento
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              setBlockForm({
+                employeeId: filters.employeeId ?? "",
+                startTime: currentDate,
+                endTime: new Date(currentDate.getTime() + 60 * 60 * 1000),
+                reason: "",
+              })
+            }
+          >
+            Novo bloqueio
+          </Button>
         </div>
       </div>
+
+      <section className="grid gap-3 rounded-2xl bg-stitch-surface-container-low p-4 md:grid-cols-3">
+        <label className="space-y-1 text-sm font-semibold">
+          Profissional
+          <select
+            className="h-10 w-full rounded-lg bg-stitch-surface-container px-3"
+            value={filters.employeeId ?? ""}
+            onChange={(event) =>
+              updateFilters({ employeeId: event.target.value || undefined })
+            }
+          >
+            <option value="">Toda a equipe</option>
+            {employees.map((employee) => (
+              <option key={employee.id} value={employee.id}>
+                {employee.full_name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="space-y-1 text-sm font-semibold">
+          Status
+          <select
+            className="h-10 w-full rounded-lg bg-stitch-surface-container px-3"
+            value={filters.statuses.join(",")}
+            onChange={(event) =>
+              updateFilters({ statuses: event.target.value || undefined })
+            }
+          >
+            <option value="">Ativos (padrão)</option>
+            <option value="pending">Pendente</option>
+            <option value="confirmed">Confirmado</option>
+            <option value="completed">Concluído</option>
+            <option value="cancelled">Cancelado</option>
+          </select>
+        </label>
+        <label className="space-y-1 text-sm font-semibold">
+          Itens por página
+          <select
+            className="h-10 w-full rounded-lg bg-stitch-surface-container px-3"
+            value={filters.pageSize}
+            onChange={(event) =>
+              updateFilters({ pageSize: Number(event.target.value) })
+            }
+          >
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+        </label>
+      </section>
 
       {error && (
         <p
@@ -292,20 +505,6 @@ export default function CalendarPage() {
       )}
 
       <Card className="rounded-[2.5rem] border-none shadow-2xl overflow-hidden bg-stitch-surface-container-low/30 backdrop-blur-xl p-6 border border-white/5 min-h-[700px]">
-        <style>{`
-          .rbc-calendar { color: #e2e2e2 !important; font-family: inherit !important; }
-          .rbc-header { padding: 12px !important; font-weight: 900 !important; text-transform: uppercase !important; font-size: 11px !important; letter-spacing: 0.1em !important; color: #8c8c8c !important; border-bottom: 1px solid rgba(255,255,255,0.05) !important; }
-          .rbc-today { background-color: rgba(83, 67, 212, 0.05) !important; }
-          .rbc-off-range-bg { background-color: rgba(0,0,0,0.1) !important; }
-          .rbc-time-view, .rbc-month-view { border: 1px solid rgba(255,255,255,0.05) !important; border-radius: 20px !important; }
-          .rbc-time-header-content { border-left: 1px solid rgba(255,255,255,0.05) !important; }
-          .rbc-timeslot-group { border-bottom: 1px solid rgba(255,255,255,0.03) !important; min-height: 60px !important; }
-          .rbc-day-slot .rbc-time-slot { border-top: 1px solid rgba(255,255,255,0.02) !important; }
-          .rbc-toolbar button { color: #fff !important; border: 1px solid rgba(255,255,255,0.1) !important; background: rgba(255,255,255,0.05) !important; border-radius: 8px !important; margin: 0 2px !important; padding: 8px 16px !important; font-weight: 700 !important; text-transform: none !important; transition: all 0.2s !important; }
-          .rbc-toolbar button:hover { background: rgba(83, 67, 212, 0.2) !important; }
-          .rbc-toolbar button.rbc-active { background: #5343d4 !important; box-shadow: 0 4px 12px rgba(83, 67, 212, 0.3) !important; }
-          .rbc-event { box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important; }
-        `}</style>
         <Calendar
           localizer={localizer}
           events={events}
@@ -326,20 +525,45 @@ export default function CalendarPage() {
             event: "Evento",
             noEventsInRange: loading
               ? "Carregando agenda..."
-              : "Sem agendamentos ativos nesta data.",
+              : "Sem eventos neste período.",
           }}
-          view={view}
-          onView={handleViewChange}
-          date={date}
-          onNavigate={setDate}
+          view={filters.view}
+          onView={(view) => updateFilters({ view })}
+          date={currentDate}
+          onNavigate={(nextDate) =>
+            updateFilters({ date: getAgendaDateKey(nextDate) })
+          }
           eventPropGetter={eventStyleGetter}
           selectable
           onSelectSlot={handleSelectSlot}
-          onSelectEvent={(event) =>
-            setSelectedAppointment((event as AppointmentEvent).appointment)
-          }
+          onSelectEvent={(event) => setSelectedEvent(event as AgendaEvent)}
         />
       </Card>
+
+      <nav
+        className="flex items-center justify-end gap-3"
+        aria-label="Paginação da agenda"
+      >
+        <Button
+          type="button"
+          variant="outline"
+          disabled={filters.page === 1}
+          onClick={() => updateFilters({ page: filters.page - 1 })}
+        >
+          Anterior
+        </Button>
+        <span className="text-sm font-semibold">
+          Página {filters.page} de {totalPages}
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={filters.page >= totalPages}
+          onClick={() => updateFilters({ page: filters.page + 1 })}
+        >
+          Próxima
+        </Button>
+      </nav>
 
       <Dialog
         open={form !== null}
@@ -347,61 +571,74 @@ export default function CalendarPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Novo agendamento</DialogTitle>
+            <DialogTitle>
+              {form?.appointmentId
+                ? "Reagendar atendimento"
+                : "Novo agendamento"}
+            </DialogTitle>
             <DialogDescription>
               {form &&
-                `Horário: ${formatAgendaDate(form.startTime, { dateStyle: "short", timeStyle: "short" })}`}
+                formatAgendaDate(form.startTime, {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                })}
             </DialogDescription>
           </DialogHeader>
           {form && (
-            <form className="space-y-4" onSubmit={handleCreateAppointment}>
-              <div className="space-y-2">
-                <Label htmlFor="appointment-customer-name">
-                  Nome do cliente
-                </Label>
-                <Input
-                  id="appointment-customer-name"
+            <form className="space-y-4" onSubmit={handleSaveAppointment}>
+              {!form.appointmentId && (
+                <>
+                  <label className="space-y-1 block">
+                    <Label htmlFor="appointment-customer-name">
+                      Nome do cliente
+                    </Label>
+                    <Input
+                      id="appointment-customer-name"
+                      required
+                      maxLength={160}
+                      value={form.customerName}
+                      onChange={(event) =>
+                        setForm({ ...form, customerName: event.target.value })
+                      }
+                    />
+                  </label>
+                  <label className="space-y-1 block">
+                    <Label htmlFor="appointment-customer-phone">Telefone</Label>
+                    <Input
+                      id="appointment-customer-phone"
+                      maxLength={30}
+                      value={form.customerPhone}
+                      onChange={(event) =>
+                        setForm({ ...form, customerPhone: event.target.value })
+                      }
+                    />
+                  </label>
+                </>
+              )}
+              <label className="space-y-1 block">
+                <Label htmlFor="appointment-service">Serviço</Label>
+                <select
+                  id="appointment-service"
                   required
-                  maxLength={160}
-                  value={form.customerName}
+                  className="h-12 w-full rounded-stitch-md bg-stitch-surface-container px-3"
+                  value={form.serviceId}
                   onChange={(event) =>
-                    setForm({ ...form, customerName: event.target.value })
+                    setForm({ ...form, serviceId: event.target.value })
                   }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="appointment-customer-phone">Telefone</Label>
-                <Input
-                  id="appointment-customer-phone"
-                  maxLength={30}
-                  value={form.customerPhone}
-                  onChange={(event) =>
-                    setForm({ ...form, customerPhone: event.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="appointment-duration">Duração (minutos)</Label>
-                <Input
-                  id="appointment-duration"
-                  type="number"
-                  min={5}
-                  max={720}
-                  required
-                  value={form.durationMinutes}
-                  onChange={(event) =>
-                    setForm({
-                      ...form,
-                      durationMinutes: Number(event.target.value),
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
+                >
+                  <option value="">Selecione um serviço</option>
+                  {services.map((service) => (
+                    <option key={service.id} value={service.id}>
+                      {service.name} ({service.duration_minutes} min)
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="space-y-1 block">
                 <Label htmlFor="appointment-employee">Profissional</Label>
                 <select
                   id="appointment-employee"
-                  className="flex h-12 w-full rounded-stitch-md bg-stitch-surface-container px-4 text-sm"
+                  className="h-12 w-full rounded-stitch-md bg-stitch-surface-container px-3"
                   value={form.employeeId}
                   onChange={(event) =>
                     setForm({ ...form, employeeId: event.target.value })
@@ -414,21 +651,27 @@ export default function CalendarPage() {
                     </option>
                   ))}
                 </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="appointment-notes">Observações</Label>
-                <textarea
-                  id="appointment-notes"
-                  className="min-h-24 w-full rounded-stitch-md bg-stitch-surface-container p-4 text-sm"
-                  maxLength={2000}
-                  value={form.notes}
-                  onChange={(event) =>
-                    setForm({ ...form, notes: event.target.value })
-                  }
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={creating}>
-                {creating ? "Criando agendamento..." : "Criar agendamento"}
+              </label>
+              {!form.appointmentId && (
+                <label className="space-y-1 block">
+                  <Label htmlFor="appointment-notes">Observações</Label>
+                  <textarea
+                    id="appointment-notes"
+                    className="min-h-24 w-full rounded-stitch-md bg-stitch-surface-container p-3"
+                    maxLength={2000}
+                    value={form.notes}
+                    onChange={(event) =>
+                      setForm({ ...form, notes: event.target.value })
+                    }
+                  />
+                </label>
+              )}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={creating || rescheduling || servicesQuery.isLoading}
+              >
+                {form.appointmentId ? "Reagendar" : "Criar agendamento"}
               </Button>
             </form>
           )}
@@ -436,54 +679,167 @@ export default function CalendarPage() {
       </Dialog>
 
       <Dialog
-        open={selectedAppointment !== null}
-        onOpenChange={(open) => !open && setSelectedAppointment(null)}
+        open={blockForm !== null}
+        onOpenChange={(open) => !open && setBlockForm(null)}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{selectedAppointment?.customer_name}</DialogTitle>
+            <DialogTitle>Novo bloqueio</DialogTitle>
             <DialogDescription>
-              {selectedAppointment &&
-                `${formatAgendaDate(new Date(selectedAppointment.start_time), { dateStyle: "short", timeStyle: "short" })} · ${selectedAppointment.status}`}
+              Impede novos agendamentos no período selecionado.
             </DialogDescription>
           </DialogHeader>
-          {selectedAppointment && (
-            <div className="space-y-4">
+          {blockForm && (
+            <form className="space-y-4" onSubmit={handleCreateBlock}>
+              <label className="space-y-1 block">
+                <Label htmlFor="block-employee">Profissional</Label>
+                <select
+                  id="block-employee"
+                  className="h-12 w-full rounded-stitch-md bg-stitch-surface-container px-3"
+                  value={blockForm.employeeId}
+                  onChange={(event) =>
+                    setBlockForm({
+                      ...blockForm,
+                      employeeId: event.target.value,
+                    })
+                  }
+                >
+                  <option value="">Toda a organização</option>
+                  {employees.map((employee) => (
+                    <option key={employee.id} value={employee.id}>
+                      {employee.full_name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="space-y-1 block">
+                <Label htmlFor="block-reason">Motivo</Label>
+                <Input
+                  id="block-reason"
+                  maxLength={500}
+                  value={blockForm.reason}
+                  onChange={(event) =>
+                    setBlockForm({ ...blockForm, reason: event.target.value })
+                  }
+                />
+              </label>
               <p className="text-sm text-stitch-on-surface-variant">
-                {selectedAppointment.notes || "Nenhuma observação cadastrada."}
+                {formatAgendaDate(blockForm.startTime, {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                })}{" "}
+                até{" "}
+                {formatAgendaDate(blockForm.endTime, { timeStyle: "short" })}
               </p>
+              <Button type="submit" className="w-full" disabled={changingBlock}>
+                Criar bloqueio
+              </Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={selectedEvent !== null}
+        onOpenChange={(open) => !open && setSelectedEvent(null)}
+      >
+        <DialogContent>
+          {selectedEvent?.kind === "appointment" && (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {selectedEvent.appointment.customer_name}
+                </DialogTitle>
+                <DialogDescription>
+                  {formatAgendaDate(
+                    new Date(selectedEvent.appointment.start_time),
+                    { dateStyle: "short", timeStyle: "short" },
+                  )}{" "}
+                  · {selectedEvent.appointment.status}
+                </DialogDescription>
+              </DialogHeader>
               <div className="flex flex-wrap gap-3">
-                {selectedAppointment.status === "pending" && (
+                {selectedEvent.appointment.status === "pending" && (
                   <Button
                     type="button"
-                    onClick={() => handleStatusChange("confirmed")}
+                    onClick={() =>
+                      handleStatusChange(selectedEvent.appointment, "confirmed")
+                    }
                     disabled={updatingStatus}
                   >
                     Confirmar
                   </Button>
                 )}
-                {selectedAppointment.status === "confirmed" && (
+                {selectedEvent.appointment.status === "confirmed" && (
                   <Button
                     type="button"
-                    onClick={() => handleStatusChange("completed")}
+                    onClick={() =>
+                      handleStatusChange(selectedEvent.appointment, "completed")
+                    }
                     disabled={updatingStatus}
                   >
                     Concluir
                   </Button>
                 )}
-                {(selectedAppointment.status === "pending" ||
-                  selectedAppointment.status === "confirmed") && (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={() => handleStatusChange("cancelled")}
-                    disabled={cancelling || updatingStatus}
-                  >
-                    Cancelar agendamento
-                  </Button>
+                {(selectedEvent.appointment.status === "pending" ||
+                  selectedEvent.appointment.status === "confirmed") && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() =>
+                        setForm({
+                          appointmentId: selectedEvent.appointment.id,
+                          customerName: selectedEvent.appointment.customer_name,
+                          customerPhone:
+                            selectedEvent.appointment.customer_phone,
+                          employeeId:
+                            selectedEvent.appointment.employee_id ?? "",
+                          notes: selectedEvent.appointment.notes ?? "",
+                          serviceId: selectedEvent.appointment.service_id,
+                          startTime: new Date(
+                            selectedEvent.appointment.start_time,
+                          ),
+                        })
+                      }
+                    >
+                      Reagendar
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={() =>
+                        handleStatusChange(
+                          selectedEvent.appointment,
+                          "cancelled",
+                        )
+                      }
+                      disabled={cancelling || updatingStatus}
+                    >
+                      Cancelar
+                    </Button>
+                  </>
                 )}
               </div>
-            </div>
+            </>
+          )}
+          {selectedEvent?.kind === "block" && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Bloqueio de agenda</DialogTitle>
+                <DialogDescription>
+                  {selectedEvent.block.reason || "Sem motivo informado"}
+                </DialogDescription>
+              </DialogHeader>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => handleDeleteBlock(selectedEvent.block)}
+                disabled={changingBlock}
+              >
+                Remover bloqueio
+              </Button>
+            </>
           )}
         </DialogContent>
       </Dialog>
