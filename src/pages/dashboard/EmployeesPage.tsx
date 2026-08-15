@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useEmployees } from "@/hooks/use-employees";
 import { useAppointments } from "@/hooks/use-appointments";
+import { isSameDayInSaoPaulo } from "@/hooks/use-dashboard-stats";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,11 @@ const addEmployeeSchema = z.object({
 
 type AddEmployeeForm = z.infer<typeof addEmployeeSchema>;
 
+/**
+ * Gerencia a equipe e exibe a carga diária no fuso America/Sao_Paulo.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
 export default function EmployeesPage() {
   const { employees, loading, createEmployee, updateEmployee, deleteEmployee } = useEmployees();
   const { appointments } = useAppointments();
@@ -46,9 +52,9 @@ export default function EmployeesPage() {
     e.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const today = new Date().toISOString().split("T")[0];
   const todayAppointments = appointments.filter(
-    (a) => a.start_time.startsWith(today) && a.status !== "cancelled"
+    (appointment) => appointment.status !== "cancelled"
+      && isSameDayInSaoPaulo(new Date(appointment.start_time)),
   );
 
   const getEmployeeTodayCount = (empId: string) =>

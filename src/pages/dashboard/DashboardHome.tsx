@@ -1,16 +1,22 @@
 import { StatsCard } from "@/components/ui/stats-card";
 import { useAppointments } from "@/hooks/use-appointments";
-import { useDashboardStats } from "@/hooks/use-dashboard-stats";
+import {
+  formatInSaoPaulo,
+  isSameDayInSaoPaulo,
+  useDashboardStats,
+} from "@/hooks/use-dashboard-stats";
 import { useEmployees } from "@/hooks/use-employees";
 import { Button } from "@/components/ui/button";
-import { format, isSameDay } from "date-fns";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
-import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 
-// Página Inicial do Dashboard
+/**
+ * Exibe as métricas e a agenda diária no fuso operacional America/Sao_Paulo.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
 export default function DashboardHome() {
   const { profile } = useAuth();
   const { appointments, loading: loadingApts } = useAppointments();
@@ -20,8 +26,10 @@ export default function DashboardHome() {
   const stats = useDashboardStats(appointments);
   const loading = loadingApts || loadingEmps;
 
-  // Filtrar agendamentos de hoje
-  const todayApts = appointments.filter(apt => isSameDay(new Date(apt.start_time), new Date()));
+  const todayApts = appointments.filter(
+    (appointment) => appointment.status !== "cancelled"
+      && isSameDayInSaoPaulo(new Date(appointment.start_time)),
+  );
 
   if (loading) {
     return (
@@ -90,7 +98,7 @@ export default function DashboardHome() {
         <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
           <h3 className="text-2xl font-black font-headline flex items-center gap-3 text-stitch-on-surface">
             <span className="material-symbols-outlined text-stitch-primary text-3xl">calendar_month</span>
-            Agenda do Dia - {format(new Date(), "dd 'de' MMMM", { locale: ptBR })}
+            Agenda do Dia - {formatInSaoPaulo(new Date(), { day: "2-digit", month: "long" })}
           </h3>
           <div className="flex bg-stitch-surface-container-lowest p-1.5 rounded-2xl shadow-sm border border-stitch-outline-variant/5">
             <Button variant="default" size="sm" onClick={() => navigate('/dashboard/calendar?view=day')} className="rounded-xl shadow-none font-black text-[10px] tracking-widest uppercase">Hoje</Button>
@@ -128,7 +136,7 @@ export default function DashboardHome() {
                     <Card key={apt.id} className="p-5 border-l-4 border-stitch-secondary bg-stitch-surface-container-lowest group hover:scale-[1.02] transition-all border-y-0 border-r-0 rounded-2xl shadow-sm">
                       <div className="flex justify-between items-start mb-3">
                         <p className="text-[10px] font-black text-stitch-primary uppercase tracking-tight">
-                          {format(new Date(apt.start_time), 'HH:mm')} - {format(new Date(apt.end_time), 'HH:mm')}
+                          {formatInSaoPaulo(new Date(apt.start_time), { hour: "2-digit", minute: "2-digit", hourCycle: "h23" })} - {formatInSaoPaulo(new Date(apt.end_time), { hour: "2-digit", minute: "2-digit", hourCycle: "h23" })}
                         </p>
                         {apt.status === 'completed' && (
                           <span className="material-symbols-outlined text-emerald-500 text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>

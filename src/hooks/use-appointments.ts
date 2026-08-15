@@ -1,9 +1,11 @@
-import { useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { useEffect, useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/lib/supabase";
 
-// Interface para um agendamento
+export type AppointmentStatus =
+  "pending" | "confirmed" | "completed" | "cancelled";
+
 export interface Appointment {
   id: string;
   customer_name: string;
@@ -12,7 +14,7 @@ export interface Appointment {
   employee_id: string;
   start_time: string;
   end_time: string;
-  status: "pending" | "confirmed" | "completed" | "cancelled";
+  status: AppointmentStatus;
   notes?: string;
   created_at: string;
   organization_id: string;
@@ -30,36 +32,147 @@ export interface Appointment {
   employee?: {
     full_name: string;
   };
-  payment_status: 'pending' | 'paid' | 'refunded';
-  payment_method?: 'credit_card' | 'debit_card' | 'pix' | 'cash' | 'online';
+  payment_status: "pending" | "paid" | "refunded";
+  payment_method?: "credit_card" | "debit_card" | "pix" | "cash" | "online";
   amount_paid: number;
   is_blocked?: boolean;
   reminder_sent_at?: string;
 }
 
-// Hook customizado para buscar agendamentos
+export interface CreateAppointmentInput {
+  customerId?: string | null;
+  customerName: string;
+  customerPhone?: string | null;
+  serviceId?: string | null;
+  employeeId?: string | null;
+  startTime: string;
+  endTime: string;
+  notes?: string | null;
+}
+
+type ManageAppointmentCommand =
+  | ({ action: "create" } & CreateAppointmentInput)
+  | {
+      action: "update-status";
+      appointmentId: string;
+      status: AppointmentStatus;
+    }
+  | { action: "cancel"; appointmentId: string };
+
+type ManageAppointmentResponse = {
+  appointment?: Appointment;
+  error?: string;
+};
+
+/**
+ * Converte uma resposta de erro da Edge Function em mensagem própria para a interface.
+ *
+ * @author André Narcizo
+ */
+async function getFunctionErrorMessage(error: unknown): Promise<string> {
+  if (error && typeof error === "object" && "context" in error) {
+    const context = (error as { context?: unknown }).context;
+    if (context instanceof Response) {
+      const body = (await context
+        .clone()
+        .json()
+        .catch(() => null)) as ManageAppointmentResponse | null;
+      const message = body?.error;
+      if (context.status === 409) {
+        return (
+          message ?? "Conflito de horário. Atualize a agenda e tente novamente."
+        );
+      }
+      if (message) return message;
+    }
+  }
+
+  return error instanceof Error
+    ? error.message
+    : "Não foi possível concluir a operação na agenda.";
+}
+
+/**
+ * Executa comandos de agenda somente pela fronteira autorizada do servidor.
+ *
+ * @author André Narcizo
+ */
+async function manageAppointment(
+  command: ManageAppointmentCommand,
+): Promise<Appointment> {
+  const { data, error } =
+    await supabase.functions.invoke<ManageAppointmentResponse>(
+      "manage-appointment",
+      { body: command },
+    );
+
+  if (error) {
+    throw new Error(await getFunctionErrorMessage(error));
+  }
+  if (!data?.appointment) {
+    throw new Error(
+      data?.error ?? "A agenda não retornou o agendamento atualizado.",
+    );
+  }
+
+  return data.appointment;
+}
+
+/**
+ * Normaliza dados relacionais opcionais recebidos do PostgREST para o contrato da tela.
+ *
+ * @author André Narcizo
+ */
+function normalizeAppointment(item: Record<string, unknown>): Appointment {
+  return {
+    ...item,
+    employee: Array.isArray(item.employee) ? item.employee[0] : item.employee,
+    payment_status: (item.payment_status ||
+      "pending") as Appointment["payment_status"],
+    amount_paid: (item.amount_paid || 0) as number,
+    customer_phone: (item.customer_phone || "") as string,
+    customer_name: (item.customer_name || "Cliente sem nome") as string,
+  } as Appointment;
+}
+
+/**
+ * Busca agendamentos e encaminha as mudanças críticas para a Edge Function autorizada.
+ *
+ * @author André Narcizo
+ */
 export function useAppointments() {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
+  const queryKey = useMemo(
+    () => ["appointments", profile?.organization_id] as const,
+    [profile?.organization_id],
+  );
 
-  const { data: appointments = [], isLoading: loading, error } = useQuery({
-    queryKey: ["appointments", profile?.organization_id],
+  const {
+    data: appointments = [],
+    isLoading: loading,
+    error,
+  } = useQuery({
+    queryKey,
     queryFn: async () => {
       if (!profile?.organization_id) return [];
-      
-      // Query básica primeiro, relações adicionadas se as tabelas existirem
-      const { data, error } = await supabase
+
+      const { data, error: queryError } = await supabase
         .from("appointments")
-        .select(`
+        .select(
+          `
           *,
           service:services(name, price, duration_minutes),
           employee:profiles(full_name)
-        `)
+        `,
+        )
         .eq("organization_id", profile.organization_id)
         .order("start_time", { ascending: true });
 
-      // Se der erro 400 (relação inválida), tentar query simples
-      if (error?.code === "PGRST200" || error?.message?.includes("relationship")) {
+      if (
+        queryError?.code === "PGRST200" ||
+        queryError?.message?.includes("relationship")
+      ) {
         const { data: fallbackData, error: fallbackError } = await supabase
           .from("appointments")
           .select("*")
@@ -67,30 +180,15 @@ export function useAppointments() {
           .order("start_time", { ascending: true });
 
         if (fallbackError) throw fallbackError;
-        return (fallbackData || []).map((item: Record<string, unknown>) => ({
-          ...item,
-          payment_status: (item.payment_status || 'pending') as Appointment['payment_status'],
-          amount_paid: (item.amount_paid || 0) as number,
-          customer_phone: (item.customer_phone || "") as string,
-          customer_name: (item.customer_name || "Cliente sem nome") as string,
-        })) as Appointment[];
+        return (fallbackData ?? []).map(normalizeAppointment) as Appointment[];
       }
+      if (queryError) throw queryError;
 
-      if (error) throw error;
-
-      return (data || []).map((item: Record<string, unknown>) => ({
-        ...item,
-        employee: Array.isArray(item.employee) ? item.employee[0] : item.employee,
-        payment_status: (item.payment_status || 'pending') as Appointment['payment_status'],
-        amount_paid: (item.amount_paid || 0) as number,
-        customer_phone: (item.customer_phone || "") as string,
-        customer_name: (item.customer_name || "Cliente sem nome") as string,
-      })) as Appointment[];
+      return (data ?? []).map(normalizeAppointment) as Appointment[];
     },
-    enabled: !!profile?.organization_id,
+    enabled: Boolean(profile?.organization_id),
   });
 
-  // Configurar realtime subscription para atualizações
   useEffect(() => {
     if (!profile?.organization_id) return;
 
@@ -104,117 +202,46 @@ export function useAppointments() {
           table: "appointments",
           filter: `organization_id=eq.${profile.organization_id}`,
         },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["appointments", profile.organization_id] });
-        }
+        () => queryClient.invalidateQueries({ queryKey }),
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.organization_id, queryClient]);
-
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: Appointment["status"] }) => {
-      const organizationId = profile?.organization_id;
-      if (!organizationId) throw new Error('Organização não encontrada');
-
-      const { error } = await supabase
-        .from("appointments")
-        .update({ status })
-        .eq("id", id)
-        .eq('organization_id', organizationId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["appointments", profile?.organization_id] });
-    },
-  });
-
-  const updateAppointmentMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Pick<Appointment, 'customer_name' | 'customer_phone' | 'service_id' | 'employee_id' | 'start_time' | 'end_time' | 'status' | 'notes' | 'is_blocked'>> }) => {
-      const organizationId = profile?.organization_id;
-      if (!organizationId) throw new Error('Organização não encontrada');
-
-      const { error } = await supabase
-        .from("appointments")
-        .update(updates)
-        .eq("id", id)
-        .eq('organization_id', organizationId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["appointments", profile?.organization_id] });
-    },
-  });
+  }, [profile?.organization_id, queryClient, queryKey]);
 
   const createAppointmentMutation = useMutation({
-    mutationFn: async (appointment: {
-      customer_id?: string | null;
-      customer_name: string;
-      customer_phone?: string;
-      service_id?: string | null;
-      employee_id?: string;
-      start_time: string;
-      end_time: string;
-      status?: Appointment["status"];
-      notes?: string;
-      is_blocked?: boolean;
-    }) => {
-      const organizationId = profile?.organization_id;
-      if (!organizationId) throw new Error("Organização não encontrada");
-
-      const { data, error } = await supabase
-        .from("appointments")
-        .insert({
-          ...appointment,
-          organization_id: organizationId,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["appointments", profile?.organization_id] });
-    },
+    mutationFn: (appointment: CreateAppointmentInput) =>
+      manageAppointment({
+        action: "create",
+        ...appointment,
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey }),
   });
 
-  const deleteAppointmentMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const organizationId = profile?.organization_id;
-      if (!organizationId) throw new Error('Organização não encontrada');
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: AppointmentStatus }) =>
+      manageAppointment({ action: "update-status", appointmentId: id, status }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey }),
+  });
 
-      const { error } = await supabase
-        .from("appointments")
-        .delete()
-        .eq("id", id)
-        .eq('organization_id', organizationId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["appointments", profile?.organization_id] });
-    },
+  const cancelAppointmentMutation = useMutation({
+    mutationFn: (id: string) =>
+      manageAppointment({ action: "cancel", appointmentId: id }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey }),
   });
 
   return {
     appointments,
     loading,
-    error: error ? (error as Error).message : null,
-    updateAppointmentStatus: async (id: string, status: Appointment["status"]) => {
-      await updateStatusMutation.mutateAsync({ id, status });
-    },
-    updateAppointment: async (id: string, updates: Partial<Pick<Appointment, 'customer_name' | 'customer_phone' | 'service_id' | 'employee_id' | 'start_time' | 'end_time' | 'status' | 'notes' | 'is_blocked'>>) => {
-      await updateAppointmentMutation.mutateAsync({ id, updates });
-    },
+    error: error instanceof Error ? error.message : null,
     createAppointment: createAppointmentMutation.mutateAsync,
-    deleteAppointment: async (id: string) => {
-      await deleteAppointmentMutation.mutateAsync(id);
-    },
+    updateAppointmentStatus: (id: string, status: AppointmentStatus) =>
+      updateStatusMutation.mutateAsync({ id, status }),
+    cancelAppointment: cancelAppointmentMutation.mutateAsync,
+    creating: createAppointmentMutation.isPending,
+    updatingStatus: updateStatusMutation.isPending,
+    cancelling: cancelAppointmentMutation.isPending,
   };
 }

@@ -833,3 +833,11 @@ As tabelas de OTP, rate limit e sessão possuem RLS, privilégios da Data API re
 O onboarding foi transferido para a Edge Function `complete-onboarding`, que valida o JWT e chama uma única função transacional do banco. A operação persiste organização, perfil owner, configurações comerciais/endereço, sete dias de expediente e serviço inicial; repetição do mesmo payload atualiza os mesmos registros sem duplicá-los. A função SQL tem `search_path` restrito e execução revogada para `PUBLIC`, `anon` e `authenticated`.
 
 O teste de banco foi aprovado no ambiente remoto de teste, com rollback das fixtures. O Security Advisor continua sem alertas.
+
+### Progresso da SPEC-004 — etapa 1 — 15/08/2026
+
+A agenda deixou de depender de `insert`, `update` e `delete` diretos no browser. A Edge Function `manage-appointment` foi publicada no projeto remoto de teste com JWT obrigatório e uma segunda validação via `auth.getUser()`. Ela valida perfil (`owner`, `admin` ou `employee`), escopo da organização, vínculos de cliente/serviço/profissional, transições de estado e devolve `409` quando a constraint de exclusão PostgreSQL bloqueia um conflito.
+
+O calendário agora cria agendamentos pela seleção de um horário e abre detalhes para confirmar, concluir ou cancelar. Cancelados não entram no calendário ativo, no dashboard, nas métricas, na receita nem na carga diária por profissional. Datas de métricas e exibição operacional usam `America/Sao_Paulo`; dois testes Vitest cobrem o limite UTC e a exclusão de cancelados.
+
+A SPEC-004 permanece **em implementação**: reagendamento, duração derivada do serviço no servidor, expediente/pausas/bloqueios, filtros persistidos e um E2E autenticado com concorrência ainda são necessários antes de considerar a agenda pronta para produção.

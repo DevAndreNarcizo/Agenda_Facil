@@ -1,6 +1,74 @@
 import { useMemo } from "react";
 import type { Appointment } from "./use-appointments";
-import { startOfDay, endOfDay, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+
+export const SAO_PAULO_TIME_ZONE = "America/Sao_Paulo";
+
+interface SaoPauloDateParts {
+  year: string;
+  month: string;
+  day: string;
+}
+
+const saoPauloDatePartsFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: SAO_PAULO_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/**
+ * Obtém os componentes de data de um instante no fuso operacional do produto.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+function getSaoPauloDateParts(date: Date): SaoPauloDateParts | null {
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  const parts = saoPauloDatePartsFormatter.formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+
+  if (!year || !month || !day) {
+    return null;
+  }
+
+  return { year, month, day };
+}
+
+/**
+ * Verifica se dois instantes pertencem ao mesmo dia em America/Sao_Paulo.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+export function isSameDayInSaoPaulo(date: Date, referenceDate: Date = new Date()): boolean {
+  const dateParts = getSaoPauloDateParts(date);
+  const referenceParts = getSaoPauloDateParts(referenceDate);
+
+  return dateParts !== null
+    && referenceParts !== null
+    && dateParts.year === referenceParts.year
+    && dateParts.month === referenceParts.month
+    && dateParts.day === referenceParts.day;
+}
+
+/**
+ * Formata um instante usando o fuso operacional America/Sao_Paulo.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+export function formatInSaoPaulo(
+  date: Date,
+  options: Intl.DateTimeFormatOptions,
+  locale = "pt-BR",
+): string {
+  return new Intl.DateTimeFormat(locale, {
+    ...options,
+    timeZone: SAO_PAULO_TIME_ZONE,
+  }).format(date);
+}
 
 // Interface para as estatísticas do dashboard
 export interface DashboardStats {
@@ -10,33 +78,51 @@ export interface DashboardStats {
   completedRate: number; // Taxa de conclusão (%)
 }
 
-// Hook para calcular estatísticas do dashboard
+/**
+ * Calcula métricas operacionais sem incluir atendimentos cancelados.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
 export function useDashboardStats(appointments: Appointment[]): DashboardStats {
   return useMemo(() => {
     const now = new Date();
-    const todayStart = startOfDay(now);
-    const todayEnd = endOfDay(now);
-    const monthStart = startOfMonth(now);
-    const monthEnd = endOfMonth(now);
+    const currentDateParts = getSaoPauloDateParts(now);
 
-    // Filtrar agendamentos de hoje
+    if (!currentDateParts) {
+      return {
+        todayAppointments: 0,
+        monthAppointments: 0,
+        monthRevenue: 0,
+        completedRate: 0,
+      };
+    }
+
     const todayAppointments = appointments.filter((apt) => {
+      if (apt.status === "cancelled") {
+        return false;
+      }
+
       const scheduledDate = new Date(apt.start_time);
-      return isWithinInterval(scheduledDate, { start: todayStart, end: todayEnd });
+      return isSameDayInSaoPaulo(scheduledDate, now);
     });
 
-    // Filtrar agendamentos do mês
     const monthAppointments = appointments.filter((apt) => {
+      if (apt.status === "cancelled") {
+        return false;
+      }
+
       const scheduledDate = new Date(apt.start_time);
-      return isWithinInterval(scheduledDate, { start: monthStart, end: monthEnd });
+      const scheduledDateParts = getSaoPauloDateParts(scheduledDate);
+
+      return scheduledDateParts !== null
+        && scheduledDateParts.year === currentDateParts.year
+        && scheduledDateParts.month === currentDateParts.month;
     });
 
-    // Calcular receita do mês (apenas agendamentos pagos)
     const monthRevenue = monthAppointments
       .filter((apt) => apt.payment_status === 'paid')
       .reduce((sum, apt) => sum + (apt.amount_paid || apt.service?.price || 0), 0);
 
-    // Calcular taxa de conclusão
     const completedCount = monthAppointments.filter((apt) => apt.status === "completed").length;
     const completedRate = monthAppointments.length > 0 
       ? (completedCount / monthAppointments.length) * 100 
