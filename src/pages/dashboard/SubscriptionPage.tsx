@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 const PLANS = [
   {
-    id: "price_starter_placeholder", // Replace with real Stripe Price IDs
+    id: "starter",
     name: "Starter",
     price: "R$39",
     subtitle: "/mês · 1 profissional",
@@ -27,7 +27,7 @@ const PLANS = [
     buttonText: "Selecionar Starter",
   },
   {
-    id: "price_pro_placeholder", // Replace with real Stripe Price IDs
+    id: "pro",
     name: "Pro",
     price: "R$69",
     subtitle: "/mês · até 5 profissionais",
@@ -44,7 +44,7 @@ const PLANS = [
     buttonText: "Selecionar Pro",
   },
   {
-    id: "price_clinica_placeholder", // Replace with real Stripe Price IDs
+    id: "clinic",
     name: "Clínica",
     price: "R$99",
     subtitle: "/mês · profissionais ilimitados",
@@ -62,11 +62,11 @@ const PLANS = [
 ];
 
 export default function SubscriptionPage() {
-  const { profile, user } = useAuth();
+  const { profile } = useAuth();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  const handleSubscribe = async (planId: string, planName: string) => {
-    if (!profile?.organization_id || !user?.email) {
+  const handleSubscribe = async (planId: string) => {
+    if (!profile?.organization_id) {
       toast.error("Você precisa estar logado para assinar um plano.");
       return;
     }
@@ -74,14 +74,7 @@ export default function SubscriptionPage() {
     setLoadingPlan(planId);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: {
-          priceId: planId,
-          customerEmail: user.email,
-          metadata: {
-            organization_id: profile.organization_id,
-            planName: planName
-          }
-        }
+        body: { planCode: planId }
       });
 
       if (error) throw error;
@@ -165,7 +158,7 @@ export default function SubscriptionPage() {
               </ul>
 
               <Button 
-                onClick={() => handleSubscribe(plan.id, plan.name)}
+                onClick={() => handleSubscribe(plan.id)}
                 disabled={loadingPlan !== null}
                 className={cn(
                   "w-full h-14 rounded-2xl text-[10px] tracking-widest uppercase font-black transition-all mt-8",

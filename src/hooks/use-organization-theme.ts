@@ -7,14 +7,15 @@ export function useOrganizationTheme() {
   const { profile } = useAuth();
 
   useEffect(() => {
-    if (!profile?.organization_id) return;
+    const organizationId = profile?.organization_id;
+    if (!organizationId) return;
 
     const fetchAndApplyTheme = async () => {
       try {
         const { data, error } = await supabase
           .from("organizations")
           .select('primary_color, secondary_color, accent_color, logo_url')
-          .eq('id', profile.organization_id)
+          .eq('id', organizationId)
           .single();
 
         if (error) return;

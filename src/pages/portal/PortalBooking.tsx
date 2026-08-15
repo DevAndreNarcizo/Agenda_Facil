@@ -51,7 +51,7 @@ export default function PortalBooking() {
     const customerName = localStorage.getItem("portal_customer_name");
     const orgId = localStorage.getItem("portal_organization_id");
 
-    if (!customerId || !orgId || !selectedService || !date || !time) return;
+    if (!customerId || !customerName || !orgId || !selectedService || !date || !time) return;
 
     setLoading(true);
     try {

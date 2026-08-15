@@ -19,7 +19,8 @@ export default function ThemeCustomization() {
   useEffect(() => {
     if (authLoading) return; // Aguarda a autenticação inicial
 
-    if (!profile?.organization_id) {
+    const organizationId = profile?.organization_id;
+    if (!organizationId) {
       setLoadingTheme(false); // Remove o loading infinito
       return;
     }
@@ -29,7 +30,7 @@ export default function ThemeCustomization() {
         const { data, error } = await supabase
           .from("organizations")
           .select('primary_color, secondary_color, accent_color, logo_url')
-          .eq('id', profile.organization_id)
+          .eq('id', organizationId)
           .single();
 
         if (error) throw error;

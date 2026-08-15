@@ -50,6 +50,9 @@ export function useCustomers() {
       const statsMap = new Map<string, { last_appointment: string | null; total_appointments: number }>();
 
       for (const apt of (appointmentStats || [])) {
+        if (!apt.customer_id) {
+          continue;
+        }
         const existing = statsMap.get(apt.customer_id);
         if (existing) {
           existing.total_appointments += 1;
@@ -61,8 +64,9 @@ export function useCustomers() {
         }
       }
 
-      return (data || []).map((customer: Customer) => ({
+      return (data || []).map((customer) => ({
         ...customer,
+        phone: customer.phone ?? '',
         last_appointment: statsMap.get(customer.id)?.last_appointment || null,
         total_appointments: statsMap.get(customer.id)?.total_appointments || 0,
       })) as Customer[];
@@ -72,11 +76,16 @@ export function useCustomers() {
 
   const createMutation = useMutation({
     mutationFn: async (customer: { name: string; phone: string; email?: string }) => {
+      const organizationId = profile?.organization_id;
+      if (!organizationId) {
+        throw new Error('Organização não encontrada');
+      }
+
       const { data, error } = await supabase
         .from("customers")
         .insert({
           ...customer,
-          organization_id: profile?.organization_id,
+          organization_id: organizationId,
         })
         .select()
         .single();
@@ -90,10 +99,14 @@ export function useCustomers() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: { name?: string; phone?: string; email?: string } }) => {
+      const organizationId = profile?.organization_id;
+      if (!organizationId) throw new Error('Organização não encontrada');
+
       const { data, error } = await supabase
         .from("customers")
         .update(updates)
         .eq("id", id)
+        .eq('organization_id', organizationId)
         .select()
         .single();
       if (error) throw error;
@@ -106,10 +119,14 @@ export function useCustomers() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      const organizationId = profile?.organization_id;
+      if (!organizationId) throw new Error('Organização não encontrada');
+
       const { error } = await supabase
         .from("customers")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq('organization_id', organizationId);
       if (error) throw error;
     },
     onSuccess: () => {

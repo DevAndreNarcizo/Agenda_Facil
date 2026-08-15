@@ -25,11 +25,12 @@ interface SidebarProps {
   navigation: NavigationItem[];
   profile: Profile | null;
   location: { pathname: string };
+  navigate: (path: string) => void;
   setIsMobileMenuOpen: (open: boolean) => void;
   onSignOut: () => void;
 }
 
-const SidebarContent = ({ navigation, profile, location, setIsMobileMenuOpen, onSignOut }: SidebarProps) => (
+const SidebarContent = ({ navigation, profile, location, navigate, setIsMobileMenuOpen, onSignOut }: SidebarProps) => (
   <div className="flex h-full flex-col bg-stitch-surface text-stitch-on-surface border-r border-stitch-outline-variant/10">
     {/* Brand Identity */}
     <div className="flex items-center gap-3 px-6 py-10 mb-2">
@@ -91,10 +92,10 @@ const SidebarContent = ({ navigation, profile, location, setIsMobileMenuOpen, on
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-[calc(var(--radix-dropdown-menu-trigger-width)-1rem)] ml-2 mb-2 rounded-xl bg-stitch-surface text-stitch-on-surface border border-stitch-outline-variant/10 shadow-xl" side="top" align="center">
           <DropdownMenuLabel className="font-black text-xs uppercase tracking-widest text-stitch-on-surface-variant/80 px-4 py-2">Configurações Rápidas</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => window.location.href = '/dashboard/analytics'} className="gap-3 font-bold cursor-pointer py-3 px-4 focus:bg-stitch-primary/5 focus:text-stitch-primary">
+          <DropdownMenuItem onClick={() => navigate('/dashboard/analytics')} className="gap-3 font-bold cursor-pointer py-3 px-4 focus:bg-stitch-primary/5 focus:text-stitch-primary">
             <span className="material-symbols-outlined text-lg">insights</span> Analytics
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => window.location.href = '/dashboard/theme'} className="gap-3 font-bold cursor-pointer py-3 px-4 focus:bg-stitch-primary/5 focus:text-stitch-primary">
+          <DropdownMenuItem onClick={() => navigate('/dashboard/theme')} className="gap-3 font-bold cursor-pointer py-3 px-4 focus:bg-stitch-primary/5 focus:text-stitch-primary">
             <span className="material-symbols-outlined text-lg">palette</span> Customizar Cores
           </DropdownMenuItem>
           <div className="h-px bg-stitch-outline-variant/10 my-1 mx-2" />
@@ -112,7 +113,7 @@ const SidebarContent = ({ navigation, profile, location, setIsMobileMenuOpen, on
 
 // Layout Principal do Dashboard
 export function DashboardLayout() {
-  const { signOut, profile, loading, refreshProfile } = useAuth();
+  const { signOut, profile, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -165,6 +166,7 @@ export function DashboardLayout() {
           navigation={navigation} 
           profile={profile} 
           location={location} 
+          navigate={navigate}
           setIsMobileMenuOpen={setIsMobileMenuOpen} 
           onSignOut={handleSignOut}
         />
@@ -230,6 +232,7 @@ export function DashboardLayout() {
             navigation={navigation} 
             profile={profile} 
             location={location} 
+            navigate={navigate}
             setIsMobileMenuOpen={setIsMobileMenuOpen} 
             onSignOut={handleSignOut}
           />

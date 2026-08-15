@@ -1,94 +1,109 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { AuthContext } from "./auth-context-types";
-import type { AuthContextType, Profile } from "./auth-context-types";
-import type { Session, User } from "@supabase/supabase-js";
+import { useCallback, useEffect, useState } from 'react';
+import type { Session, User } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
+import { AuthContext } from './auth-context-types';
+import type { AuthContextType, Profile } from './auth-context-types';
 
+/**
+ * Aguarda um intervalo curto antes de tentar novamente uma consulta transitória.
+ *
+ * @author André Narcizo
+ */
+function sleep(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
+/**
+ * Disponibiliza sessão e perfil autenticado para toda a aplicação.
+ *
+ * @author André Narcizo
+ */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
-    // Tentar até 3 vezes com delay (RLS pode não estar pronto logo após login)
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
+  /**
+   * Obtém o perfil com poucas tentativas para cobrir a criação assíncrona pelo trigger do Auth.
+   *
+   * @author André Narcizo
+   */
+  const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
 
-        if (!error && data) {
-          setProfile(data);
-          return;
-        }
+      if (!error && data) {
+        return data as Profile;
+      }
 
-        // Se erro de RLS ou não encontrado, esperar e tentar de novo
-        if (attempt < 2) {
-          await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
-        }
-      } catch {
-        if (attempt < 2) {
-          await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
-        }
+      if (attempt < 2) {
+        await sleep(500 * (attempt + 1));
       }
     }
-  };
+
+    return null;
+  }, []);
+
+  /**
+   * Sincroniza todos os estados dependentes de uma sessão antes de liberar a interface.
+   *
+   * @author André Narcizo
+   */
+  const synchronizeSession = useCallback(async (nextSession: Session | null): Promise<void> => {
+    setLoading(true);
+    setSession(nextSession);
+    setUser(nextSession?.user ?? null);
+
+    if (!nextSession?.user) {
+      setProfile(null);
+      setLoading(false);
+      return;
+    }
+
+    const nextProfile = await fetchProfile(nextSession.user.id);
+    setProfile(nextProfile);
+    setLoading(false);
+  }, [fetchProfile]);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id).then(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
-    });
+    void supabase.auth.getSession().then(({ data }) => synchronizeSession(data.session));
 
-    // Listen for changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      void synchronizeSession(nextSession);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [synchronizeSession]);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
+  /**
+   * Encerra a sessão e limpa imediatamente os dados protegidos do contexto.
+   *
+   * @author André Narcizo
+   */
+  const signOut = async (): Promise<void> => {
     setProfile(null);
+    await supabase.auth.signOut();
   };
 
-  const refreshProfile = async () => {
-    if (user) {
-      await fetchProfile(user.id);
+  /**
+   * Recarrega o perfil do usuário autenticado.
+   *
+   * @author André Narcizo
+   */
+  const refreshProfile = async (): Promise<void> => {
+    if (!user) {
+      return;
     }
+
+    setProfile(await fetchProfile(user.id));
   };
 
-  const value: AuthContextType = {
-    session,
-    user,
-    profile,
-    loading,
-    signOut,
-    refreshProfile
-  };
+  const value: AuthContextType = { session, user, profile, loading, signOut, refreshProfile };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

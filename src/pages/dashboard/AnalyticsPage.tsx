@@ -39,19 +39,24 @@ export default function AnalyticsPage() {
   }, [profile?.organization_id]);
 
   const fetchAnalytics = async () => {
+    const organizationId = profile?.organization_id;
+    if (!organizationId) {
+      return;
+    }
+
     try {
       const [revenueRes, servicesRes, hoursRes, statsRes] = await Promise.all([
-        supabase.rpc('get_monthly_revenue', { organization_id: profile?.organization_id }),
-        supabase.rpc('get_top_services', { organization_id: profile?.organization_id }),
-        supabase.rpc('get_peak_hours', { organization_id: profile?.organization_id }),
-        supabase.rpc('get_dashboard_stats', { organization_id: profile?.organization_id })
+        supabase.rpc('get_monthly_revenue', { organization_id: organizationId }),
+        supabase.rpc('get_top_services', { organization_id: organizationId }),
+        supabase.rpc('get_peak_hours', { organization_id: organizationId }),
+        supabase.rpc('get_dashboard_stats', { organization_id: organizationId })
       ]);
 
       if (revenueRes.data) setMonthlyRevenue(revenueRes.data);
       if (servicesRes.data) setTopServices(servicesRes.data);
       if (hoursRes.data) setPeakHours(hoursRes.data);
       if (statsRes.data && statsRes.data[0]) setStats(statsRes.data[0]);
-    } catch (error) {
+    } catch {
       toast.error('Erro ao carregar dados de analytics.');
     } finally {
       setLoading(false);

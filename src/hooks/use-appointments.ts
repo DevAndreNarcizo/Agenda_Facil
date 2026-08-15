@@ -117,10 +117,14 @@ export function useAppointments() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: Appointment["status"] }) => {
+      const organizationId = profile?.organization_id;
+      if (!organizationId) throw new Error('Organização não encontrada');
+
       const { error } = await supabase
         .from("appointments")
         .update({ status })
-        .eq("id", id);
+        .eq("id", id)
+        .eq('organization_id', organizationId);
 
       if (error) throw error;
     },
@@ -130,11 +134,15 @@ export function useAppointments() {
   });
 
   const updateAppointmentMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Appointment> }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Pick<Appointment, 'customer_name' | 'customer_phone' | 'service_id' | 'employee_id' | 'start_time' | 'end_time' | 'status' | 'notes' | 'is_blocked'>> }) => {
+      const organizationId = profile?.organization_id;
+      if (!organizationId) throw new Error('Organização não encontrada');
+
       const { error } = await supabase
         .from("appointments")
         .update(updates)
-        .eq("id", id);
+        .eq("id", id)
+        .eq('organization_id', organizationId);
 
       if (error) throw error;
     },
@@ -156,13 +164,14 @@ export function useAppointments() {
       notes?: string;
       is_blocked?: boolean;
     }) => {
-      if (!profile?.organization_id) throw new Error("Organização não encontrada");
+      const organizationId = profile?.organization_id;
+      if (!organizationId) throw new Error("Organização não encontrada");
 
       const { data, error } = await supabase
         .from("appointments")
         .insert({
           ...appointment,
-          organization_id: profile.organization_id,
+          organization_id: organizationId,
         })
         .select()
         .single();
@@ -177,10 +186,14 @@ export function useAppointments() {
 
   const deleteAppointmentMutation = useMutation({
     mutationFn: async (id: string) => {
+      const organizationId = profile?.organization_id;
+      if (!organizationId) throw new Error('Organização não encontrada');
+
       const { error } = await supabase
         .from("appointments")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq('organization_id', organizationId);
 
       if (error) throw error;
     },
@@ -196,7 +209,7 @@ export function useAppointments() {
     updateAppointmentStatus: async (id: string, status: Appointment["status"]) => {
       await updateStatusMutation.mutateAsync({ id, status });
     },
-    updateAppointment: async (id: string, updates: Partial<Appointment>) => {
+    updateAppointment: async (id: string, updates: Partial<Pick<Appointment, 'customer_name' | 'customer_phone' | 'service_id' | 'employee_id' | 'start_time' | 'end_time' | 'status' | 'notes' | 'is_blocked'>>) => {
       await updateAppointmentMutation.mutateAsync({ id, updates });
     },
     createAppointment: createAppointmentMutation.mutateAsync,

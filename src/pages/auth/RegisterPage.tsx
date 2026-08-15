@@ -45,7 +45,7 @@ export default function RegisterPage() {
             full_name: data.fullName,
             org_name: data.orgName,
             org_slug: data.orgSlug,
-            role: 'admin',
+            role: 'owner',
           },
         },
       });
@@ -53,7 +53,7 @@ export default function RegisterPage() {
       if (authError) throw authError;
       if (!authData.user) throw new Error("Erro ao criar usuário");
 
-      navigate("/onboarding");
+      navigate("/dashboard");
     } catch (err: unknown) {
       const error = err as Error;
       console.error(error);

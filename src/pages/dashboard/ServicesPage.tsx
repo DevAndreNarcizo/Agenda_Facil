@@ -42,11 +42,16 @@ export default function ServicesPage() {
   }, [profile?.organization_id]);
 
   const fetchServices = async () => {
+    const organizationId = profile?.organization_id;
+    if (!organizationId) {
+      return;
+    }
+
     setLoading(true);
     const { data, error } = await supabase
       .from("services")
       .select("*")
-      .eq("organization_id", profile?.organization_id)
+      .eq("organization_id", organizationId)
       .order("name");
 
     if (error) {
@@ -69,13 +74,14 @@ export default function ServicesPage() {
       if (editingService) {
         const { error } = await supabase
           .from("services")
-          .update({
+        .update({
             name: formData.name,
             duration_minutes: Number(formData.duration_minutes),
             price: Number(formData.price),
             description: formData.description,
-          })
-          .eq("id", editingService.id);
+        })
+          .eq("id", editingService.id)
+          .eq('organization_id', profile.organization_id);
         if (error) throw error;
         toast.success("Serviço atualizado com sucesso!");
       } else {
@@ -103,7 +109,11 @@ export default function ServicesPage() {
   const handleDeleteService = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir este serviço?")) return;
     try {
-      const { error } = await supabase.from("services").delete().eq("id", id);
+      const organizationId = profile?.organization_id;
+      if (!organizationId) {
+        throw new Error('Organização não encontrada');
+      }
+      const { error } = await supabase.from("services").delete().eq("id", id).eq('organization_id', organizationId);
       if (error) throw error;
       toast.success("Serviço removido.");
       fetchServices();

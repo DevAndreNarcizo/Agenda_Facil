@@ -14,6 +14,18 @@ const WHATSAPP_FUNCTION_URL = Deno.env.get('WHATSAPP_FUNCTION_URL') || `${supaba
 
 serve(async (req) => {
   try {
+    const cronSecret = Deno.env.get('REMINDERS_CRON_SECRET');
+    if (!cronSecret || req.headers.get('x-cron-secret') !== cronSecret) {
+      return new Response(JSON.stringify({ error: 'Não autorizado' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    if (req.method !== 'POST') {
+      return new Response(JSON.stringify({ error: 'Método não permitido' }), {
+        status: 405,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Buscar agendamentos que começam exatamente daqui a 24 horas (janela de 1 hora)
     const now = new Date();
     const startTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
@@ -67,11 +79,11 @@ serve(async (req) => {
 
         const message = `Olá ${customerName}! Passando para lembrar do seu agendamento amanhã às ${appointmentTime} na ${orgName}. Confirmado?`;
 
-        // Chamar função de envio de WhatsApp
-        const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
-        if (!anonKey) {
-          console.error('Missing SUPABASE_ANON_KEY');
-          results.push({ id: apt.id, success: false, error: 'missing_anon_key' });
+        // Chamar o canal interno autenticado de WhatsApp
+        const internalSecret = Deno.env.get('WHATSAPP_INTERNAL_SECRET');
+        if (!internalSecret) {
+          console.error('Missing WHATSAPP_INTERNAL_SECRET');
+          results.push({ id: apt.id, success: false, error: 'missing_internal_secret' });
           continue;
         }
 
@@ -79,7 +91,7 @@ serve(async (req) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${anonKey}`
+            'x-internal-secret': internalSecret
           },
           body: JSON.stringify({
             phone: customerPhone,

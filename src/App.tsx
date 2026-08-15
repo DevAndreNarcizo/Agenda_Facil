@@ -51,30 +51,30 @@ function App() {
           {/* Rotas Protegidas: Dashboard */}
           {/* O DashboardLayout serve como um "wrapper" que contém a Sidebar e o Header */}
           {/* Todas as rotas aninhadas aqui serão renderizadas dentro do <Outlet /> do DashboardLayout */}
-          <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+          <Route path="/dashboard" element={<ProtectedRoute requireOrganization><DashboardLayout /></ProtectedRoute>}>
             {/* Rota Index: Renderizada quando o usuário acessa /dashboard */}
             <Route index element={<DashboardHome />} />
             
             {/* Rota: Gestão de Funcionários (/dashboard/employees) */}
-            <Route path="employees" element={<EmployeesPage />} />
+            <Route path="employees" element={<ProtectedRoute allowedRoles={['owner', 'admin']}><EmployeesPage /></ProtectedRoute>} />
             
             {/* Rota: Gestão de Clientes (/dashboard/customers) */}
             <Route path="customers" element={<CustomersPage />} />
             
             {/* Rota: Gestão de Serviços (/dashboard/services) */}
-            <Route path="services" element={<ServicesPage />} />
+            <Route path="services" element={<ProtectedRoute allowedRoles={['owner', 'admin']}><ServicesPage /></ProtectedRoute>} />
             
             {/* Rota: Configurações (/dashboard/settings) */}
-            <Route path="settings" element={<SettingsPage />} />
+            <Route path="settings" element={<ProtectedRoute allowedRoles={['owner', 'admin']}><SettingsPage /></ProtectedRoute>} />
             
             {/* Rota: Personalização de Tema (/dashboard/theme) */}
-            <Route path="theme" element={<ThemeCustomization />} />
+            <Route path="theme" element={<ProtectedRoute allowedRoles={['owner', 'admin']}><ThemeCustomization /></ProtectedRoute>} />
             
             {/* Rota: Analytics (/dashboard/analytics) */}
             <Route path="analytics" element={<AnalyticsPage />} />
             
             {/* Rota: Assinatura (/dashboard/subscription) */}
-            <Route path="subscription" element={<SubscriptionPage />} />
+            <Route path="subscription" element={<ProtectedRoute allowedRoles={['owner']}><SubscriptionPage /></ProtectedRoute>} />
             
             {/* Rota: Calendário (/dashboard/calendar) */}
             <Route path="calendar" element={<CalendarPage />} />
@@ -87,9 +87,6 @@ function App() {
             <Route path="book" element={<PortalBooking />} />
           </Route>
 
-          {/* Rota Raiz: Redireciona automaticamente para /dashboard */}
-          {/* O atributo 'replace' substitui a entrada atual no histórico, evitando que o usuário volte para a raiz ao clicar em 'Voltar' */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
         <Toaster />
       </AuthProvider>

@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Calendar, dateFnsLocalizer, type View, Views } from "react-big-calendar";
+import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -8,6 +8,7 @@ import { useAppointments } from "@/hooks/use-appointments";
 import { useEmployees } from "@/hooks/use-employees";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getCalendarView } from "@/lib/calendar-view";
 
 const locales = {
   "pt-BR": ptBR,
@@ -24,21 +25,22 @@ const localizer = dateFnsLocalizer({
 export default function CalendarPage() {
   const { appointments } = useAppointments();
   const { employees } = useEmployees();
-  const [searchParams] = useSearchParams();
-  const [view, setView] = useState<View>(() => {
-    const v = new URLSearchParams(window.location.search).get("view");
-    if (v === "day") return Views.DAY;
-    if (v === "month") return Views.MONTH;
-    return Views.WEEK;
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view = getCalendarView(searchParams.get('view'));
   const [date, setDate] = useState(new Date());
 
-  useEffect(() => {
-    const v = searchParams.get("view");
-    if (v === "day") setView(Views.DAY);
-    if (v === "week") setView(Views.WEEK);
-    if (v === "month") setView(Views.MONTH);
-  }, [searchParams]);
+  /**
+   * Persiste a visualização escolhida na URL para navegação compartilhável.
+   *
+   * @author André Narcizo
+   */
+  const handleViewChange = (nextView: import('react-big-calendar').View): void => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.set('view', nextView);
+      return next;
+    }, { replace: true });
+  };
 
   const events = appointments.map((apt) => ({
     id: apt.id,
@@ -157,7 +159,7 @@ export default function CalendarPage() {
             noEventsInRange: "Sem agendamentos nesta data.",
           }}
           view={view}
-          onView={(v) => setView(v)}
+          onView={handleViewChange}
           date={date}
           onNavigate={(d) => setDate(d)}
           eventPropGetter={eventStyleGetter}

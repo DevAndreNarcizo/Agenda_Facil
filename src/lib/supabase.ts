@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from './database.types';
 
 // Carrega as variáveis de ambiente definidas no arquivo .env
 // VITE_SUPABASE_URL: URL do seu projeto Supabase
@@ -13,4 +14,4 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // Cria e exporta uma instância única do cliente Supabase
 // Esta instância será usada em toda a aplicação para fazer requisições ao banco de dados e auth
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);

@@ -41,32 +41,7 @@ export default function PortalLogin() {
 
       if (error) throw error;
 
-      // Enviar via WhatsApp Cloud API Oficial (via Edge Function)
-      try {
-        const WHATSAPP_FUNC_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-whatsapp`;
-        
-        await fetch(WHATSAPP_FUNC_URL, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-          },
-          body: JSON.stringify({
-            phone: cleanPhone,
-            message: `Seu código de acesso para o Portal do Cliente é: ${data?.simulated_code}`
-          })
-        });
-
-        toast.success('Código enviado!', {
-          duration: 5000,
-          description: 'Verifique seu WhatsApp'
-        });
-      } catch (whatsappError) {
-        console.warn('WhatsApp service not available:', whatsappError);
-        toast.info(`Código (Dev): ${data?.simulated_code}`, {
-          duration: 15000,
-        });
-      }
+      toast.success(data?.message || 'Se o número estiver cadastrado, o código será enviado pelo WhatsApp.');
 
       setStep('otp');
     } catch (err: unknown) {
@@ -99,6 +74,9 @@ export default function PortalLogin() {
 
       // Salva dados do cliente no localStorage
       const customer = data.customer;
+      if (!customer) {
+        throw new Error('Não foi possível identificar o cliente.');
+      }
       localStorage.setItem("portal_customer_id", customer.id);
       localStorage.setItem("portal_customer_name", customer.name);
       localStorage.setItem("portal_organization_id", customer.organization_id);

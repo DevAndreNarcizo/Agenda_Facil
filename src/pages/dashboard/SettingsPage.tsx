@@ -34,25 +34,35 @@ export default function SettingsPage() {
       .single();
     
     if (data) {
-      setCompany(data);
+      setCompany({
+        name: data.name,
+        slug: data.slug ?? '',
+        plan_name: data.plan_name ?? 'starter',
+        subscription_status: data.subscription_status ?? 'trialing',
+      });
       setName(data.name);
       setSlug(data.slug || "");
     }
   };
 
   const handleUpdateCompany = async () => {
+    const organizationId = profile?.organization_id;
+    if (!organizationId) {
+      toast.error('Organização não encontrada.');
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase
         .from("organizations")
         .update({ name, slug })
-        .eq("id", profile?.organization_id);
+        .eq("id", organizationId);
       
       if (error) throw error;
       toast.success("Configurações salvas com sucesso!");
       fetchCompanyDetails();
-    } catch (error: unknown) {
-      const err = error as Error;
+    } catch {
       toast.error("Erro ao salvar configurações.");
     } finally {
       setLoading(false);
