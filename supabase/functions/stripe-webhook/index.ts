@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@12.9.0?target=deno";
 import {
+  hasUpdatedOrganization,
   jsonResponse,
   logIntegrationEvent,
   requirePost,
@@ -128,7 +129,7 @@ serve(async (request) => {
         throw new Error("invalid_checkout_metadata");
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("organizations")
         .update({
           plan_name: planCode,
@@ -136,8 +137,12 @@ serve(async (request) => {
           stripe_subscription_id: getStripeReferenceId(session.subscription),
           subscription_status: "active",
         })
-        .eq("id", organizationId);
-      if (error) throw new Error("organization_update_failed");
+        .eq("id", organizationId)
+        .select("id")
+        .maybeSingle();
+      if (!hasUpdatedOrganization(data, error)) {
+        throw new Error("organization_update_failed");
+      }
     }
 
     if (
@@ -145,26 +150,34 @@ serve(async (request) => {
       event.type === "customer.subscription.deleted"
     ) {
       const subscription = event.data.object as Stripe.Subscription;
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("organizations")
         .update({
           subscription_status: event.type === "customer.subscription.deleted"
             ? "cancelled"
             : subscription.status,
         })
-        .eq("stripe_subscription_id", subscription.id);
-      if (error) throw new Error("subscription_update_failed");
+        .eq("stripe_subscription_id", subscription.id)
+        .select("id")
+        .maybeSingle();
+      if (!hasUpdatedOrganization(data, error)) {
+        throw new Error("subscription_update_failed");
+      }
     }
 
     if (event.type === "invoice.payment_failed") {
       const invoice = event.data.object as Stripe.Invoice;
       const subscriptionId = getStripeReferenceId(invoice.subscription);
       if (subscriptionId) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("organizations")
           .update({ subscription_status: "past_due" })
-          .eq("stripe_subscription_id", subscriptionId);
-        if (error) throw new Error("invoice_update_failed");
+          .eq("stripe_subscription_id", subscriptionId)
+          .select("id")
+          .maybeSingle();
+        if (!hasUpdatedOrganization(data, error)) {
+          throw new Error("invoice_update_failed");
+        }
       }
     }
 

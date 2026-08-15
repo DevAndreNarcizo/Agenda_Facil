@@ -3,8 +3,12 @@ BEGIN;
 DO $$
 DECLARE
   v_organization_id uuid;
-  v_appointment_id uuid;
-  v_delivery_id uuid;
+  v_reminder_appointment_id uuid;
+  v_cancelled_appointment_id uuid;
+  v_confirmation_appointment_id uuid;
+  v_reminder_delivery_id uuid;
+  v_cancelled_delivery_id uuid;
+  v_confirmation_delivery_id uuid;
   v_claimed_delivery_id uuid;
   v_status text;
 BEGIN
@@ -14,39 +18,85 @@ BEGIN
 
   INSERT INTO public.appointments (organization_id, start_time, end_time, status)
   VALUES (v_organization_id, now() + interval '2 days', now() + interval '2 days 30 minutes', 'confirmed')
-  RETURNING id INTO v_appointment_id;
+  RETURNING id INTO v_reminder_appointment_id;
+
+  INSERT INTO public.appointments (organization_id, start_time, end_time, status)
+  VALUES (v_organization_id, now() + interval '3 days', now() + interval '3 days 30 minutes', 'cancelled')
+  RETURNING id INTO v_cancelled_appointment_id;
+
+  INSERT INTO public.appointments (organization_id, start_time, end_time, status)
+  VALUES (v_organization_id, now() + interval '4 days', now() + interval '4 days 30 minutes', 'confirmed')
+  RETURNING id INTO v_confirmation_appointment_id;
 
   INSERT INTO public.message_deliveries (organization_id, appointment_id, channel, template_name, scheduled_for)
-  VALUES (v_organization_id, v_appointment_id, 'whatsapp', 'appointment_reminder', now())
-  RETURNING id INTO v_delivery_id;
+  VALUES (v_organization_id, v_reminder_appointment_id, 'whatsapp', 'appointment_reminder', now() - interval '3 minutes')
+  RETURNING id INTO v_reminder_delivery_id;
+
+  INSERT INTO public.message_deliveries (organization_id, appointment_id, channel, template_name, scheduled_for)
+  VALUES (v_organization_id, v_cancelled_appointment_id, 'whatsapp', 'appointment_reminder', now() - interval '2 minutes')
+  RETURNING id INTO v_cancelled_delivery_id;
+
+  INSERT INTO public.message_deliveries (organization_id, appointment_id, channel, template_name, scheduled_for)
+  VALUES (v_organization_id, v_confirmation_appointment_id, 'whatsapp', 'appointment_confirmation', now() - interval '1 minute')
+  RETURNING id INTO v_confirmation_delivery_id;
 
   BEGIN
     INSERT INTO public.message_deliveries (organization_id, appointment_id, channel, template_name, scheduled_for)
-    VALUES (v_organization_id, v_appointment_id, 'whatsapp', 'appointment_reminder', now());
+    VALUES (v_organization_id, v_reminder_appointment_id, 'whatsapp', 'appointment_reminder', now());
     RAISE EXCEPTION 'A outbox aceitou entrega duplicada.';
   EXCEPTION WHEN unique_violation THEN
     NULL;
   END;
 
-  SELECT id INTO v_claimed_delivery_id FROM public.claim_message_deliveries(1);
-  IF v_claimed_delivery_id IS DISTINCT FROM v_delivery_id THEN
-    RAISE EXCEPTION 'Claim da outbox não retornou a entrega esperada.';
+  SELECT id INTO v_claimed_delivery_id
+  FROM public.claim_reminder_deliveries(1, interval '1 minute');
+  IF v_claimed_delivery_id IS DISTINCT FROM v_reminder_delivery_id THEN
+    RAISE EXCEPTION 'Claim de lembrete não retornou a entrega esperada.';
   END IF;
 
-  IF (SELECT status FROM public.message_deliveries WHERE id = v_delivery_id) <> 'processing' THEN
-    RAISE EXCEPTION 'Claim não marcou a entrega como processing.';
+  IF EXISTS (
+    SELECT 1
+    FROM public.message_deliveries
+    WHERE id = v_confirmation_delivery_id
+      AND status <> 'pending'
+  ) THEN
+    RAISE EXCEPTION 'Claim de lembrete reivindicou template incompatível.';
   END IF;
 
-  PERFORM public.mark_message_delivery(v_delivery_id, 'failed', 'provider_422', NULL);
-  IF (SELECT status FROM public.message_deliveries WHERE id = v_delivery_id) <> 'failed' THEN
-    RAISE EXCEPTION 'Falha não foi registrada na outbox.';
+  UPDATE public.message_deliveries
+  SET locked_at = now() - interval '2 minutes'
+  WHERE id = v_reminder_delivery_id;
+
+  SELECT id INTO v_claimed_delivery_id
+  FROM public.claim_reminder_deliveries(1, interval '1 minute');
+  IF v_claimed_delivery_id IS DISTINCT FROM v_reminder_delivery_id THEN
+    RAISE EXCEPTION 'Lock abandonado não foi recuperado pelo claim.';
   END IF;
 
-  UPDATE public.message_deliveries SET next_attempt_at = now() WHERE id = v_delivery_id;
-  PERFORM public.claim_message_deliveries(1);
-  PERFORM public.mark_message_delivery(v_delivery_id, 'sent', NULL, 'wamid.test');
-  IF (SELECT status FROM public.message_deliveries WHERE id = v_delivery_id) <> 'sent' THEN
-    RAISE EXCEPTION 'Entrega não foi finalizada como enviada.';
+  v_status := public.complete_reminder_delivery(
+    v_reminder_delivery_id,
+    v_reminder_appointment_id,
+    v_organization_id,
+    'wamid.test'
+  );
+  IF v_status <> 'sent' THEN
+    RAISE EXCEPTION 'Finalização atômica não retornou sent.';
+  END IF;
+
+  IF (SELECT status FROM public.message_deliveries WHERE id = v_reminder_delivery_id) <> 'sent'
+    OR (SELECT reminder_sent_at IS NULL FROM public.appointments WHERE id = v_reminder_appointment_id) THEN
+    RAISE EXCEPTION 'Finalização atômica não confirmou entrega e agendamento.';
+  END IF;
+
+  SELECT id INTO v_claimed_delivery_id
+  FROM public.claim_reminder_deliveries(1, interval '1 minute');
+  IF v_claimed_delivery_id IS DISTINCT FROM v_cancelled_delivery_id THEN
+    RAISE EXCEPTION 'Claim não disponibilizou entrega cancelada para descarte pelo worker.';
+  END IF;
+
+  PERFORM public.mark_message_delivery(v_cancelled_delivery_id, 'skipped', 'appointment_not_confirmed', NULL);
+  IF (SELECT status FROM public.message_deliveries WHERE id = v_cancelled_delivery_id) <> 'skipped' THEN
+    RAISE EXCEPTION 'Entrega de agendamento não confirmado não foi descartada.';
   END IF;
 
   v_status := public.claim_webhook_event('stripe', 'evt_test_001', 'checkout.session.completed');
@@ -69,8 +119,8 @@ BEGIN
     RAISE EXCEPTION 'authenticated ainda pode ler a outbox.';
   END IF;
 
-  IF has_function_privilege('authenticated', 'public.claim_message_deliveries(integer)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'authenticated ainda pode executar claim da outbox.';
+  IF has_function_privilege('authenticated', 'public.claim_reminder_deliveries(integer, interval)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'authenticated ainda pode executar claim de lembretes.';
   END IF;
 END;
 $$;

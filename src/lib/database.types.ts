@@ -971,6 +971,33 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      claim_reminder_deliveries: {
+        Args: { p_limit?: number; p_stale_after?: string }
+        Returns: {
+          appointment_id: string
+          attempts: number
+          channel: string
+          created_at: string
+          id: string
+          last_error_code: string | null
+          locked_at: string | null
+          max_attempts: number
+          next_attempt_at: string
+          organization_id: string
+          provider_message_id: string | null
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+          template_name: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "message_deliveries"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       claim_webhook_event: {
         Args: {
           p_event_type: string
@@ -987,6 +1014,15 @@ export type Database = {
       complete_password_reset: {
         Args: { new_password: string; reset_token: string }
         Returns: Json
+      }
+      complete_reminder_delivery: {
+        Args: {
+          p_appointment_id: string
+          p_delivery_id: string
+          p_organization_id: string
+          p_provider_message_id?: string
+        }
+        Returns: string
       }
       get_customer_appointments: {
         Args: { p_customer_id: string }

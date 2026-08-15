@@ -1,4 +1,5 @@
 import {
+  hasUpdatedOrganization,
   hasValidSharedSecret,
   parseInternalWhatsAppRequest,
   requirePost,
@@ -71,5 +72,20 @@ Deno.test("rejeita template, correlationId e parâmetros inválidos", () => {
     requirePost(new Request("https://agenda-facil.test", { method: "GET" }))
       ?.status === 405,
     "Método GET deve ser recusado.",
+  );
+});
+
+Deno.test("exige uma organização afetada antes de confirmar webhook", () => {
+  assert(
+    hasUpdatedOrganization({ id: "organization-id" }, null),
+    "Uma linha retornada sem erro deve ser considerada atualizada.",
+  );
+  assert(
+    !hasUpdatedOrganization(null, null),
+    "Update sem linha afetada não pode confirmar o webhook.",
+  );
+  assert(
+    !hasUpdatedOrganization({ id: "organization-id" }, { message: "falha" }),
+    "Erro do banco não pode confirmar o webhook.",
   );
 });

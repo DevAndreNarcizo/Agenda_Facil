@@ -1,4 +1,7 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  createClient,
+  type SupabaseClient,
+} from "https://esm.sh/@supabase/supabase-js@2";
 import {
   hasValidSharedSecret,
   jsonResponse,
@@ -7,11 +10,13 @@ import {
 } from "../_shared/integrations.ts";
 
 type Delivery = { appointment_id: string; id: string; organization_id: string };
+type DeliveryFinalStatus = "failed" | "skipped" | "unknown";
 type AppointmentContext = {
   customer_name: string | null;
   customer_phone: string | null;
   id: string;
   start_time: string;
+  status: string;
   customer:
     | { name: string; phone: string }
     | { name: string; phone: string }[]
@@ -38,6 +43,46 @@ function getBatchSize(): number {
   return Number.isInteger(configured) && configured >= 1 && configured <= 100
     ? configured
     : 25;
+}
+
+/**
+ * Converte o TTL de recuperação de locks em um intervalo seguro para o PostgreSQL.
+ *
+ * @author André Narcizo
+ */
+function getClaimStaleAfter(): string {
+  const seconds = Number(
+    Deno.env.get("INTEGRATIONS_CLAIM_TTL_SECONDS") ?? "600",
+  );
+  return Number.isInteger(seconds) && seconds >= 60 && seconds <= 3600
+    ? `${seconds} seconds`
+    : "10 minutes";
+}
+
+/**
+ * Finaliza uma entrega sem ocultar falhas de persistência.
+ *
+ * @author André Narcizo
+ */
+async function markDelivery(
+  supabase: SupabaseClient,
+  deliveryId: string,
+  status: DeliveryFinalStatus,
+  errorCode: string,
+): Promise<boolean> {
+  const { error } = await supabase.rpc("mark_message_delivery", {
+    p_delivery_id: deliveryId,
+    p_status: status,
+    p_error_code: errorCode,
+    p_provider_message_id: null,
+  });
+
+  if (!error) return true;
+
+  logIntegrationEvent("reminders.delivery", "error", {
+    errorCode: "delivery_mark_failed",
+  });
+  return false;
 }
 
 Deno.serve(async (request) => {
@@ -119,8 +164,11 @@ Deno.serve(async (request) => {
   }
 
   const { data: deliveries, error: claimError } = await supabase.rpc(
-    "claim_message_deliveries",
-    { p_limit: batchSize },
+    "claim_reminder_deliveries",
+    {
+      p_limit: batchSize,
+      p_stale_after: getClaimStaleAfter(),
+    },
   );
   if (claimError) {
     logIntegrationEvent("reminders.run", "error", {
@@ -134,30 +182,52 @@ Deno.serve(async (request) => {
 
   let sent = 0;
   let failed = 0;
+  let skipped = 0;
   let unknown = 0;
+  let persistenceFailures = 0;
 
   for (const delivery of (deliveries ?? []) as Delivery[]) {
     const { data: appointment, error: appointmentError } = await supabase
       .from("appointments")
       .select(
-        "customer_name, customer_phone, id, start_time, customer:customers(name, phone), organization:organizations(name)",
+        "customer_name, customer_phone, id, start_time, status, customer:customers(name, phone), organization:organizations(name)",
       )
       .eq("id", delivery.appointment_id)
       .eq("organization_id", delivery.organization_id)
       .maybeSingle();
 
     if (appointmentError || !appointment) {
-      await supabase.rpc("mark_message_delivery", {
-        p_delivery_id: delivery.id,
-        p_status: "failed",
-        p_error_code: "appointment_not_found",
-        p_provider_message_id: null,
-      });
-      failed += 1;
+      if (
+        await markDelivery(
+          supabase,
+          delivery.id,
+          "failed",
+          "appointment_not_found",
+        )
+      ) {
+        failed += 1;
+      } else {
+        persistenceFailures += 1;
+      }
       continue;
     }
 
     const context = appointment as unknown as AppointmentContext;
+    if (context.status !== "confirmed") {
+      if (
+        await markDelivery(
+          supabase,
+          delivery.id,
+          "skipped",
+          "appointment_not_confirmed",
+        )
+      ) {
+        skipped += 1;
+      } else {
+        persistenceFailures += 1;
+      }
+      continue;
+    }
     const customer = firstRelation(context.customer);
     const organization = firstRelation(context.organization);
     const customerName = context.customer_name ?? customer?.name;
@@ -165,13 +235,18 @@ Deno.serve(async (request) => {
     const organizationName = organization?.name;
 
     if (!customerName || !customerPhone || !organizationName) {
-      await supabase.rpc("mark_message_delivery", {
-        p_delivery_id: delivery.id,
-        p_status: "failed",
-        p_error_code: "missing_recipient_context",
-        p_provider_message_id: null,
-      });
-      failed += 1;
+      if (
+        await markDelivery(
+          supabase,
+          delivery.id,
+          "failed",
+          "missing_recipient_context",
+        )
+      ) {
+        failed += 1;
+      } else {
+        persistenceFailures += 1;
+      }
       continue;
     }
 
@@ -206,47 +281,77 @@ Deno.serve(async (request) => {
       } | null;
 
       if (response.ok) {
-        await Promise.all([
-          supabase.rpc("mark_message_delivery", {
+        const { data: completion, error: completionError } = await supabase.rpc(
+          "complete_reminder_delivery",
+          {
             p_delivery_id: delivery.id,
-            p_status: "sent",
-            p_error_code: null,
+            p_appointment_id: context.id,
+            p_organization_id: delivery.organization_id,
             p_provider_message_id: body?.providerMessageId ?? null,
-          }),
-          supabase.from("appointments").update({
-            reminder_sent_at: new Date().toISOString(),
-          }).eq("id", context.id).eq(
-            "organization_id",
-            delivery.organization_id,
-          ),
-        ]);
+          },
+        );
+
+        if (completionError || completion !== "sent") {
+          if (completionError) {
+            const marked = await markDelivery(
+              supabase,
+              delivery.id,
+              "unknown",
+              "delivery_confirmation_failed",
+            );
+            persistenceFailures += marked ? 0 : 1;
+          }
+          unknown += 1;
+          continue;
+        }
+
         sent += 1;
         continue;
       }
 
-      const status: "failed" | "unknown" = response.status >= 500
+      const status: DeliveryFinalStatus = response.status >= 500
         ? "unknown"
         : "failed";
-      await supabase.rpc("mark_message_delivery", {
-        p_delivery_id: delivery.id,
-        p_status: status,
-        p_error_code: `whatsapp_${response.status}`,
-        p_provider_message_id: null,
-      });
-      if (status === "failed") {
-        failed += 1;
+      if (
+        await markDelivery(
+          supabase,
+          delivery.id,
+          status,
+          `whatsapp_${response.status}`,
+        )
+      ) {
+        if (status === "failed") {
+          failed += 1;
+        } else {
+          unknown += 1;
+        }
       } else {
-        unknown += 1;
+        persistenceFailures += 1;
       }
     } catch {
-      await supabase.rpc("mark_message_delivery", {
-        p_delivery_id: delivery.id,
-        p_status: "unknown",
-        p_error_code: "whatsapp_unreachable",
-        p_provider_message_id: null,
-      });
-      unknown += 1;
+      if (
+        await markDelivery(
+          supabase,
+          delivery.id,
+          "unknown",
+          "whatsapp_unreachable",
+        )
+      ) {
+        unknown += 1;
+      } else {
+        persistenceFailures += 1;
+      }
     }
+  }
+
+  if (persistenceFailures > 0) {
+    logIntegrationEvent("reminders.run", "error", {
+      attempt: (deliveries ?? []).length,
+      errorCode: "delivery_persistence_failed",
+    });
+    return jsonResponse({
+      error: "Não foi possível registrar todas as entregas.",
+    }, 500);
   }
 
   logIntegrationEvent("reminders.run", "ok", {
@@ -257,6 +362,7 @@ Deno.serve(async (request) => {
     claimed: (deliveries ?? []).length,
     sent,
     failed,
+    skipped,
     unknown,
   }, 200);
 });

@@ -108,6 +108,19 @@ export function parseInternalWhatsAppRequest(
 }
 
 /**
+ * Confirma que uma mutação de organização afetou exatamente um registro retornado pelo Supabase.
+ *
+ * @author André Narcizo
+ */
+export function hasUpdatedOrganization(data: unknown, error: unknown): boolean {
+  return error === null &&
+    typeof data === "object" &&
+    data !== null &&
+    "id" in data &&
+    typeof data.id === "string";
+}
+
+/**
  * Emite apenas contexto operacional não sensível para logs de integração.
  *
  * @author André Narcizo

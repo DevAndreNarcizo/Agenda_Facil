@@ -22,13 +22,18 @@ Operar Stripe e WhatsApp como integrações server-to-server, autenticadas, idem
 2. Reentrega de webhook não duplica estado nem cobrança.
 3. Uma chamada anônima a WhatsApp/reminders é recusada.
 4. Falha de mensagem é rastreável e reprocessável sem duplicar envio.
+5. Locks abandonados por crash são recuperados após o TTL e não ficam presos em `processing`.
+6. Um webhook sem organização correspondente não é marcado como processado.
 
 ## Implementação sem credenciais — 15/08/2026
 
 Concluídos no ambiente de teste:
 
 - outbox `message_deliveries` com RLS, unicidade por agendamento/template, claim concorrente, retry com backoff e estados rastreáveis;
-- ledger Stripe com claim atômico antes de atualizar assinatura e reconhecimento seguro de redelivery;
+- recuperação de locks `processing` abandonados, com TTL configurável por `INTEGRATIONS_CLAIM_TTL_SECONDS` (60–3600 segundos);
+- worker de lembretes restrito a `whatsapp` + `appointment_reminder`, que descarta agendamentos não confirmados sem chamar o provedor;
+- confirmação de lembrete por RPC transacional: entrega `sent` e `appointments.reminder_sent_at` são persistidos juntas;
+- ledger Stripe com claim atômico antes de atualizar assinatura, falha recuperável quando nenhuma organização é alterada e reconhecimento seguro de redelivery;
 - boundary interno de WhatsApp com segredo compartilhado, contrato de templates limitado e logs sem dados pessoais;
 - worker de lembretes com enfileiramento idempotente e retorno apenas de contadores agregados;
 - tipos TypeScript regenerados e teste SQL transacional.
