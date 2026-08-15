@@ -78,67 +78,40 @@ export default function OnboardingPage() {
   const nextStep = () => setStep((s) => Math.min(s + 1, totalSteps - 1));
   const prevStep = () => setStep((s) => Math.max(s - 1, 0));
 
-  const handleFinishOnboarding = async () => {
+  /**
+   * Finaliza o onboarding por uma única transação validada no servidor.
+   *
+   * @author André Narcizo
+   */
+  const handleFinishOnboarding = async (): Promise<void> => {
     if (!user) {
       toast.error("Usuário não autenticado.");
       return;
     }
 
     setSaving(true);
-
     try {
-      // 1. Create the organization
-      const slug = data.businessName
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "");
+      const { error } = await supabase.functions.invoke("complete-onboarding", {
+        body: {
+          ...data,
+          schedule: data.schedule.map((item, dayOfWeek) => ({
+            active: item.active,
+            dayOfWeek,
+            end: item.end,
+            start: item.start,
+          })),
+          serviceDuration: Number(data.serviceDuration),
+          servicePrice: Number(data.servicePrice),
+        },
+      });
+      if (error) throw error;
 
-      const { data: org, error: orgError } = await supabase
-        .from("organizations")
-        .insert({
-          name: data.businessName || "Minha Empresa",
-          slug: slug || "minha-empresa",
-        })
-        .select("id")
-        .single();
-
-      if (orgError) throw orgError;
-
-      const organizationId = org.id;
-
-      // 2. Update the user profile with organization_id and role owner
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          organization_id: organizationId,
-          role: "owner",
-          full_name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Usuário",
-        })
-        .eq("id", user.id);
-
-      if (profileError) throw profileError;
-
-      // 3. Create the first service (if provided)
-      if (data.serviceName) {
-        await supabase.from("services").insert({
-          organization_id: organizationId,
-          name: data.serviceName,
-          price: parseFloat(data.servicePrice) || 0,
-          duration_minutes: parseInt(data.serviceDuration) || 30,
-          category: data.serviceCategory || "Geral",
-        });
-      }
-
-      // 4. Refresh the profile in context so dashboard loads correctly
       await refreshProfile();
-
       toast.success("Sua empresa foi criada com sucesso!");
-      nextStep(); // Go to success step
-    } catch (error) {
-      const err = error as Error;
-      toast.error(err.message || "Erro ao criar empresa. Tente novamente.");
+      nextStep();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Erro ao criar empresa. Tente novamente.";
+      toast.error(message);
     } finally {
       setSaving(false);
     }

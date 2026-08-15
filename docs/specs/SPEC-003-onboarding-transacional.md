@@ -1,6 +1,6 @@
 # SPEC-003 — Onboarding transacional e idempotente
 
-**Status:** proposta
+**Status:** implementada e validada no ambiente remoto de teste
 **Prioridade:** P1
 
 ## Objetivo
@@ -14,6 +14,13 @@ Persistir todos os dados coletados no onboarding em uma única operação idempo
 - chamadas repetidas não criam duplicidade;
 - slug é normalizado, único e reservado;
 - falhas retornam erro de domínio sem estado parcial.
+
+## Execução atual — 15/08/2026
+
+- Migration `20260815_000005_onboarding_transactional.sql` aplicada no ambiente de teste.
+- Edge Function `complete-onboarding` publicada com validação de JWT e payload; o browser não cria mais organização, perfil ou serviço diretamente.
+- A operação de banco `complete_onboarding` é transacional, idempotente e executável apenas pela `service_role` usada pela Edge Function.
+- Teste transacional repetiu a mesma solicitação e confirmou uma única organização, sete horários e um único serviço inicial, com `ROLLBACK` ao final.
 
 ## Critérios de aceite
 

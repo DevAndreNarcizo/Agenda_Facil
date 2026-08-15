@@ -208,6 +208,76 @@ export type Database = {
           },
         ];
       };
+      organization_business_hours: {
+        Row: {
+          day_of_week: number;
+          end_time: string;
+          is_active: boolean;
+          organization_id: string;
+          start_time: string;
+        };
+        Insert: {
+          day_of_week: number;
+          end_time: string;
+          is_active?: boolean;
+          organization_id: string;
+          start_time: string;
+        };
+        Update: {
+          day_of_week?: number;
+          end_time?: string;
+          is_active?: boolean;
+          organization_id?: string;
+          start_time?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "organization_business_hours_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      organization_settings: {
+        Row: {
+          address: Json;
+          bio: string;
+          instagram: string;
+          organization_id: string;
+          specialty: string;
+          timezone: string;
+          updated_at: string;
+        };
+        Insert: {
+          address?: Json;
+          bio?: string;
+          instagram?: string;
+          organization_id: string;
+          specialty?: string;
+          timezone?: string;
+          updated_at?: string;
+        };
+        Update: {
+          address?: Json;
+          bio?: string;
+          instagram?: string;
+          organization_id?: string;
+          specialty?: string;
+          timezone?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "organization_settings_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: true;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       organizations: {
         Row: {
           accent_color: string | null;
@@ -215,6 +285,7 @@ export type Database = {
           id: string;
           logo_url: string | null;
           name: string;
+          onboarding_completed_at: string | null;
           owner_id: string | null;
           plan_name: string | null;
           primary_color: string | null;
@@ -232,6 +303,7 @@ export type Database = {
           id?: string;
           logo_url?: string | null;
           name: string;
+          onboarding_completed_at?: string | null;
           owner_id?: string | null;
           plan_name?: string | null;
           primary_color?: string | null;
@@ -249,6 +321,7 @@ export type Database = {
           id?: string;
           logo_url?: string | null;
           name?: string;
+          onboarding_completed_at?: string | null;
           owner_id?: string | null;
           plan_name?: string | null;
           primary_color?: string | null;
@@ -738,6 +811,10 @@ export type Database = {
           p_start_time: string;
         };
         Returns: boolean;
+      };
+      complete_onboarding: {
+        Args: { p_payload: Json; p_user_id: string };
+        Returns: string;
       };
       complete_password_reset: {
         Args: { new_password: string; reset_token: string };

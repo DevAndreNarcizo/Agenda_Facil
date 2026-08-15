@@ -826,3 +826,10 @@ A proteção contra senhas vazadas foi verificada no painel do Supabase, mas est
 O Portal do Cliente não persiste mais `customer_id`, `organization_id` ou nome do cliente em `localStorage`. Ele usa apenas um token opaco de 256 bits, cuja versão em hash é armazenada com expiração de oito horas e revogação no servidor. As operações de sessão, serviços, agendamentos e reservas foram centralizadas em Edge Functions; a agenda possui também constraint de banco contra conflito de horários da mesma organização.
 
 As tabelas de OTP, rate limit e sessão possuem RLS, privilégios da Data API revogados e policies explícitas de negação. A verificação transacional para a role `authenticated` foi aprovada e o Security Advisor não reporta alertas. Ainda falta configurar o segredo `PORTAL_TOKEN_PEPPER` e o canal WhatsApp para validar o OTP de ponta a ponta; nenhum secret foi criado ou registrado.
+
+
+### Progresso da SPEC-003 — 15/08/2026
+
+O onboarding foi transferido para a Edge Function `complete-onboarding`, que valida o JWT e chama uma única função transacional do banco. A operação persiste organização, perfil owner, configurações comerciais/endereço, sete dias de expediente e serviço inicial; repetição do mesmo payload atualiza os mesmos registros sem duplicá-los. A função SQL tem `search_path` restrito e execução revogada para `PUBLIC`, `anon` e `authenticated`.
+
+O teste de banco foi aprovado no ambiente remoto de teste, com rollback das fixtures. O Security Advisor continua sem alertas.
