@@ -4,7 +4,82 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { Json } from "@/lib/database.types";
 import { toast } from "sonner";
+
+interface PortalCustomer {
+  id: string;
+  name: string;
+  organization_id: string;
+}
+
+interface OtpRequestResponse {
+  message?: string;
+}
+
+interface OtpVerificationResponse {
+  customer?: PortalCustomer;
+  message?: string;
+  success: boolean;
+}
+
+/**
+ * Verifica se um valor JSON possui uma estrutura de objeto simples.
+ *
+ * @author André Narcizo
+ */
+function isJsonRecord(value: Json | null): value is Record<string, Json> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Converte com segurança a resposta não tipada do RPC de solicitação de OTP.
+ *
+ * @author André Narcizo
+ */
+function parseOtpRequestResponse(data: Json | null): OtpRequestResponse {
+  if (!isJsonRecord(data)) {
+    return {};
+  }
+
+  return {
+    message: typeof data.message === "string" ? data.message : undefined,
+  };
+}
+
+/**
+ * Converte com segurança a resposta não tipada do RPC legado de validação de OTP.
+ *
+ * @author André Narcizo
+ */
+function parseOtpVerificationResponse(data: Json | null): OtpVerificationResponse {
+  if (!isJsonRecord(data)) {
+    return { success: false };
+  }
+
+  const customer = data.customer;
+  if (
+    isJsonRecord(customer) &&
+    typeof customer.id === "string" &&
+    typeof customer.name === "string" &&
+    typeof customer.organization_id === "string"
+  ) {
+    return {
+      customer: {
+        id: customer.id,
+        name: customer.name,
+        organization_id: customer.organization_id,
+      },
+      message: typeof data.message === "string" ? data.message : undefined,
+      success: data.success === true,
+    };
+  }
+
+  return {
+    message: typeof data.message === "string" ? data.message : undefined,
+    success: data.success === true,
+  };
+}
 
 export default function PortalLogin() {
   const [phone, setPhone] = useState("");
@@ -41,7 +116,8 @@ export default function PortalLogin() {
 
       if (error) throw error;
 
-      toast.success(data?.message || 'Se o número estiver cadastrado, o código será enviado pelo WhatsApp.');
+      const response = parseOtpRequestResponse(data);
+      toast.success(response.message || 'Se o número estiver cadastrado, o código será enviado pelo WhatsApp.');
 
       setStep('otp');
     } catch (err: unknown) {
@@ -67,13 +143,14 @@ export default function PortalLogin() {
 
       if (error) throw error;
 
-      if (!data?.success) {
-        toast.error(data?.message || "Código inválido");
+      const response = parseOtpVerificationResponse(data);
+      if (!response.success) {
+        toast.error(response.message || "Código inválido");
         return;
       }
 
       // Salva dados do cliente no localStorage
-      const customer = data.customer;
+      const customer = response.customer;
       if (!customer) {
         throw new Error('Não foi possível identificar o cliente.');
       }

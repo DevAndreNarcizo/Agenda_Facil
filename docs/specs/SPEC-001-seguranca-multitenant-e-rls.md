@@ -1,6 +1,6 @@
 # SPEC-001 — Segurança multitenant e RLS
 
-**Status:** pronta para implementação em staging
+**Status:** em implementação — validada no ambiente remoto de teste
 **Prioridade:** P0
 
 ## Objetivo
@@ -14,6 +14,13 @@ Estabelecer `organizations/organization_id` como contrato único e impedir leitu
 - gerar `src/lib/database.types.ts` pelo Supabase CLI conectado ao projeto;
 - mover mutações administrativas de perfis para Edge Functions;
 - adicionar testes de isolamento para owner, admin, employee e duas organizações.
+
+## Execução atual — 15/08/2026
+
+- Migration canônica aplicada ao projeto remoto de teste e complementada por `20260815_000002_optimize_rls_policies.sql`.
+- Tipos oficiais do banco regenerados em `src/lib/database.types.ts`.
+- Matriz transacional de RLS adicionada em `supabase/tests/rls-isolation.sql` e aprovada para owner, admin e employee de uma organização contra uma segunda organização.
+- Security Advisor sem alertas; o Performance Advisor manteve apenas avisos informativos de índices ainda sem uso em um banco sem carga.
 
 ## Fora do escopo
 

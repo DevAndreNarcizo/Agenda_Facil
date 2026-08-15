@@ -1,13 +1,3 @@
-/**
- * Contratos tipados do schema público consumido pelo frontend.
- *
- * Este arquivo deve ser regenerado a partir do projeto Supabase após a aplicação
- * das migrations canônicas. Enquanto isso, ele evita que operações críticas
- * degradem para `never` e mantém o contrato explícito no cliente.
- *
- * @author André Narcizo - andre.narcizo@sysout.com.br
- */
-
 export type Json =
   | string
   | number
@@ -16,165 +6,797 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export type UserRole = 'admin' | 'employee' | 'owner' | 'staff';
-export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
-export type PaymentStatus = 'pending' | 'paid' | 'refunded';
-
-type Row<T> = T & Record<string, unknown>;
-type Insert<T> = Partial<T> & Record<string, unknown>;
-type Update<T> = Partial<T> & Record<string, unknown>;
-
-interface ProfileRow {
-  id: string;
-  organization_id: string | null;
-  role: UserRole;
-  full_name: string | null;
-  created_at: string;
-}
-
-interface OrganizationRow {
-  id: string;
-  name: string;
-  slug: string | null;
-  plan_name: string | null;
-  subscription_status: string | null;
-  stripe_customer_id: string | null;
-  stripe_subscription_id: string | null;
-  trial_end: string | null;
-  primary_color: string | null;
-  secondary_color: string | null;
-  accent_color: string | null;
-  logo_url: string | null;
-  created_at: string;
-}
-
-interface CustomerRow {
-  id: string;
-  organization_id: string;
-  name: string;
-  phone: string | null;
-  email: string | null;
-  created_at: string;
-}
-
-interface ServiceRow {
-  id: string;
-  organization_id: string;
-  name: string;
-  description: string | null;
-  category: string | null;
-  duration_minutes: number;
-  price: number;
-  created_at: string;
-}
-
-interface AppointmentRow {
-  id: string;
-  organization_id: string;
-  customer_id: string | null;
-  customer_name: string;
-  customer_phone: string | null;
-  service_id: string | null;
-  employee_id: string | null;
-  start_time: string;
-  end_time: string;
-  status: AppointmentStatus;
-  notes: string | null;
-  payment_status: PaymentStatus | null;
-  payment_method: 'credit_card' | 'debit_card' | 'pix' | 'cash' | 'online' | null;
-  amount_paid: number | null;
-  is_blocked: boolean | null;
-  reminder_sent_at: string | null;
-  created_at: string;
-}
-
-export interface Database {
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.4";
+  };
   public: {
     Tables: {
-      profiles: {
-        Row: Row<ProfileRow>;
-        Insert: Insert<ProfileRow> & Pick<ProfileRow, 'id'>;
-        Update: Update<ProfileRow>;
-        Relationships: [];
+      appointments: {
+        Row: {
+          amount_paid: number;
+          created_at: string | null;
+          customer_id: string | null;
+          customer_name: string | null;
+          customer_phone: string | null;
+          employee_id: string | null;
+          end_time: string;
+          id: string;
+          is_blocked: boolean | null;
+          notes: string | null;
+          organization_id: string | null;
+          payment_method: string | null;
+          payment_status: string;
+          promotion_id: string | null;
+          reminder_sent_at: string | null;
+          service_id: string | null;
+          start_time: string;
+          status: string;
+        };
+        Insert: {
+          amount_paid?: number;
+          created_at?: string | null;
+          customer_id?: string | null;
+          customer_name?: string | null;
+          customer_phone?: string | null;
+          employee_id?: string | null;
+          end_time: string;
+          id?: string;
+          is_blocked?: boolean | null;
+          notes?: string | null;
+          organization_id?: string | null;
+          payment_method?: string | null;
+          payment_status?: string;
+          promotion_id?: string | null;
+          reminder_sent_at?: string | null;
+          service_id?: string | null;
+          start_time: string;
+          status?: string;
+        };
+        Update: {
+          amount_paid?: number;
+          created_at?: string | null;
+          customer_id?: string | null;
+          customer_name?: string | null;
+          customer_phone?: string | null;
+          employee_id?: string | null;
+          end_time?: string;
+          id?: string;
+          is_blocked?: boolean | null;
+          notes?: string | null;
+          organization_id?: string | null;
+          payment_method?: string | null;
+          payment_status?: string;
+          promotion_id?: string | null;
+          reminder_sent_at?: string | null;
+          service_id?: string | null;
+          start_time?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "appointments_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "appointments_employee_id_fkey";
+            columns: ["employee_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "appointments_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "appointments_promotion_id_fkey";
+            columns: ["promotion_id"];
+            isOneToOne: false;
+            referencedRelation: "promotions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "appointments_service_id_fkey";
+            columns: ["service_id"];
+            isOneToOne: false;
+            referencedRelation: "services";
+            referencedColumns: ["id"];
+          },
+        ];
       };
-      organizations: {
-        Row: Row<OrganizationRow>;
-        Insert: Insert<OrganizationRow> & Pick<OrganizationRow, 'name'>;
-        Update: Update<OrganizationRow>;
-        Relationships: [];
+      audit_logs: {
+        Row: {
+          action: string;
+          created_at: string | null;
+          id: string;
+          new_data: Json | null;
+          old_data: Json | null;
+          organization_id: string | null;
+          record_id: string | null;
+          table_name: string;
+          user_id: string | null;
+        };
+        Insert: {
+          action: string;
+          created_at?: string | null;
+          id?: string;
+          new_data?: Json | null;
+          old_data?: Json | null;
+          organization_id?: string | null;
+          record_id?: string | null;
+          table_name: string;
+          user_id?: string | null;
+        };
+        Update: {
+          action?: string;
+          created_at?: string | null;
+          id?: string;
+          new_data?: Json | null;
+          old_data?: Json | null;
+          organization_id?: string | null;
+          record_id?: string | null;
+          table_name?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       customers: {
-        Row: Row<CustomerRow>;
-        Insert: Insert<CustomerRow> & Pick<CustomerRow, 'organization_id' | 'name'>;
-        Update: Update<CustomerRow>;
+        Row: {
+          company_id: string | null;
+          created_at: string;
+          email: string | null;
+          id: string;
+          name: string;
+          organization_id: string;
+          phone: string;
+          updated_at: string;
+        };
+        Insert: {
+          company_id?: string | null;
+          created_at?: string;
+          email?: string | null;
+          id?: string;
+          name: string;
+          organization_id: string;
+          phone: string;
+          updated_at?: string;
+        };
+        Update: {
+          company_id?: string | null;
+          created_at?: string;
+          email?: string | null;
+          id?: string;
+          name?: string;
+          organization_id?: string;
+          phone?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "customers_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "customers_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      organizations: {
+        Row: {
+          accent_color: string | null;
+          created_at: string | null;
+          id: string;
+          logo_url: string | null;
+          name: string;
+          owner_id: string | null;
+          plan_name: string | null;
+          primary_color: string | null;
+          secondary_color: string | null;
+          slug: string;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
+          subscription_status: string | null;
+          trial_end: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          accent_color?: string | null;
+          created_at?: string | null;
+          id?: string;
+          logo_url?: string | null;
+          name: string;
+          owner_id?: string | null;
+          plan_name?: string | null;
+          primary_color?: string | null;
+          secondary_color?: string | null;
+          slug: string;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          subscription_status?: string | null;
+          trial_end?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          accent_color?: string | null;
+          created_at?: string | null;
+          id?: string;
+          logo_url?: string | null;
+          name?: string;
+          owner_id?: string | null;
+          plan_name?: string | null;
+          primary_color?: string | null;
+          secondary_color?: string | null;
+          slug?: string;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          subscription_status?: string | null;
+          trial_end?: string | null;
+          updated_at?: string | null;
+        };
         Relationships: [];
+      };
+      password_reset_tokens: {
+        Row: {
+          created_at: string;
+          expires_at: string;
+          id: string;
+          token: string;
+          used: boolean;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          token: string;
+          used?: boolean;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          token?: string;
+          used?: boolean;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      profiles: {
+        Row: {
+          avatar_url: string | null;
+          created_at: string | null;
+          email: string | null;
+          full_name: string;
+          id: string;
+          organization_id: string | null;
+          phone: string | null;
+          photo_url: string | null;
+          role: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          avatar_url?: string | null;
+          created_at?: string | null;
+          email?: string | null;
+          full_name: string;
+          id: string;
+          organization_id?: string | null;
+          phone?: string | null;
+          photo_url?: string | null;
+          role: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          avatar_url?: string | null;
+          created_at?: string | null;
+          email?: string | null;
+          full_name?: string;
+          id?: string;
+          organization_id?: string | null;
+          phone?: string | null;
+          photo_url?: string | null;
+          role?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      promotions: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          description: string | null;
+          discount_type: string;
+          discount_value: number;
+          end_date: string | null;
+          id: string;
+          name: string;
+          organization_id: string;
+          service_id: string | null;
+          start_date: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
+          discount_type?: string;
+          discount_value: number;
+          end_date?: string | null;
+          id?: string;
+          name: string;
+          organization_id: string;
+          service_id?: string | null;
+          start_date?: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
+          discount_type?: string;
+          discount_value?: number;
+          end_date?: string | null;
+          id?: string;
+          name?: string;
+          organization_id?: string;
+          service_id?: string | null;
+          start_date?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "promotions_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "promotions_service_id_fkey";
+            columns: ["service_id"];
+            isOneToOne: false;
+            referencedRelation: "services";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      reviews: {
+        Row: {
+          appointment_id: string;
+          comment: string | null;
+          created_at: string;
+          id: string;
+          organization_id: string;
+          rating: number;
+          updated_at: string;
+        };
+        Insert: {
+          appointment_id: string;
+          comment?: string | null;
+          created_at?: string;
+          id?: string;
+          organization_id: string;
+          rating: number;
+          updated_at?: string;
+        };
+        Update: {
+          appointment_id?: string;
+          comment?: string | null;
+          created_at?: string;
+          id?: string;
+          organization_id?: string;
+          rating?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reviews_appointment_id_fkey";
+            columns: ["appointment_id"];
+            isOneToOne: true;
+            referencedRelation: "appointments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reviews_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       services: {
-        Row: Row<ServiceRow>;
-        Insert: Insert<ServiceRow> & Pick<ServiceRow, 'organization_id' | 'name'>;
-        Update: Update<ServiceRow>;
+        Row: {
+          category: string | null;
+          created_at: string | null;
+          description: string | null;
+          duration_minutes: number;
+          id: string;
+          is_active: boolean | null;
+          name: string;
+          organization_id: string | null;
+          price: number;
+        };
+        Insert: {
+          category?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          duration_minutes?: number;
+          id?: string;
+          is_active?: boolean | null;
+          name: string;
+          organization_id?: string | null;
+          price: number;
+        };
+        Update: {
+          category?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          duration_minutes?: number;
+          id?: string;
+          is_active?: boolean | null;
+          name?: string;
+          organization_id?: string | null;
+          price?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "services_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      verification_codes: {
+        Row: {
+          code: string;
+          created_at: string | null;
+          expires_at: string;
+          id: string;
+          phone: string;
+        };
+        Insert: {
+          code: string;
+          created_at?: string | null;
+          expires_at: string;
+          id?: string;
+          phone: string;
+        };
+        Update: {
+          code?: string;
+          created_at?: string | null;
+          expires_at?: string;
+          id?: string;
+          phone?: string;
+        };
         Relationships: [];
       };
-      appointments: {
-        Row: Row<AppointmentRow>;
-        Insert: Insert<AppointmentRow> & Pick<AppointmentRow, 'organization_id' | 'customer_name' | 'start_time' | 'end_time'>;
-        Update: Update<AppointmentRow>;
+      waitlist: {
+        Row: {
+          created_at: string;
+          customer_id: string;
+          desired_date: string;
+          employee_id: string | null;
+          id: string;
+          notes: string | null;
+          organization_id: string;
+          service_id: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          customer_id: string;
+          desired_date: string;
+          employee_id?: string | null;
+          id?: string;
+          notes?: string | null;
+          organization_id: string;
+          service_id?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          customer_id?: string;
+          desired_date?: string;
+          employee_id?: string | null;
+          id?: string;
+          notes?: string | null;
+          organization_id?: string;
+          service_id?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "waitlist_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "waitlist_employee_id_fkey";
+            columns: ["employee_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "waitlist_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "waitlist_service_id_fkey";
+            columns: ["service_id"];
+            isOneToOne: false;
+            referencedRelation: "services";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      webhook_events: {
+        Row: {
+          event_type: string;
+          id: string;
+          processed_at: string;
+          provider: string;
+          provider_event_id: string;
+        };
+        Insert: {
+          event_type: string;
+          id?: string;
+          processed_at?: string;
+          provider: string;
+          provider_event_id: string;
+        };
+        Update: {
+          event_type?: string;
+          id?: string;
+          processed_at?: string;
+          provider?: string;
+          provider_event_id?: string;
+        };
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      [_ in never]: never;
+    };
     Functions: {
-      request_otp: {
-        Args: { phone_number: string };
-        Returns: { success: boolean; message: string };
-      };
-      verify_otp: {
-        Args: { phone_number: string; input_code: string };
-        Returns: {
-          success: boolean;
-          message?: string;
-          customer?: { id: string; name: string; organization_id: string };
-        };
-      };
       check_availability: {
-        Args: { p_start_time: string; p_end_time: string; p_organization_id: string };
+        Args: {
+          p_employee_id?: string;
+          p_end_time: string;
+          p_exclude_appointment_id?: string;
+          p_organization_id: string;
+          p_start_time: string;
+        };
         Returns: boolean;
+      };
+      complete_password_reset: {
+        Args: { new_password: string; reset_token: string };
+        Returns: Json;
       };
       get_customer_appointments: {
         Args: { p_customer_id: string };
-        Returns: Array<{
-          id: string;
-          start_time: string;
+        Returns: {
           end_time: string;
-          status: AppointmentStatus;
+          id: string;
+          service_duration: number;
           service_name: string;
           service_price: number;
-          service_duration: number;
-        }>;
-      };
-      get_monthly_revenue: {
-        Args: { organization_id: string };
-        Returns: Array<{ month: string; revenue: number }>;
-      };
-      get_top_services: {
-        Args: { organization_id: string };
-        Returns: Array<{ service_name: string; count: number; revenue: number }>;
-      };
-      get_peak_hours: {
-        Args: { organization_id: string };
-        Returns: Array<{ hour: string; appointments: number }>;
+          start_time: string;
+          status: string;
+        }[];
       };
       get_dashboard_stats: {
         Args: { organization_id: string };
-        Returns: Array<{
+        Returns: {
+          avg_ticket: number;
           total_appointments: number;
           total_customers: number;
           total_revenue: number;
-          avg_ticket: number;
-        }>;
+        }[];
       };
+      get_monthly_revenue: {
+        Args: { organization_id: string };
+        Returns: {
+          month: string;
+          revenue: number;
+        }[];
+      };
+      get_peak_hours: {
+        Args: { organization_id: string };
+        Returns: {
+          appointments: number;
+          hour: string;
+        }[];
+      };
+      get_top_services: {
+        Args: { organization_id: string };
+        Returns: {
+          count: number;
+          revenue: number;
+          service_name: string;
+        }[];
+      };
+      get_user_organization_id: { Args: never; Returns: string };
+      request_otp: { Args: { phone_number: string }; Returns: Json };
+      request_password_reset: { Args: { user_email: string }; Returns: Json };
+      verify_otp: {
+        Args: { input_code: string; phone_number: string };
+        Returns: Json;
+      };
+      verify_reset_token: { Args: { reset_token: string }; Returns: Json };
     };
-    Enums: Record<string, never>;
-    CompositeTypes: Record<string, never>;
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
+};
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<
+  keyof Database,
+  "public"
+>];
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
 }
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R;
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R;
+      }
+      ? R
+      : never
+    : never;
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I;
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I;
+      }
+      ? I
+      : never
+    : never;
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U;
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U;
+      }
+      ? U
+      : never
+    : never;
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never) = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never;
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never) = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never;
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const;

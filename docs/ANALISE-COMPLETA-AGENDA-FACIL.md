@@ -764,7 +764,7 @@ Depois da Fase 0 e da Fase 1, o projeto estará em condição muito melhor para 
 | `npm test` | aprovado — 2 testes unitários |
 | `npm run build` | aprovado |
 | `npm audit` | 0 vulnerabilidades |
-| Banco/Supabase remoto | não verificado: CLI e credenciais administrativas não estão disponíveis neste ambiente |
+| Banco/Supabase remoto de teste | verificado via MCP; migrations e validação transacional de RLS aprovadas |
 
 ### Correções aplicadas
 
@@ -775,21 +775,21 @@ Depois da Fase 0 e da Fase 1, o projeto estará em condição muito melhor para 
 | AG-005 OTP exposto no cliente | **mitigado** | interface não exibe nem encaminha `simulated_code` para endpoint público |
 | AG-006 reset de senha falso | **corrigido no frontend** | fluxo usa `resetPasswordForEmail` e `updateUser` do Supabase Auth |
 | AG-008 checkout sem autorização | **corrigido no código** | Edge Function valida JWT, owner, plano permitido e Price ID somente no servidor |
-| AG-015 RBAC somente visual | **mitigado** | rotas sensíveis possuem guard de papel; RLS canônico está preparado em migration |
+| AG-015 RBAC somente visual | **mitigado e validado em teste** | rotas sensíveis possuem guard de papel; matriz RLS de duas organizações aprovada |
 | AG-016 corrida de perfil | **corrigido** | `AuthProvider` só libera a interface após sincronizar sessão e perfil |
 | AG-017 `signUp` no navegador | **corrigido no código** | cadastro migrou para `create-employee` com Service Role isolado na Edge Function |
-| AG-025 tipos Supabase ausentes | **corrigido provisoriamente** | contrato tipado local criado; deve ser gerado do banco após a migration |
+| AG-025 tipos Supabase ausentes | **corrigido** | contrato oficial regenerado diretamente do banco remoto pelo MCP |
 | AG-027/AG-032 | **corrigidos** | rota raiz duplicada removida; guards, mensagens e falhas de sessão endurecidos |
 | AG-031 | **corrigido** | navegação interna não recarrega a página inteira |
 | AG-034 headers | **mitigado** | CSP, HSTS e Permissions-Policy adicionados à Netlify |
-| AG-010/AG-011/AG-013/AG-014 | **preparados, pendentes de aplicação** | migration canônica cria ledger de webhook, índices, RLS e funções com `search_path` fixado |
+| AG-010/AG-011/AG-013/AG-014 | **aplicados e validados no ambiente de teste** | migration canônica cria ledger de webhook, índices, RLS e funções com `search_path` fixado |
 | AG-016 testes/CI | **baseline criado** | Vitest e workflow GitHub Actions adicionados |
 | supply chain | **corrigido no lockfile** | audit completo sem vulnerabilidades no momento da análise |
 
 ### Riscos que continuam bloqueadores de produção
 
 1. **Portal do Cliente (AG-003/AG-005/AG-021)**: ainda usa `localStorage` como sessão e RPCs SQL legados. A interface não vaza o OTP, mas a sessão não é uma credencial confiável. Não publicar este fluxo antes da SPEC-002.
-2. **Banco remoto não aplicado**: `20260815_000001_canonical_organizations_security.sql` é deliberadamente uma migration de aplicação manual, após backup e staging. Sem isso, a RLS ativa pode divergir do repositório.
+2. **Produção ainda não validada**: as migrations canônicas e a matriz RLS foram aprovadas apenas no projeto remoto de teste. O rollout produtivo exige backup, staging, janela de mudança e nova execução dos testes.
 3. **SQL legado**: `schema.sql`, `src/database/` e `supabase/fix_*.sql` preservam referências a `companies/company_id`; devem ser arquivados após inventário do banco e nunca executados como fonte de verdade.
 4. **WhatsApp e lembretes**: `send-whatsapp`, `send-reminders` e `whatsapp-service` ainda precisam ser substituídos pelo boundary interno da SPEC-005. Não exponha o endpoint de envio ao browser.
 5. **Onboarding e agenda**: continuam incompletos e precisam das SPEC-003 e SPEC-004 antes de clientes pagantes.
@@ -797,7 +797,7 @@ Depois da Fase 0 e da Fase 1, o projeto estará em condição muito melhor para 
 
 ### Ordem recomendada de execução
 
-1. Aplicar ADR-001 e SPEC-001 em staging, gerar tipos Supabase e testar isolamento entre duas organizações.
+1. Repetir ADR-001 e a matriz da SPEC-001 em staging/produção controlada, com backup e monitoramento.
 2. Implementar SPEC-002 antes de disponibilizar o Portal do Cliente.
 3. Implementar SPEC-003 e SPEC-004 para tornar onboarding e agenda comercialmente utilizáveis.
 4. Aplicar SPEC-005 e ADR-004, configurar secrets e deploy das Edge Functions.
@@ -809,4 +809,13 @@ O projeto remoto `AgendaFácil` foi redefinido com autorização do responsável
 
 Resultado verificado: `auth.users`, `organizations`, `profiles` e `webhook_events` estão vazios; RLS está ativo nas tabelas públicas; Security Advisor não reporta alertas. Foram publicadas as Edge Functions `create-checkout`, `create-employee`, `stripe-webhook`, `send-whatsapp` e `send-reminders`.
 
-Ainda é obrigatório cadastrar os secrets de Stripe, WhatsApp, cron e `APP_URL` no painel do Supabase antes de usar cobrança ou mensageria. Ative também a proteção de senha vazada em **Auth > Password Security**. Nenhum secret foi criado ou exposto nesta execução.
+Ainda é obrigatório cadastrar os secrets de Stripe, WhatsApp, cron e `APP_URL` no painel do Supabase antes de usar cobrança ou mensageria. A proteção de senha vazada deve ser avaliada junto a um plano Pro ou superior, pois não está disponível no plano Free. Nenhum secret foi criado ou exposto nesta execução.
+
+
+### Progresso da SPEC-001 — 15/08/2026
+
+Foram gerados os tipos oficiais do banco em `src/lib/database.types.ts`; o Portal Login passou a validar explicitamente os retornos JSON das RPCs de OTP antes de consumi-los. A migration `20260815_000002_optimize_rls_policies.sql` também elimina o índice duplicado de agendamentos e evita a reavaliação por linha de `auth.uid()` nas policies de `profiles`.
+
+O script transacional `supabase/tests/rls-isolation.sql` foi executado com sucesso no projeto remoto de teste, sem persistir fixtures: confirmou isolamento de leitura para owner/admin/employee, bloqueou inserção entre organizações e bloqueou escalação de papel. O Security Advisor segue sem alertas. Os avisos restantes do Performance Advisor são exclusivamente de índices sem uso, esperados enquanto o banco não recebe carga real; nenhum índice deve ser removido antes de telemetria de uso.
+
+A proteção contra senhas vazadas foi verificada no painel do Supabase, mas está indisponível no plano Free. Não houve upgrade nem mudança de plano; isso requer decisão comercial específica antes de produção.
