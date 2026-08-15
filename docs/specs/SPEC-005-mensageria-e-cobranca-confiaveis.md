@@ -1,6 +1,6 @@
 # SPEC-005 — Mensageria e cobrança confiáveis
 
-**Status:** pronta para configuração após SPEC-001
+**Status:** implementada no ambiente de teste; configuração externa pendente
 **Prioridade:** P1
 
 ## Objetivo
@@ -22,3 +22,26 @@ Operar Stripe e WhatsApp como integrações server-to-server, autenticadas, idem
 2. Reentrega de webhook não duplica estado nem cobrança.
 3. Uma chamada anônima a WhatsApp/reminders é recusada.
 4. Falha de mensagem é rastreável e reprocessável sem duplicar envio.
+
+## Implementação sem credenciais — 15/08/2026
+
+Concluídos no ambiente de teste:
+
+- outbox `message_deliveries` com RLS, unicidade por agendamento/template, claim concorrente, retry com backoff e estados rastreáveis;
+- ledger Stripe com claim atômico antes de atualizar assinatura e reconhecimento seguro de redelivery;
+- boundary interno de WhatsApp com segredo compartilhado, contrato de templates limitado e logs sem dados pessoais;
+- worker de lembretes com enfileiramento idempotente e retorno apenas de contadores agregados;
+- tipos TypeScript regenerados e teste SQL transacional.
+
+### Checklist manual de configuração
+
+1. Criar os três Prices recorrentes no Stripe e inserir apenas seus IDs em `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_PRO` e `STRIPE_PRICE_CLINIC`.
+2. Inserir `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `APP_URL`, `WHATSAPP_CLOUD_API_TOKEN`, `PHONE_NUMBER_ID`, `WHATSAPP_INTERNAL_SECRET` e `REMINDERS_CRON_SECRET` como Edge Function secrets — nunca no frontend ou Git.
+3. Registrar no Stripe o endpoint `stripe-webhook` e enviar eventos de checkout, assinatura e falha de fatura.
+4. Aprovar no Meta os templates `appointment_reminder`, `appointment_confirmation` e `portal_otp`, com parâmetros na ordem usada pelas funções.
+5. Criar cron autenticado que chame `send-reminders` com `x-cron-secret`; começar em sandbox e monitorar os logs estruturados.
+6. Executar os cenários sandbox de assinatura, redelivery Stripe, falha/retry WhatsApp e lembrete de agendamento antes de produção.
+
+### Limite conhecido
+
+Sem credenciais Stripe/Meta não é possível validar uma assinatura criptográfica real, criar checkout ou confirmar a aceitação de um template pelo provedor. As funções retornam erro controlado de configuração até os secrets serem definidos.
