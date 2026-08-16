@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import { useBookingSourceMetrics } from '@/hooks/use-booking-source-metrics';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
@@ -28,6 +29,12 @@ export default function AnalyticsPage() {
   const [stats, setStats] = useState({ total_appointments: 0, total_customers: 0, total_revenue: 0, avg_ticket: 0 });
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<PeriodType>('monthly');
+  const {
+    error: bookingSourceError,
+    isLoading: isLoadingBookingSources,
+    metrics: bookingSourceMetrics,
+    totalBookings,
+  } = useBookingSourceMetrics();
 
   useEffect(() => {
     if (!profile?.organization_id) {
@@ -185,6 +192,45 @@ export default function AnalyticsPage() {
           colorClass="border-stitch-primary-container"
         />
       </div>
+
+      <Card className="rounded-[2.5rem] border border-stitch-outline-variant/10 bg-stitch-surface-container-low/30 p-8 shadow-sm">
+        <CardHeader className="mb-6 flex flex-row items-start justify-between gap-4 p-0">
+          <div>
+            <CardTitle className="font-headline text-2xl font-black text-stitch-on-surface">Reservas por canal</CardTitle>
+            <CardDescription className="mt-1 text-sm font-medium text-stitch-on-surface-variant">Origem registrada em todos os agendamentos da organização.</CardDescription>
+          </div>
+          <span className="rounded-xl bg-stitch-primary/10 px-4 py-2 text-sm font-black text-stitch-primary">{totalBookings} reservas</span>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoadingBookingSources ? (
+            <p aria-live="polite" className="text-sm text-stitch-on-surface-variant">Carregando canais de aquisição...</p>
+          ) : bookingSourceError ? (
+            <p role="alert" className="text-sm text-stitch-error">Não foi possível carregar as reservas por canal.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[480px] text-left">
+                <caption className="sr-only">Quantidade e participação das reservas por canal de origem</caption>
+                <thead className="border-b border-stitch-outline-variant/20 text-xs uppercase tracking-wider text-stitch-on-surface-variant">
+                  <tr>
+                    <th className="px-3 py-3 font-black" scope="col">Canal</th>
+                    <th className="px-3 py-3 text-right font-black" scope="col">Reservas</th>
+                    <th className="px-3 py-3 text-right font-black" scope="col">Participação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bookingSourceMetrics.map((metric) => (
+                    <tr key={metric.source} className="border-b border-stitch-outline-variant/10 last:border-0">
+                      <th className="px-3 py-3 font-bold text-stitch-on-surface" scope="row">{metric.label}</th>
+                      <td className="px-3 py-3 text-right font-black text-stitch-on-surface">{metric.count}</td>
+                      <td className="px-3 py-3 text-right font-medium text-stitch-on-surface-variant">{metric.percentage}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Main Revenue Chart */}

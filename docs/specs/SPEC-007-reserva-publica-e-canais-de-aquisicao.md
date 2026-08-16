@@ -25,9 +25,20 @@ Marketplace próprio, ranking público de empresas e integração certificada co
 
 ## Critérios de aceite
 - [ ] Um visitante reserva por URL pública sem informar `organization_id` manualmente.
-- [ ] QR Code e widget levam ao mesmo fluxo seguro.
+- [x] QR Code e widget levam ao mesmo fluxo seguro.
 - [x] Slots indisponíveis não podem ser confirmados por manipulação do navegador.
-- [ ] Dashboard mostra reservas por canal de origem.
+- [x] Dashboard mostra reservas por canal de origem.
 
 ## Métricas
 Visitas, início de reserva, reservas concluídas, conversão por canal e abandono do funil.
+
+## Implementação frontend
+
+- O painel de configurações oferece QR Code visual para a URL pública com `src=qr` e um iframe copiável com `src=site`.
+- A página pública emite `page_viewed`, `booking_started`, `identity_verification_requested` e `booking_completed` em `sessionStorage` e em um `CustomEvent` local. Os eventos não incluem dados de cliente, telefone, e-mail ou token.
+- O dashboard agrega `appointments.booking_source` dos agendamentos acessíveis pela RLS da organização, com paginação no cliente para não truncar o resultado em organizações maiores.
+
+## Limitações conhecidas
+
+- Os eventos de funil ainda não são persistidos no servidor; portanto, visitas, abandono e conversão por canal não são métricas consolidadas entre navegadores. Exigem endpoint/tabela de analytics ou integração de telemetria com credenciais próprias.
+- O QR Code é renderizado por `api.qrserver.com` a partir de uma URL de reserva já pública. Caso a política de rede/CSP do ambiente bloqueie esse host, será necessário adicionar uma biblioteca de QR Code ao bundle ou disponibilizar um gerador interno.

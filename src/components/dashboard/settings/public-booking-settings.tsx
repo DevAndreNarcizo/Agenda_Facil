@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { PublicBookingQrCode } from '@/components/dashboard/settings/public-booking-qr-code';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -29,6 +30,15 @@ const defaultSettings: PublicBookingSettingsState = {
 };
 
 /**
+ * Gera o iframe seguro e pronto para colar no site parceiro.
+ *
+ * @author André Narcizo
+ */
+function createPublicBookingWidgetSnippet(bookingUrl: string): string {
+  return `<iframe src="${bookingUrl}?src=site" title="Reserva online" width="100%" height="760" loading="lazy" style="border:0;border-radius:16px"></iframe>`;
+}
+
+/**
  * Alterna um identificador em uma lista sem mutar o estado atual.
  *
  * @author André Narcizo
@@ -52,7 +62,7 @@ export function PublicBookingSettings({ organizationId, slug }: PublicBookingSet
   const bookingUrl = useMemo(() => `${window.location.origin}/reservar/${slug}`, [slug]);
   const qrUrl = useMemo(() => `${bookingUrl}?src=qr`, [bookingUrl]);
   const widgetSnippet = useMemo(
-    () => `<iframe src="${bookingUrl}?src=site" title="Reserva online" width="100%" height="760" loading="lazy" style="border:0;border-radius:16px"></iframe>`,
+    () => createPublicBookingWidgetSnippet(bookingUrl),
     [bookingUrl],
   );
 
@@ -219,12 +229,26 @@ export function PublicBookingSettings({ organizationId, slug }: PublicBookingSet
                 <div className="flex gap-2"><code className="min-w-0 flex-1 truncate rounded-lg bg-stitch-surface p-3 text-xs">{bookingUrl}</code><Button variant="outline" onClick={() => void copy(bookingUrl)}>Copiar</Button></div>
               </div>
               <div className="space-y-2">
-                <Label>Destino do QR Code (origem rastreada)</Label>
-                <div className="flex gap-2"><code className="min-w-0 flex-1 truncate rounded-lg bg-stitch-surface p-3 text-xs">{qrUrl}</code><Button variant="outline" onClick={() => void copy(qrUrl)}>Copiar</Button></div>
+                <Label>QR Code de reserva</Label>
+                <div className="flex flex-col items-center gap-4 rounded-2xl bg-stitch-surface p-5 sm:flex-row sm:items-start">
+                  <PublicBookingQrCode value={qrUrl} />
+                  <div className="min-w-0 flex-1 space-y-3">
+                    <p className="text-sm text-stitch-on-surface-variant">Baixe ou compartilhe este QR Code. As reservas abertas por ele serão marcadas com a origem “QR Code”.</p>
+                    <code className="block break-all rounded-lg bg-white p-3 text-xs">{qrUrl}</code>
+                    <Button type="button" variant="outline" onClick={() => void copy(qrUrl)}>Copiar link do QR Code</Button>
+                  </div>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Widget para site</Label>
-                <div className="flex gap-2"><code className="min-w-0 flex-1 truncate rounded-lg bg-stitch-surface p-3 text-xs">{widgetSnippet}</code><Button variant="outline" onClick={() => void copy(widgetSnippet)}>Copiar</Button></div>
+                <p className="text-xs text-stitch-on-surface-variant">Cole este código HTML na página em que deseja exibir o agendamento.</p>
+                <textarea
+                  aria-label="Código HTML do widget de reserva"
+                  className="min-h-28 w-full rounded-lg border border-stitch-outline-variant/20 bg-stitch-surface p-3 font-mono text-xs"
+                  readOnly
+                  value={widgetSnippet}
+                />
+                <Button type="button" variant="outline" onClick={() => void copy(widgetSnippet)}>Copiar código do widget</Button>
               </div>
             </div>
           </>

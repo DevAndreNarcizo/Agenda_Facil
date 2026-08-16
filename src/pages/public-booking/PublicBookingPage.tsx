@@ -13,6 +13,7 @@ import {
 } from '@/lib/public-booking-api';
 import { resolveBookingSource } from '@/lib/public-booking-source';
 import { getPortalSession } from '@/lib/portal-api';
+import { usePublicBookingFunnel } from '@/hooks/use-public-booking-funnel';
 import { toast } from 'sonner';
 
 /**
@@ -38,6 +39,7 @@ export default function PublicBookingPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const source = useMemo(() => resolveBookingSource(location.search), [location.search]);
+  const { track } = usePublicBookingFunnel(slug, source);
   const [context, setContext] = useState<PublicBookingContext | null>(null);
   const [selectedService, setSelectedService] = useState<PublicBookingService | null>(null);
   const [employeeId, setEmployeeId] = useState<string | null>(null);
@@ -61,6 +63,7 @@ export default function PublicBookingPage() {
         const response = await getPublicBookingContext(slug);
         if (!active) return;
         setContext(response);
+        track('page_viewed');
         if (response.employees.length === 1) setEmployeeId(response.employees[0].id);
       } catch {
         if (active) setContext(null);
@@ -73,7 +76,7 @@ export default function PublicBookingPage() {
     return () => {
       active = false;
     };
-  }, [slug]);
+  }, [slug, track]);
 
   useEffect(() => {
     let active = true;
@@ -117,6 +120,7 @@ export default function PublicBookingPage() {
    * @author André Narcizo
    */
   const redirectToPortalLogin = (): void => {
+    track('identity_verification_requested');
     const returnTo = `${location.pathname}${location.search}`;
     navigate(`/portal/login?returnTo=${encodeURIComponent(returnTo)}`);
   };
@@ -139,6 +143,7 @@ export default function PublicBookingPage() {
         source,
         startTime: selectedSlot,
       });
+      track('booking_completed');
       toast.success('Reserva solicitada com sucesso.');
       setSelectedSlot(null);
       setSlots([]);
@@ -157,6 +162,17 @@ export default function PublicBookingPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  /**
+   * Define o serviço e marca o primeiro avanço do visitante no funil local.
+   *
+   * @author André Narcizo
+   */
+  const handleServiceChange = (serviceId: string): void => {
+    const service = context?.services.find((item) => item.id === serviceId) ?? null;
+    if (service && !selectedService) track('booking_started');
+    setSelectedService(service);
   };
 
   if (isLoadingContext) {
@@ -193,7 +209,7 @@ export default function PublicBookingPage() {
               id="public-service"
               className="h-12 w-full rounded-xl border border-stitch-outline-variant/30 bg-white px-3 font-medium"
               value={selectedService?.id ?? ''}
-              onChange={(event) => setSelectedService(context.services.find((service) => service.id === event.target.value) ?? null)}
+              onChange={(event) => handleServiceChange(event.target.value)}
             >
               <option value="">Selecione um serviço</option>
               {context.services.map((service) => (
