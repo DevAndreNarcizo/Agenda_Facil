@@ -78,7 +78,7 @@ Preços recorrentes são entidades próprias do Stripe e não devem ser alterado
 2. Crie um endpoint com a URL:
 
    ```text
-   https://pretzsmbjwatpbrmnrfw.supabase.co/functions/v1/stripe-webhook
+   https://<SEU-PROJETO>.supabase.co/functions/v1/stripe-webhook
    ```
 
 3. Assine estes eventos:
@@ -145,7 +145,7 @@ A função `send-reminders` exige `x-cron-secret`; uma chamada sem esse cabeçal
 5. Configure um HTTP POST para:
 
    ```text
-   https://pretzsmbjwatpbrmnrfw.supabase.co/functions/v1/send-reminders
+   https://<SEU-PROJETO>.supabase.co/functions/v1/send-reminders
    ```
 
 6. Inclua os cabeçalhos `Content-Type: application/json` e `x-cron-secret` recuperado do Vault.
