@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { describeError } from "@/hooks/use-organization";
 import { useAuth } from "@/hooks/use-auth";
 import { useEmployees, type Employee } from "@/hooks/use-employees";
 import { useAppointments } from "@/hooks/use-appointments";
@@ -11,7 +12,8 @@ import { ListPrimaryCell, ListTable, type ListColumn } from "@/components/panel/
 import { PanelDialog } from "@/components/panel/panel-dialog";
 import { EmptyState, Field, IconAction, InitialsAvatar, Page, PageHeader, PanelButton, SearchField, ToolbarSelect } from "@/components/panel/primitives";
 import { RowMenu } from "@/components/panel/row-menu";
-import { formatInstant, getZonedParts, todayKey } from "@/lib/agenda-time";
+import { formatInstant, todayKey } from "@/lib/agenda-time";
+import { normalizeAppointmentFilters } from "@/lib/appointment-filters";
 import { getInitials, plural } from "@/lib/format";
 import { EmployeeForm } from "./components/EmployeeForm";
 
@@ -33,7 +35,9 @@ const ROLE_LABELS: Record<string, string> = { owner: "Proprietária(o)", admin: 
 export default function EmployeesPage() {
   const { profile } = useAuth();
   const { employees, loading, createEmployee, updateEmployee, deleteEmployee } = useEmployees();
-  const { appointments } = useAppointments();
+  const today = todayKey();
+  const todayFilters = useMemo(() => normalizeAppointmentFilters(new URLSearchParams(`view=day&date=${today}`)), [today]);
+  const { appointments } = useAppointments(todayFilters, { fetchAll: true });
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -45,10 +49,9 @@ export default function EmployeesPage() {
   const form = useForm<AddEmployeeForm>({ resolver: zodResolver(addEmployeeSchema) });
 
   const todayCounts = useMemo(() => {
-    const today = todayKey();
     const counts = new Map<string, number>();
     appointments
-      .filter((appointment) => appointment.status !== "cancelled" && getZonedParts(new Date(appointment.start_time)).dateKey === today)
+      .filter((appointment) => appointment.status !== "cancelled")
       .forEach((appointment) => counts.set(appointment.employee_id, (counts.get(appointment.employee_id) ?? 0) + 1));
     return counts;
   }, [appointments]);
@@ -88,8 +91,8 @@ export default function EmployeesPage() {
       await updateEmployee(editing.id, { full_name: editName.trim(), ...(editing.role !== "owner" ? { role: editRole } : {}) });
       toast.success("Profissional atualizado.");
       setEditing(null);
-    } catch {
-      toast.error("Não foi possível atualizar o profissional.");
+    } catch (cause) {
+      toast.error(describeError(cause, "Não foi possível atualizar o profissional."));
     }
   };
 
@@ -99,8 +102,8 @@ export default function EmployeesPage() {
       await deleteEmployee(toDelete.id);
       toast.success("Profissional removido.");
       setToDelete(null);
-    } catch {
-      toast.error("Não foi possível remover. Verifique se há agendamentos vinculados.");
+    } catch (cause) {
+      toast.error(describeError(cause, "Não foi possível remover. Verifique se há agendamentos vinculados."));
     }
   };
 
@@ -148,7 +151,7 @@ export default function EmployeesPage() {
           label="Função"
           value={roleFilter}
           onChange={setRoleFilter}
-          options={[{ value: "", label: "Todas as funções" }, { value: "owner", label: "Proprietária(o)" }, { value: "admin", label: "Administrador" }, { value: "employee", label: "Profissional" }]}
+          options={[{ value: "", label: "Todas as funções" }, { value: "owner", label: "Proprietária(o)" }, { value: "admin", label: "Administrador" }, { value: "employee", label: "Profissional" }, { value: "staff", label: "Equipe" }]}
         />
       </div>
 

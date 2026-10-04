@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { describeError } from "@/hooks/use-organization";
 import { useServices, type Service, type ServiceInput } from "@/hooks/use-services";
 import { ConfirmDialog } from "@/components/panel/confirm-dialog";
 import { ListPrimaryCell, ListTable, type ListColumn } from "@/components/panel/list-table";
@@ -51,8 +52,8 @@ export default function ServicesPage() {
       await saveService(formData, editing?.id);
       toast.success(editing ? "Serviço atualizado." : "Serviço cadastrado.");
       setModalOpen(false);
-    } catch {
-      toast.error("Não foi possível salvar o serviço. Verifique os dados.");
+    } catch (cause) {
+      toast.error(describeError(cause, "Não foi possível salvar o serviço. Verifique os dados."));
     }
   };
 
@@ -60,8 +61,8 @@ export default function ServicesPage() {
     try {
       await setServiceActive(service.id, !service.is_active);
       toast.success(service.is_active ? "Serviço desativado. Ele some da reserva online." : "Serviço ativado.");
-    } catch {
-      toast.error("Não foi possível alterar o status do serviço.");
+    } catch (cause) {
+      toast.error(describeError(cause, "Não foi possível alterar o status do serviço."));
     }
   };
 
@@ -71,8 +72,8 @@ export default function ServicesPage() {
       await deleteService(toDelete.id);
       toast.success("Serviço removido.");
       setToDelete(null);
-    } catch {
-      toast.error("Não foi possível remover. Se houver agendamentos vinculados, desative o serviço.");
+    } catch (cause) {
+      toast.error(describeError(cause, "Não foi possível remover. Se houver agendamentos vinculados, desative o serviço."));
     }
   };
 

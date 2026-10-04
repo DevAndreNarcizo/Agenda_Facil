@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { describeError } from "@/hooks/use-organization";
+import { useAuth } from "@/hooks/use-auth";
 import { useCustomers } from "@/hooks/use-customers";
 import { ConfirmDialog } from "@/components/panel/confirm-dialog";
 import { ListPrimaryCell, ListTable, Pagination, type ListColumn } from "@/components/panel/list-table";
@@ -22,6 +24,9 @@ type SortKey = "name" | "recent" | "visits";
  * @author André Narcizo - andre.narcizo@sysout.com.br
  */
 export default function CustomersPage() {
+  const { profile } = useAuth();
+  // Exclusão é restrita a owner/admin no banco (migration 20261004_000001); a interface acompanha.
+  const canDelete = profile?.role === "owner" || profile?.role === "admin";
   const { customers, loading, newThisMonth, totalCustomers, createCustomer, updateCustomer, deleteCustomer } = useCustomers();
   const [searchParams, setSearchParams] = useSearchParams();
   const search = searchParams.get("q") ?? "";
@@ -83,8 +88,8 @@ export default function CustomersPage() {
       else await createCustomer(payload);
       toast.success(editingId ? "Cliente atualizado." : "Cliente cadastrado.");
       setModalOpen(false);
-    } catch {
-      toast.error("Não foi possível salvar o cliente. Tente novamente.");
+    } catch (cause) {
+      toast.error(describeError(cause, "Não foi possível salvar o cliente. Tente novamente."));
     } finally {
       setSaving(false);
     }
@@ -96,8 +101,8 @@ export default function CustomersPage() {
       await deleteCustomer(toDelete.id);
       toast.success("Cliente excluído.");
       setToDelete(null);
-    } catch {
-      toast.error("Não foi possível excluir. Verifique se há agendamentos vinculados.");
+    } catch (cause) {
+      toast.error(describeError(cause, "Não foi possível excluir. Verifique se há agendamentos vinculados."));
     }
   };
 
@@ -131,7 +136,7 @@ export default function CustomersPage() {
       render: (customer) => (
         <div className="flex gap-0.5 text-af-ink3">
           <IconAction icon="edit" label={`Editar ${customer.name}`} className="text-af-ink3" onClick={() => openModal(customer)} />
-          <RowMenu items={[{ label: "Excluir cliente", icon: "delete", danger: true, onSelect: () => setToDelete(customer) }]} />
+          {canDelete && <RowMenu items={[{ label: "Excluir cliente", icon: "delete", danger: true, onSelect: () => setToDelete(customer) }]} />}
         </div>
       ),
     },

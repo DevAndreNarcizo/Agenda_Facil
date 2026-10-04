@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
+import { assertRowsAffected } from "@/hooks/use-organization";
 
 export interface Employee {
   id: string;
@@ -61,12 +62,14 @@ export function useEmployees() {
       const organizationId = profile?.organization_id;
       if (!organizationId) throw new Error('Organização não encontrada');
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
-        .update(updates)
+        .update({ ...updates, updated_at: new Date().toISOString() })
         .eq("id", id)
-        .eq('organization_id', organizationId);
+        .eq('organization_id', organizationId)
+        .select("id");
       if (error) throw error;
+      assertRowsAffected(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employees", profile?.organization_id] });
@@ -78,12 +81,14 @@ export function useEmployees() {
       const organizationId = profile?.organization_id;
       if (!organizationId) throw new Error('Organização não encontrada');
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .delete()
         .eq("id", id)
-        .eq('organization_id', organizationId);
+        .eq('organization_id', organizationId)
+        .select("id");
       if (error) throw error;
+      assertRowsAffected(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employees", profile?.organization_id] });

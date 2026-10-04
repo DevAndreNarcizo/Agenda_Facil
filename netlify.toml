@@ -7,17 +7,77 @@
 # VITE_SUPABASE_URL
 # VITE_SUPABASE_ANON_KEY
 
-# Headers for security
+# Headers de segurança comuns a todas as rotas.
+# X-Frame-Options/frame-ancestors NÃO ficam aqui: a Netlify combina regras que casam com a mesma
+# rota, então um bloqueio global impediria o widget /reservar/* em sites parceiros.
+# connect-src inclui wss:// para o Realtime do Supabase (https:// não cobre websockets).
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "DENY"
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
-    Content-Security-Policy = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self'; connect-src 'self' https://*.supabase.co https://api.stripe.com;"
+    Content-Security-Policy = "default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com;"
+
+# Anti-clickjacking em todas as áreas autenticadas e de login (não embutíveis).
+[[headers]]
+  for = "/"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    Content-Security-Policy = "frame-ancestors 'none'"
+[[headers]]
+  for = "/login"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    Content-Security-Policy = "frame-ancestors 'none'"
+[[headers]]
+  for = "/register"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    Content-Security-Policy = "frame-ancestors 'none'"
+[[headers]]
+  for = "/forgot-password"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    Content-Security-Policy = "frame-ancestors 'none'"
+[[headers]]
+  for = "/reset-password"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    Content-Security-Policy = "frame-ancestors 'none'"
+[[headers]]
+  for = "/onboarding"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    Content-Security-Policy = "frame-ancestors 'none'"
+[[headers]]
+  for = "/dashboard"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    Content-Security-Policy = "frame-ancestors 'none'"
+[[headers]]
+  for = "/dashboard/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    Content-Security-Policy = "frame-ancestors 'none'"
+[[headers]]
+  for = "/portal"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    Content-Security-Policy = "frame-ancestors 'none'"
+[[headers]]
+  for = "/portal/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    Content-Security-Policy = "frame-ancestors 'none'"
+
+# /reservar/* é embutível de propósito (widget de reserva em sites parceiros).
+[[headers]]
+  for = "/reservar/*"
+  [headers.values]
+    Content-Security-Policy = "frame-ancestors *"
 
 # Cache static assets
 [[headers]]

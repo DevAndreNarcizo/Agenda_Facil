@@ -1097,7 +1097,7 @@ export type Database = {
         }[]
       }
       get_dashboard_stats: {
-        Args: { organization_id: string }
+        Args: never
         Returns: {
           avg_ticket: number
           total_appointments: number
@@ -1106,14 +1106,24 @@ export type Database = {
         }[]
       }
       get_monthly_revenue: {
-        Args: { organization_id: string }
+        Args: never
         Returns: {
           month: string
           revenue: number
         }[]
       }
+      get_period_summary: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          booked_minutes: number
+          completed: number
+          paid_revenue: number
+          pending: number
+          total: number
+        }[]
+      }
       get_peak_hours: {
-        Args: { organization_id: string }
+        Args: never
         Returns: {
           appointments: number
           hour: string
@@ -1130,7 +1140,7 @@ export type Database = {
       }
       get_public_booking_context: { Args: { p_slug: string }; Returns: Json }
       get_top_services: {
-        Args: { organization_id: string }
+        Args: never
         Returns: {
           count: number
           revenue: number

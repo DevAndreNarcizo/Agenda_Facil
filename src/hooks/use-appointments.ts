@@ -155,12 +155,21 @@ function normalizeAppointment(item: Record<string, unknown>): Appointment {
   } as Appointment;
 }
 
+/** Tamanho do lote ao carregar um período completo (limite padrão do PostgREST). */
+const FETCH_ALL_CHUNK = 1000;
+
+export interface UseAppointmentsOptions {
+  /** Ignora page/pageSize e carrega todo o período em lotes (grade da agenda). */
+  fetchAll?: boolean;
+}
+
 /**
  * Fornece consultas paginadas da agenda e comandos centralizados na Edge Function.
  *
  * @author André Narcizo
  */
-export function useAppointments(filters?: AppointmentFilters) {
+export function useAppointments(filters?: AppointmentFilters, options: UseAppointmentsOptions = {}) {
+  const fetchAll = Boolean(options.fetchAll);
   const { profile } = useAuth();
   const queryClient = useQueryClient();
   const defaultFilters = useMemo(
@@ -184,10 +193,10 @@ export function useAppointments(filters?: AppointmentFilters) {
         activeFilters.view,
         activeFilters.employeeId ?? "",
         activeFilters.statuses.join(","),
-        activeFilters.page,
-        activeFilters.pageSize,
+        fetchAll ? "all" : activeFilters.page,
+        fetchAll ? "all" : activeFilters.pageSize,
       ] as const,
-    [activeFilters, profile?.organization_id],
+    [activeFilters, fetchAll, profile?.organization_id],
   );
   const blocksQueryKey = useMemo(
     () => ["appointment-blocks", ...queryKey.slice(1)] as const,
@@ -199,27 +208,49 @@ export function useAppointments(filters?: AppointmentFilters) {
     queryFn: async () => {
       if (!profile?.organization_id) return { appointments: [], total: 0 };
 
-      let query = supabase
-        .from("appointments")
-        .select(
-          "*, service:services(name, price, duration_minutes), employee:profiles(full_name)",
-          { count: "exact" },
-        )
-        .eq("organization_id", profile.organization_id)
-        .gte("start_time", range.start.toISOString())
-        .lt("start_time", range.end.toISOString())
-        .order("start_time", { ascending: true })
-        .range(
-          (activeFilters.page - 1) * activeFilters.pageSize,
-          activeFilters.page * activeFilters.pageSize - 1,
-        );
+      /**
+       * Monta a consulta do período para um intervalo de linhas [from, to].
+       *
+       * @author André Narcizo - andre.narcizo@sysout.com.br
+       */
+      const buildQuery = (from: number, to: number) => {
+        let query = supabase
+          .from("appointments")
+          .select(
+            "*, service:services(name, price, duration_minutes), employee:profiles(full_name)",
+            { count: "exact" },
+          )
+          .eq("organization_id", profile.organization_id as string)
+          .gte("start_time", range.start.toISOString())
+          .lt("start_time", range.end.toISOString())
+          .order("start_time", { ascending: true })
+          // Desempate estável: sem ele, lotes paginados podem repetir/omitir empates de horário.
+          .order("id", { ascending: true })
+          .range(from, to);
 
-      if (activeFilters.employeeId)
-        query = query.eq("employee_id", activeFilters.employeeId);
-      if (activeFilters.statuses.length > 0)
-        query = query.in("status", activeFilters.statuses);
+        if (activeFilters.employeeId)
+          query = query.eq("employee_id", activeFilters.employeeId);
+        if (activeFilters.statuses.length > 0)
+          query = query.in("status", activeFilters.statuses);
+        return query;
+      };
 
-      const { data, error, count } = await query;
+      if (fetchAll) {
+        const rows: Record<string, unknown>[] = [];
+        for (let from = 0; ; from += FETCH_ALL_CHUNK) {
+          const { data, error, count } = await buildQuery(from, from + FETCH_ALL_CHUNK - 1);
+          if (error) throw error;
+          rows.push(...((data ?? []) as Record<string, unknown>[]));
+          if (!data || data.length < FETCH_ALL_CHUNK || rows.length >= (count ?? 0)) {
+            return { appointments: rows.map(normalizeAppointment), total: count ?? rows.length };
+          }
+        }
+      }
+
+      const { data, error, count } = await buildQuery(
+        (activeFilters.page - 1) * activeFilters.pageSize,
+        activeFilters.page * activeFilters.pageSize - 1,
+      );
       if (error) throw error;
       return {
         appointments: (data ?? []).map(normalizeAppointment) as Appointment[],

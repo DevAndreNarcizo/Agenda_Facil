@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
+import { assertRowsAffected } from "@/hooks/use-organization";
 
 interface Customer {
   id: string;
@@ -122,12 +123,14 @@ export function useCustomers() {
       const organizationId = profile?.organization_id;
       if (!organizationId) throw new Error('Organização não encontrada');
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("customers")
         .delete()
         .eq("id", id)
-        .eq('organization_id', organizationId);
+        .eq('organization_id', organizationId)
+        .select("id");
       if (error) throw error;
+      assertRowsAffected(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers", profile?.organization_id] });

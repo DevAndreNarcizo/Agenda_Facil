@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { assertRowsAffected } from "@/hooks/use-organization";
 import { supabase } from "@/lib/supabase";
 
 export interface Service {
@@ -66,10 +67,11 @@ export function useServices() {
         price: Number(input.price),
         description: input.description.trim() || null,
       };
-      const { error } = id
-        ? await supabase.from("services").update(payload).eq("id", id).eq("organization_id", orgId)
-        : await supabase.from("services").insert({ ...payload, organization_id: orgId });
+      const { data, error } = id
+        ? await supabase.from("services").update(payload).eq("id", id).eq("organization_id", orgId).select("id")
+        : await supabase.from("services").insert({ ...payload, organization_id: orgId }).select("id");
       if (error) throw error;
+      assertRowsAffected(data);
     },
     onSuccess: invalidate,
   });
@@ -77,8 +79,9 @@ export function useServices() {
   const toggleMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
       const orgId = requireOrganization();
-      const { error } = await supabase.from("services").update({ is_active: isActive }).eq("id", id).eq("organization_id", orgId);
+      const { data, error } = await supabase.from("services").update({ is_active: isActive }).eq("id", id).eq("organization_id", orgId).select("id");
       if (error) throw error;
+      assertRowsAffected(data);
     },
     onSuccess: invalidate,
   });
@@ -86,8 +89,9 @@ export function useServices() {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const orgId = requireOrganization();
-      const { error } = await supabase.from("services").delete().eq("id", id).eq("organization_id", orgId);
+      const { data, error } = await supabase.from("services").delete().eq("id", id).eq("organization_id", orgId).select("id");
       if (error) throw error;
+      assertRowsAffected(data);
     },
     onSuccess: invalidate,
   });

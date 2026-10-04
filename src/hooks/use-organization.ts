@@ -10,6 +10,38 @@ export type OrganizationSettingsRow = Database["public"]["Tables"]["organization
 
 export type PlanCode = "starter" | "pro" | "clinic";
 
+/**
+ * Escrita recusada pelo RLS (0 linhas afetadas). Mensagem pronta para a interface.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+export class PermissionDeniedError extends Error {
+  constructor(message = "Você não tem permissão para alterar estes dados. Fale com a proprietária(o) da conta.") {
+    super(message);
+    this.name = "PermissionDeniedError";
+  }
+}
+
+/**
+ * Mensagem para toast: explica a falta de permissão; demais erros usam o texto de fallback.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+export function describeError(cause: unknown, fallback: string): string {
+  if (cause instanceof PermissionDeniedError) return cause.message;
+  if (cause && typeof cause === "object" && "code" in cause && (cause as { code?: string }).code === "42501") return new PermissionDeniedError().message;
+  return fallback;
+}
+
+/**
+ * Garante que um UPDATE/DELETE com RLS afetou ao menos uma linha.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+export function assertRowsAffected(rows: unknown[] | null): void {
+  if (!rows || rows.length === 0) throw new PermissionDeniedError();
+}
+
 export interface PlanDefinition {
   code: PlanCode;
   name: string;
@@ -142,8 +174,14 @@ export function useOrganization() {
     }) => {
       if (!organizationId) throw new Error("Organização não encontrada.");
       if (input.organization) {
-        const { error } = await supabase.from("organizations").update(input.organization).eq("id", organizationId);
+        // .select() expõe linhas afetadas: com RLS, um UPDATE negado volta vazio em vez de erro.
+        const { data, error } = await supabase
+          .from("organizations")
+          .update({ ...input.organization, updated_at: new Date().toISOString() })
+          .eq("id", organizationId)
+          .select("id");
         if (error) throw error;
+        assertRowsAffected(data);
       }
       if (input.settings) {
         const { error } = await supabase

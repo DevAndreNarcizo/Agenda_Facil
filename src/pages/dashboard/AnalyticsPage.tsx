@@ -30,12 +30,12 @@ function useAnalytics(organizationId: string | null) {
     enabled: Boolean(organizationId),
     staleTime: 5 * 60_000,
     queryFn: async (): Promise<AnalyticsData> => {
-      const args = { organization_id: organizationId as string };
+      // As RPCs são SECURITY INVOKER e escopadas pela organização do usuário no servidor.
       const [revenue, services, hours, stats] = await Promise.all([
-        supabase.rpc("get_monthly_revenue", args),
-        supabase.rpc("get_top_services", args),
-        supabase.rpc("get_peak_hours", args),
-        supabase.rpc("get_dashboard_stats", args),
+        supabase.rpc("get_monthly_revenue"),
+        supabase.rpc("get_top_services"),
+        supabase.rpc("get_peak_hours"),
+        supabase.rpc("get_dashboard_stats"),
       ]);
       const failed = [revenue, services, hours, stats].find((result) => result.error);
       if (failed?.error) throw failed.error;
@@ -98,7 +98,7 @@ export default function AnalyticsPage() {
   const revenueBars = useMemo(() => {
     if (!data) return [];
     if (period === "monthly") {
-      return data.revenue.map((row) => ({ key: row.month, label: formatDateKey(`${row.month}-15`, { month: "short" }), value: row.revenue }));
+      return data.revenue.slice(-12).map((row) => ({ key: row.month, label: formatDateKey(`${row.month}-15`, { month: "short" }), value: row.revenue }));
     }
     const byYear = new Map<string, number>();
     data.revenue.forEach((row) => byYear.set(row.month.slice(0, 4), (byYear.get(row.month.slice(0, 4)) ?? 0) + row.revenue));
@@ -149,7 +149,7 @@ export default function AnalyticsPage() {
           <div className="flex items-baseline justify-between gap-3">
             <div className="flex flex-col gap-1">
               <h2 className="m-0 text-[15px] font-semibold">{period === "monthly" ? "Evolução do faturamento" : "Faturamento anual"}</h2>
-              <span className="text-xs text-af-ink3">{period === "monthly" ? "Receita bruta dos últimos 6 meses" : "Receita acumulada por ano"}</span>
+              <span className="text-xs text-af-ink3">{period === "monthly" ? "Receita realizada nos últimos 12 meses" : "Receita realizada por ano (últimos 24 meses)"}</span>
             </div>
             <span className="text-xl font-bold tracking-[-0.02em]">{formatCurrency(revenueTotal, { compact: true })}</span>
           </div>
