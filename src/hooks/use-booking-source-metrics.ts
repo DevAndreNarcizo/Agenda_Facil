@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 
 const APPOINTMENTS_PAGE_SIZE = 1_000;
 
-const bookingSourceLabels: Record<BookingSource, string> = {
+export const bookingSourceLabels: Record<BookingSource, string> = {
   direct: 'Direto',
   google: 'Google',
   instagram: 'Instagram',

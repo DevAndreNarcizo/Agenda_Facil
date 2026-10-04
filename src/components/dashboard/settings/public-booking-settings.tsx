@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { PublicBookingQrCode } from '@/components/dashboard/settings/public-booking-qr-code';
+import { Icon, Panel, PanelButton, PanelSwitch, Skeleton } from '@/components/panel/primitives';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -48,7 +45,38 @@ function toggleId(ids: string[], id: string): string[] {
 }
 
 /**
- * Gerencia quais itens do negócio podem ser exibidos na reserva pública.
+ * Lista de itens com switch (serviços/profissionais exibidos na reserva pública).
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+function ToggleList({ title, items, selected, onToggle, empty }: {
+  title: string;
+  items: SelectableItem[];
+  selected: string[];
+  onToggle: (id: string) => void;
+  empty: string;
+}) {
+  return (
+    <Panel className="overflow-hidden">
+      <div className="flex items-baseline justify-between border-b border-af-line px-5 py-3">
+        <span className="text-[13px] font-semibold">{title}</span>
+        <span className="text-xs text-af-ink3">{selected.filter((id) => items.some((item) => item.id === id)).length} de {items.length}</span>
+      </div>
+      {items.length === 0 ? (
+        <p className="m-0 px-5 py-3.5 text-[13px] text-af-ink2">{empty}</p>
+      ) : items.map((item) => (
+        <label key={item.id} className="flex cursor-pointer items-center gap-4 border-t border-af-line px-5 py-3 first-of-type:border-t-0">
+          <span className="min-w-0 flex-1 truncate text-sm">{item.name}</span>
+          <PanelSwitch checked={selected.includes(item.id)} onCheckedChange={() => onToggle(item.id)} aria-label={`Exibir ${item.name}`} />
+        </label>
+      ))}
+    </Panel>
+  );
+}
+
+/**
+ * Gerencia quais itens do negócio podem ser exibidos na reserva pública,
+ * além do link, QR code e widget para site.
  *
  * @author André Narcizo
  */
@@ -159,7 +187,7 @@ export function PublicBookingSettings({ organizationId, slug }: PublicBookingSet
           updated_at: new Date().toISOString(),
         }, { onConflict: 'organization_id' });
       if (error) throw error;
-      toast.success('Reserva pública atualizada.');
+      toast.success('Reserva online atualizada.');
     } catch {
       toast.error('Não foi possível salvar as configurações.');
     } finally {
@@ -167,93 +195,72 @@ export function PublicBookingSettings({ organizationId, slug }: PublicBookingSet
     }
   };
 
+  if (isLoading) return <Skeleton className="h-[320px]" />;
+
   return (
-    <Card className="rounded-[3rem] border border-white/5 bg-stitch-surface-container-low/20 p-0 shadow-2xl">
-      <CardHeader className="p-10 pb-5">
-        <CardTitle className="flex items-center gap-3 text-2xl font-black">
-          <span className="material-symbols-outlined text-stitch-primary">public</span>
-          Reservas públicas
-        </CardTitle>
-        <CardDescription>Publique um link seguro sem expor dados privados do seu negócio.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-8 p-10 pt-4">
-        {isLoading ? <p className="text-sm text-stitch-on-surface-variant">Carregando configurações...</p> : (
-          <>
-            <div className="flex items-center justify-between rounded-2xl bg-stitch-surface p-5">
-              <div>
-                <Label htmlFor="public-booking-enabled" className="font-black">Aceitar reservas pelo link público</Label>
-                <p className="mt-1 text-xs text-stitch-on-surface-variant">Você pode desativar a qualquer momento.</p>
-              </div>
-              <Switch
-                id="public-booking-enabled"
-                checked={settings.isEnabled}
-                onCheckedChange={(isEnabled) => setSettings((current) => ({ ...current, isEnabled }))}
-              />
-            </div>
+    <div className="flex flex-col gap-4">
+      <Panel className="flex flex-wrap items-center gap-4 px-5 py-4">
+        <PublicBookingQrCode value={qrUrl} size={72} />
+        <div className="flex min-w-[200px] flex-1 flex-col gap-1">
+          <span className="text-xs text-af-ink3">Seu link</span>
+          <span className="break-all text-sm font-medium">{bookingUrl.replace(/^https?:\/\//, '')}</span>
+          <span className="text-xs text-af-ink3">Reservas abertas pelo QR code são marcadas com a origem “QR Code”.</span>
+        </div>
+        <div className="flex gap-2">
+          <PanelButton icon="content_copy" onClick={() => void copy(bookingUrl)}>Copiar</PanelButton>
+          <a href={bookingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-af-line2 bg-af-surface px-3 text-[13px] font-medium text-af-ink no-underline hover:bg-af-surface2">
+            <Icon name="open_in_new" size={17} />Abrir
+          </a>
+        </div>
+      </Panel>
 
-            <fieldset className="space-y-3">
-              <legend className="font-black">Serviços exibidos</legend>
-              {services.length === 0 ? <p className="text-sm text-stitch-on-surface-variant">Cadastre um serviço ativo antes de publicar.</p> : services.map((service) => (
-                <label key={service.id} className="flex cursor-pointer items-center gap-3 rounded-xl border border-stitch-outline-variant/20 p-3">
-                  <input
-                    type="checkbox"
-                    checked={settings.allowedServiceIds.includes(service.id)}
-                    onChange={() => setSettings((current) => ({ ...current, allowedServiceIds: toggleId(current.allowedServiceIds, service.id) }))}
-                  />
-                  <span>{service.name}</span>
-                </label>
-              ))}
-            </fieldset>
+      <Panel className="overflow-hidden">
+        <label className="flex cursor-pointer items-center gap-4 px-5 py-3.5">
+          <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
+            <span className="text-sm font-medium">Reserva online ativa</span>
+            <span className="text-xs text-af-ink3 [text-wrap:pretty]">Clientes podem reservar pelo link público, pelo QR code e pelo widget.</span>
+          </span>
+          <PanelSwitch checked={settings.isEnabled} onCheckedChange={(isEnabled) => setSettings((current) => ({ ...current, isEnabled }))} aria-label="Reserva online ativa" />
+        </label>
+      </Panel>
 
-            {employees.length > 0 && <fieldset className="space-y-3">
-              <legend className="font-black">Profissionais exibidos</legend>
-              {employees.map((employee) => (
-                <label key={employee.id} className="flex cursor-pointer items-center gap-3 rounded-xl border border-stitch-outline-variant/20 p-3">
-                  <input
-                    type="checkbox"
-                    checked={settings.allowedEmployeeIds.includes(employee.id)}
-                    onChange={() => setSettings((current) => ({ ...current, allowedEmployeeIds: toggleId(current.allowedEmployeeIds, employee.id) }))}
-                  />
-                  <span>{employee.name}</span>
-                </label>
-              ))}
-            </fieldset>}
+      <ToggleList
+        title="Serviços exibidos"
+        items={services}
+        selected={settings.allowedServiceIds}
+        onToggle={(id) => setSettings((current) => ({ ...current, allowedServiceIds: toggleId(current.allowedServiceIds, id) }))}
+        empty="Cadastre um serviço ativo antes de publicar."
+      />
 
-            <Button className="w-full" onClick={() => void save()} disabled={isSaving}>
-              {isSaving ? 'Salvando...' : 'Salvar reservas públicas'}
-            </Button>
+      {employees.length > 0 && (
+        <ToggleList
+          title="Profissionais exibidos"
+          items={employees}
+          selected={settings.allowedEmployeeIds}
+          onToggle={(id) => setSettings((current) => ({ ...current, allowedEmployeeIds: toggleId(current.allowedEmployeeIds, id) }))}
+          empty=""
+        />
+      )}
 
-            <div className="space-y-4 border-t border-stitch-outline-variant/20 pt-7">
-              <div className="space-y-2">
-                <Label>Link de reserva</Label>
-                <div className="flex gap-2"><code className="min-w-0 flex-1 truncate rounded-lg bg-stitch-surface p-3 text-xs">{bookingUrl}</code><Button variant="outline" onClick={() => void copy(bookingUrl)}>Copiar</Button></div>
-              </div>
-              <div className="space-y-2">
-                <Label>QR Code de reserva</Label>
-                <div className="flex flex-col items-center gap-4 rounded-2xl bg-stitch-surface p-5 sm:flex-row sm:items-start">
-                  <PublicBookingQrCode value={qrUrl} />
-                  <div className="min-w-0 flex-1 space-y-3">
-                    <p className="text-sm text-stitch-on-surface-variant">Baixe ou compartilhe este QR Code. As reservas abertas por ele serão marcadas com a origem “QR Code”.</p>
-                    <code className="block break-all rounded-lg bg-white p-3 text-xs">{qrUrl}</code>
-                    <Button type="button" variant="outline" onClick={() => void copy(qrUrl)}>Copiar link do QR Code</Button>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Widget para site</Label>
-                <p className="text-xs text-stitch-on-surface-variant">Cole este código HTML na página em que deseja exibir o agendamento.</p>
-                <textarea
-                  aria-label="Código HTML do widget de reserva"
-                  className="min-h-28 w-full rounded-lg border border-stitch-outline-variant/20 bg-stitch-surface p-3 font-mono text-xs"
-                  readOnly
-                  value={widgetSnippet}
-                />
-                <Button type="button" variant="outline" onClick={() => void copy(widgetSnippet)}>Copiar código do widget</Button>
-              </div>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+      <div className="flex justify-end">
+        <PanelButton variant="primary" size="md" onClick={() => void save()} disabled={isSaving}>
+          {isSaving ? 'Salvando…' : 'Salvar reserva online'}
+        </PanelButton>
+      </div>
+
+      <Panel className="flex flex-col gap-3 p-5">
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-medium">Widget para site</span>
+          <span className="text-xs text-af-ink3">Cole este código HTML na página em que deseja exibir o agendamento.</span>
+        </div>
+        <textarea
+          aria-label="Código HTML do widget de reserva"
+          className="af-input min-h-24 resize-none py-2.5 font-mono text-xs"
+          readOnly
+          value={widgetSnippet}
+        />
+        <div><PanelButton icon="content_copy" onClick={() => void copy(widgetSnippet)}>Copiar código</PanelButton></div>
+      </Panel>
+    </div>
   );
 }

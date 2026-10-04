@@ -1,16 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { PanelDialog } from "@/components/panel/panel-dialog";
+import { Field, PanelButton } from "@/components/panel/primitives";
 
-interface CustomerFormData {
+export interface CustomerFormData {
   name: string;
   phone: string;
   email: string;
@@ -19,113 +10,47 @@ interface CustomerFormData {
 interface CustomerModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  editingCustomer: { id: string; name: string; phone: string; email: string | null } | null;
+  isEditing: boolean;
   formData: CustomerFormData;
   onFormChange: (data: CustomerFormData) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (event: React.FormEvent) => void;
   saving: boolean;
 }
 
-export function CustomerModal({
-  isOpen,
-  onOpenChange,
-  editingCustomer,
-  formData,
-  onFormChange,
-  onSubmit,
-  saving,
-}: CustomerModalProps) {
+/**
+ * Modal de cadastro/edição de cliente no padrão do painel refinado.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+export function CustomerModal({ isOpen, onOpenChange, isEditing, formData, onFormChange, onSubmit, saving }: CustomerModalProps) {
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button className="w-full h-16 rounded-2xl font-black text-lg gap-3 shadow-lg shadow-stitch-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
-          <span className="material-symbols-outlined text-2xl">person_add</span>
-          Novo Cliente
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[700px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden font-sans">
-        <DialogHeader className="p-10 pb-6 bg-stitch-surface-container-low/30">
-          <div className="flex items-center gap-4 mb-2">
-            <div className="w-14 h-14 rounded-2xl bg-stitch-primary/10 flex items-center justify-center text-stitch-primary">
-              <span className="material-symbols-outlined text-3xl">
-                {editingCustomer ? "person_edit" : "person_add"}
-              </span>
-            </div>
-            <div>
-              <DialogTitle className="text-2xl font-black font-headline text-stitch-on-surface">
-                {editingCustomer ? "Editar Cadastro" : "Novo Cliente"}
-              </DialogTitle>
-              <DialogDescription className="text-sm font-bold text-stitch-on-surface-variant opacity-60">
-                Mantenha o histórico do cliente atualizado.
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
-
-        <form onSubmit={onSubmit} className="px-10 pb-10 space-y-6 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm font-bold ml-1">Nome Completo</Label>
-            <div className="relative group">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-primary opacity-50 group-focus-within:opacity-100 transition-opacity">person</span>
-              <Input
-                id="name"
-                className="pl-12 h-14 rounded-xl border-none !bg-[#1a1c1e] text-white font-bold placeholder:text-white/20 transition-all focus-visible:ring-stitch-primary"
-                value={formData.name}
-                onChange={(e) => onFormChange({ ...formData, name: e.target.value })}
-                required
-                placeholder="Ex: Ana Beatriz Oliveira"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="phone" className="text-sm font-bold ml-1">WhatsApp / Telefone</Label>
-            <div className="relative group">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40 group-focus-within:opacity-100 transition-opacity">call</span>
-              <Input
-                id="phone"
-                className="pl-12 h-14 rounded-xl border-none !bg-[#1a1c1e] text-white font-bold placeholder:text-white/20 transition-all focus-visible:ring-stitch-primary"
-                value={formData.phone}
-                onChange={(e) => onFormChange({ ...formData, phone: e.target.value })}
-                placeholder="(11) 98765-4321"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-bold ml-1">Email</Label>
-            <div className="relative group">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40 group-focus-within:opacity-100 transition-opacity">mail</span>
-              <Input
-                id="email"
-                type="email"
-                className="pl-12 h-14 rounded-xl border-none !bg-[#1a1c1e] text-white font-bold placeholder:text-white/20 transition-all focus-visible:ring-stitch-primary"
-                value={formData.email}
-                onChange={(e) => onFormChange({ ...formData, email: e.target.value })}
-                placeholder="cliente@email.com"
-              />
-            </div>
-          </div>
-
-          <div className="pt-4">
-            <Button
-              type="submit"
-              disabled={saving}
-              className="w-full h-16 rounded-[1.5rem] font-black text-lg gap-2 shadow-xl shadow-stitch-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              {saving ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Salvando...
-                </span>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined font-black">save</span>
-                  {editingCustomer ? "Atualizar Cadastro" : "Salvar Cliente"}
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <PanelDialog
+      open={isOpen}
+      onOpenChange={onOpenChange}
+      width={480}
+      title={isEditing ? "Editar cliente" : "Novo cliente"}
+      description="Mantenha o contato atualizado para lembretes e confirmações."
+      footer={
+        <>
+          <div className="flex-1" />
+          <PanelButton variant="ghost" size="md" onClick={() => onOpenChange(false)}>Cancelar</PanelButton>
+          <PanelButton variant="primary" size="md" type="submit" form="customer-form" disabled={saving || formData.name.trim().length < 2}>
+            {saving ? "Salvando…" : isEditing ? "Salvar alterações" : "Cadastrar cliente"}
+          </PanelButton>
+        </>
+      }
+    >
+      <form id="customer-form" onSubmit={onSubmit} className="flex flex-col gap-4">
+        <Field label="Nome completo" htmlFor="customer-name">
+          <input id="customer-name" className="af-input" required autoFocus maxLength={160} value={formData.name} placeholder="Ex.: Ana Beatriz Oliveira" onChange={(event) => onFormChange({ ...formData, name: event.target.value })} />
+        </Field>
+        <Field label="WhatsApp" htmlFor="customer-phone">
+          <input id="customer-phone" className="af-input" type="tel" inputMode="tel" maxLength={30} value={formData.phone} placeholder="(11) 98765-4321" onChange={(event) => onFormChange({ ...formData, phone: event.target.value })} />
+        </Field>
+        <Field label="E-mail" htmlFor="customer-email" optional>
+          <input id="customer-email" className="af-input" type="email" maxLength={160} value={formData.email} placeholder="cliente@email.com" onChange={(event) => onFormChange({ ...formData, email: event.target.value })} />
+        </Field>
+      </form>
+    </PanelDialog>
   );
 }

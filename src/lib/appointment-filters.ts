@@ -59,7 +59,7 @@ export function normalizeAppointmentFilters(
 
 /**
  * Deriva o intervalo UTC semiaberto [start, end) para a data e visualização informadas.
- * A semana começa no domingo, conforme a convenção do calendário da aplicação.
+ * A semana começa na segunda-feira, convenção pt-BR adotada pela agenda do painel.
  *
  * @author André Narcizo
  */
@@ -75,7 +75,8 @@ export function getAppointmentUtcRange(
   const endDate = new Date(startDate);
 
   if (view === 'week') {
-    startDate.setUTCDate(startDate.getUTCDate() - startDate.getUTCDay());
+    // getUTCDay: 0 = domingo; recua até a segunda-feira da mesma semana.
+    startDate.setUTCDate(startDate.getUTCDate() - ((startDate.getUTCDay() + 6) % 7));
     endDate.setTime(startDate.getTime());
     endDate.setUTCDate(endDate.getUTCDate() + 7);
   } else if (view === 'month') {

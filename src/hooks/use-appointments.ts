@@ -35,6 +35,10 @@ export interface Appointment {
   payment_status: "pending" | "paid" | "refunded";
   amount_paid: number;
   is_blocked?: boolean;
+  /** Canal de origem da reserva (link público, QR, painel…). */
+  booking_source?: string | null;
+  /** Instante em que o lembrete automático foi enviado. */
+  reminder_sent_at?: string | null;
 }
 
 export interface AppointmentBlock {

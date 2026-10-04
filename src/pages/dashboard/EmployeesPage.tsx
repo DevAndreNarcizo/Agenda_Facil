@@ -1,276 +1,211 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useEmployees } from "@/hooks/use-employees";
-import { useAppointments } from "@/hooks/use-appointments";
-import { isSameDayInSaoPaulo } from "@/hooks/use-dashboard-stats";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/use-auth";
+import { useEmployees, type Employee } from "@/hooks/use-employees";
+import { useAppointments } from "@/hooks/use-appointments";
+import { ConfirmDialog } from "@/components/panel/confirm-dialog";
+import { ListPrimaryCell, ListTable, type ListColumn } from "@/components/panel/list-table";
+import { PanelDialog } from "@/components/panel/panel-dialog";
+import { EmptyState, Field, IconAction, InitialsAvatar, Page, PageHeader, PanelButton, SearchField, ToolbarSelect } from "@/components/panel/primitives";
+import { RowMenu } from "@/components/panel/row-menu";
+import { formatInstant, getZonedParts, todayKey } from "@/lib/agenda-time";
+import { getInitials, plural } from "@/lib/format";
 import { EmployeeForm } from "./components/EmployeeForm";
-import { EmployeesTable } from "./components/EmployeesTable";
 
 const addEmployeeSchema = z.object({
   fullName: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
-  email: z.string().email("Email inválido"),
+  email: z.string().email("E-mail inválido"),
   password: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
 });
 
 type AddEmployeeForm = z.infer<typeof addEmployeeSchema>;
 
+const ROLE_LABELS: Record<string, string> = { owner: "Proprietária(o)", admin: "Administrador", staff: "Equipe", employee: "Profissional" };
+
 /**
- * Gerencia a equipe e exibe a carga diária no fuso America/Sao_Paulo.
+ * Profissionais: equipe com função, data de entrada e carga do dia; convite, edição e remoção.
  *
  * @author André Narcizo - andre.narcizo@sysout.com.br
  */
 export default function EmployeesPage() {
+  const { profile } = useAuth();
   const { employees, loading, createEmployee, updateEmployee, deleteEmployee } = useEmployees();
   const { appointments } = useAppointments();
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [editingEmployee, setEditingEmployee] = useState<{ id: string; full_name: string } | null>(null);
+  const [editing, setEditing] = useState<Employee | null>(null);
   const [editName, setEditName] = useState("");
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editRole, setEditRole] = useState<Employee["role"]>("employee");
+  const [toDelete, setToDelete] = useState<Employee | null>(null);
+  const form = useForm<AddEmployeeForm>({ resolver: zodResolver(addEmployeeSchema) });
 
-  const form = useForm<AddEmployeeForm>({
-    resolver: zodResolver(addEmployeeSchema),
-  });
+  const todayCounts = useMemo(() => {
+    const today = todayKey();
+    const counts = new Map<string, number>();
+    appointments
+      .filter((appointment) => appointment.status !== "cancelled" && getZonedParts(new Date(appointment.start_time)).dateKey === today)
+      .forEach((appointment) => counts.set(appointment.employee_id, (counts.get(appointment.employee_id) ?? 0) + 1));
+    return counts;
+  }, [appointments]);
 
-  const filteredEmployees = employees.filter((e) =>
-    e.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const rows = employees.filter((employee) =>
+    (!roleFilter || employee.role === roleFilter)
+    && (!search.trim() || employee.full_name.toLowerCase().includes(search.trim().toLowerCase()) || employee.email?.toLowerCase().includes(search.trim().toLowerCase())));
 
-  const todayAppointments = appointments.filter(
-    (appointment) => appointment.status !== "cancelled"
-      && isSameDayInSaoPaulo(new Date(appointment.start_time)),
-  );
-
-  const getEmployeeTodayCount = (empId: string) =>
-    todayAppointments.filter((a) => a.employee_id === empId).length;
-
-  const onSubmit = async (data: AddEmployeeForm) => {
+  /**
+   * Cria o acesso do novo profissional via Edge Function.
+   *
+   * @author André Narcizo - andre.narcizo@sysout.com.br
+   */
+  const onInvite = async (data: AddEmployeeForm) => {
     setCreating(true);
     try {
       await createEmployee(data);
       form.reset();
-      setIsDialogOpen(false);
-      toast.success("Profissional adicionado com sucesso!");
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(error.message || "Erro ao adicionar funcionário");
+      setInviteOpen(false);
+      toast.success("Profissional adicionado à equipe.");
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Não foi possível adicionar o profissional.");
     } finally {
       setCreating(false);
     }
   };
 
-  const handleEditEmployee = async () => {
-    if (!editingEmployee || !editName.trim()) return;
-    try {
-      await updateEmployee(editingEmployee.id, { full_name: editName });
-      setIsEditDialogOpen(false);
-      setEditingEmployee(null);
-      toast.success("Profissional atualizado com sucesso!");
-    } catch {
-      toast.error("Erro ao atualizar profissional.");
-    }
-  };
-
-  const handleDeleteEmployee = async (id: string, name: string) => {
-    if (!confirm(`Tem certeza que deseja remover ${name}? Esta ação não pode ser desfeita.`)) return;
-    try {
-      await deleteEmployee(id);
-      toast.success("Profissional removido com sucesso!");
-    } catch {
-      toast.error("Erro ao remover profissional. Verifique se não há agendamentos vinculados.");
-    }
-  };
-
-  const openEditDialog = (employee: { id: string; full_name: string }) => {
-    setEditingEmployee(employee);
+  const openEdit = (employee: Employee) => {
+    setEditing(employee);
     setEditName(employee.full_name);
-    setIsEditDialogOpen(true);
+    setEditRole(employee.role);
   };
 
-  const getRoleLabel = (role: string) => {
-    const labels: Record<string, string> = {
-      owner: "Proprietário",
-      admin: "Administrador",
-      staff: "Staff",
-    };
-    return labels[role] ?? "Profissional";
+  const saveEdit = async () => {
+    if (!editing || editName.trim().length < 3) return;
+    try {
+      await updateEmployee(editing.id, { full_name: editName.trim(), ...(editing.role !== "owner" ? { role: editRole } : {}) });
+      toast.success("Profissional atualizado.");
+      setEditing(null);
+    } catch {
+      toast.error("Não foi possível atualizar o profissional.");
+    }
   };
 
-  return (
-    <div className="space-y-12 p-8 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <p className="text-stitch-on-surface-variant text-sm font-medium mb-1 uppercase tracking-wider">Equipe Studio</p>
-          <h1 className="font-headline text-4xl font-black tracking-tight text-stitch-on-surface">Gerenciar Profissionais</h1>
-        </div>
-        <EmployeeForm
-          isOpen={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
-          form={form}
-          onSubmit={onSubmit}
-          creating={creating}
-        />
-      </div>
+  const handleDelete = async () => {
+    if (!toDelete) return;
+    try {
+      await deleteEmployee(toDelete.id);
+      toast.success("Profissional removido.");
+      setToDelete(null);
+    } catch {
+      toast.error("Não foi possível remover. Verifique se há agendamentos vinculados.");
+    }
+  };
 
-      {/* Search & Stats Bar */}
-      <section className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-end">
-        <div className="lg:col-span-3 space-y-3">
-          <Label className="text-sm font-bold text-stitch-on-surface-variant ml-1">Filtrar Equipe</Label>
-          <div className="relative group">
-            <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-stitch-primary opacity-50 group-focus-within:opacity-100 transition-opacity text-2xl">search</span>
-            <Input
-              className="h-16 pl-14 text-lg bg-[#1a1c1e] text-white border-none rounded-2xl shadow-xl font-bold placeholder:text-white/20"
-              placeholder="Nome, cargo ou especialidade..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-        <Card className="p-6 rounded-2xl bg-stitch-surface-container-low/30 border border-white/5 flex items-center justify-between h-16">
-          <span className="text-xs font-black uppercase tracking-widest text-stitch-on-surface-variant">Total:</span>
-          <span className="text-2xl font-black font-headline text-stitch-primary">{employees.length}</span>
-        </Card>
-      </section>
-
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-64 rounded-stitch-md bg-stitch-surface-container animate-pulse" />
-          ))}
-        </div>
-      ) : filteredEmployees.length === 0 ? (
-        <div className="bg-stitch-surface-container-low/30 backdrop-blur-xl border border-white/5 rounded-[3rem] p-24 flex flex-col items-center justify-center text-center gap-8 shadow-2xl">
-          <div className="w-32 h-32 rounded-full bg-stitch-surface-container flex items-center justify-center text-stitch-on-surface-variant/30 relative">
-            <span className="material-symbols-outlined text-6xl">badge</span>
-            <div className="absolute -right-2 -bottom-2 w-12 h-12 bg-stitch-primary rounded-full flex items-center justify-center text-white shadow-lg">
-              <span className="material-symbols-outlined">add</span>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <h3 className="font-headline text-3xl font-black text-stitch-on-surface">
-              {searchTerm ? "Nenhum resultado" : "Equipe Vazia"}
-            </h3>
-            <p className="text-stitch-on-surface-variant font-medium text-lg max-w-md mx-auto opacity-70">
-              {searchTerm
-                ? "Tente buscar com outro termo."
-                : "Sua equipe é o coração do seu negócio. Adicione seu primeiro colaborador para começar a delegar atendimentos."}
-            </p>
-          </div>
-          {!searchTerm && (
-            <Button
-              onClick={() => setIsDialogOpen(true)}
-              className="h-14 px-10 rounded-xl font-black text-lg shadow-xl shadow-stitch-primary/20 hover:scale-105 transition-all"
-            >
-              Adicionar Primeiro Profissional
-            </Button>
+  const columns: ListColumn<Employee>[] = [
+    {
+      key: "name", header: "Profissional",
+      render: (employee) => <ListPrimaryCell leading={<InitialsAvatar initials={getInitials(employee.full_name)} />} title={employee.full_name} subtitle={employee.email || "Sem e-mail"} />,
+    },
+    { key: "role", header: "Função", render: (employee) => <span className="whitespace-nowrap text-[13px] text-af-ink2">{ROLE_LABELS[employee.role] ?? "Profissional"}</span> },
+    {
+      key: "since", header: "Na equipe desde",
+      render: (employee) => <span className="whitespace-nowrap text-[13px] text-af-ink2">{employee.created_at ? formatInstant(employee.created_at, { month: "short", year: "numeric" }) : "—"}</span>,
+    },
+    {
+      key: "today", header: "Hoje", align: "right",
+      render: (employee) => {
+        const count = todayCounts.get(employee.id) ?? 0;
+        return <span className="whitespace-nowrap text-[13px] text-af-ink">{count > 0 ? `${count} atend.` : "—"}</span>;
+      },
+    },
+    {
+      key: "actions", header: "", align: "right",
+      render: (employee) => (
+        <div className="flex gap-0.5">
+          <IconAction icon="edit" label={`Editar ${employee.full_name}`} className="text-af-ink3" onClick={() => openEdit(employee)} />
+          {employee.role !== "owner" && employee.id !== profile?.id && (
+            <RowMenu items={[{ label: "Remover da equipe", icon: "person_remove", danger: true, onSelect: () => setToDelete(employee) }]} />
           )}
         </div>
-      ) : (
-        <EmployeesTable
-          employees={filteredEmployees}
-          getTodayCount={getEmployeeTodayCount}
-          getRoleLabel={getRoleLabel}
-          onEdit={openEditDialog}
-          onDelete={handleDeleteEmployee}
-          onAdd={() => setIsDialogOpen(true)}
+      ),
+    },
+  ];
+
+  return (
+    <Page>
+      <PageHeader
+        eyebrow={plural(employees.length, "profissional", "profissionais")}
+        title="Profissionais"
+        actions={<PanelButton icon="add" onClick={() => setInviteOpen(true)}>Convidar profissional</PanelButton>}
+      />
+
+      <div className="flex flex-wrap items-center gap-2.5">
+        <SearchField value={search} onChange={setSearch} placeholder="Buscar profissional" />
+        <ToolbarSelect
+          label="Função"
+          value={roleFilter}
+          onChange={setRoleFilter}
+          options={[{ value: "", label: "Todas as funções" }, { value: "owner", label: "Proprietária(o)" }, { value: "admin", label: "Administrador" }, { value: "employee", label: "Profissional" }]}
         />
-      )}
-
-      {/* Edit Employee Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden font-sans bg-[#0f1113]">
-          <DialogHeader className="p-10 pb-6 bg-[#1a1c1e]/50 backdrop-blur-xl border-b border-white/5">
-            <div className="flex items-center gap-4 mb-2">
-              <div className="w-14 h-14 rounded-2xl bg-stitch-primary/10 flex items-center justify-center text-stitch-primary">
-                <span className="material-symbols-outlined text-3xl">person_edit</span>
-              </div>
-              <div>
-                <DialogTitle className="text-2xl font-black font-headline text-stitch-on-surface">Editar Profissional</DialogTitle>
-                <DialogDescription className="text-sm font-bold text-stitch-on-surface-variant opacity-60">
-                  Atualize os dados do membro da equipe.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-          <div className="px-10 pb-10 space-y-6 mt-6">
-            <div className="space-y-2">
-              <Label className="text-sm font-bold ml-1 text-white/70">Nome Completo</Label>
-              <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-primary opacity-50 group-focus-within:opacity-100 transition-opacity">person</span>
-                <Input
-                  className="pl-12 h-14 rounded-xl border-none !bg-[#1a1c1e] text-white font-bold placeholder:text-white/20 transition-all focus-visible:ring-stitch-primary"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  placeholder="Nome do profissional"
-                />
-              </div>
-            </div>
-            <Button
-              onClick={handleEditEmployee}
-              className="w-full h-16 rounded-[1.5rem] font-black text-lg gap-2 shadow-xl shadow-stitch-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <span className="material-symbols-outlined font-black">save</span>
-              Salvar Alterações
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Team Stats Summary */}
-      <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 pt-12 border-t border-stitch-surface-container">
-        <div className="bg-stitch-primary/5 p-8 rounded-stitch-md flex items-center gap-6 border border-stitch-primary/10 shadow-sm">
-          <div className="bg-stitch-primary-container w-16 h-16 rounded-2xl flex items-center justify-center text-stitch-on-primary-container shadow-inner">
-            <span className="material-symbols-outlined text-3xl">group_work</span>
-          </div>
-          <div>
-            <p className="text-xs font-black uppercase tracking-widest text-stitch-primary opacity-60 mb-1">Total Equipe</p>
-            <p className="text-3xl font-black text-stitch-on-surface leading-none">
-              {employees.length} Membro{employees.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-stitch-secondary/5 p-8 rounded-stitch-md flex items-center gap-6 border border-stitch-secondary/10 shadow-sm">
-          <div className="bg-stitch-secondary-container w-16 h-16 rounded-2xl flex items-center justify-center text-stitch-on-secondary-container shadow-inner">
-            <span className="material-symbols-outlined text-3xl">event_available</span>
-          </div>
-          <div>
-            <p className="text-xs font-black uppercase tracking-widest text-stitch-secondary opacity-60 mb-1">Atendimentos Hoje</p>
-            <p className="text-3xl font-black text-stitch-on-surface leading-none">
-              {todayAppointments.length} agendamento{todayAppointments.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-stitch-tertiary-container/10 p-8 rounded-stitch-md flex items-center gap-6 border border-stitch-tertiary-container/10 shadow-sm">
-          <div className="bg-stitch-tertiary-container w-16 h-16 rounded-2xl flex items-center justify-center text-stitch-on-tertiary-container shadow-inner">
-            <span className="material-symbols-outlined text-3xl">verified</span>
-          </div>
-          <div>
-            <p className="text-xs font-black uppercase tracking-widest text-stitch-tertiary opacity-60 mb-1">Roles</p>
-            <p className="text-3xl font-black text-stitch-on-surface leading-none">
-              {employees.filter((e) => e.role === "admin" || e.role === "owner").length} Admin
-              {employees.filter((e) => e.role === "admin" || e.role === "owner").length !== 1 ? "s" : ""}
-            </p>
-          </div>
-        </div>
       </div>
-    </div>
+
+      <ListTable
+        columns={columns}
+        template="minmax(0,2.2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,0.8fr) 72px"
+        rows={rows}
+        rowKey={(employee) => employee.id}
+        loading={loading}
+        empty={
+          <EmptyState
+            icon="badge"
+            title={employees.length === 0 ? "Equipe vazia" : "Nenhum profissional encontrado"}
+            description={employees.length === 0 ? "Convide quem atende para distribuir a agenda." : "Tente outro nome ou função."}
+          />
+        }
+        footer={<span>{plural(employees.length, "membro na equipe", "membros na equipe")}</span>}
+      />
+
+      <EmployeeForm isOpen={inviteOpen} onOpenChange={setInviteOpen} form={form} onSubmit={(data) => void onInvite(data)} creating={creating} />
+
+      <PanelDialog
+        open={editing !== null}
+        onOpenChange={(open) => !open && setEditing(null)}
+        width={440}
+        title="Editar profissional"
+        footer={
+          <>
+            <div className="flex-1" />
+            <PanelButton variant="ghost" size="md" onClick={() => setEditing(null)}>Cancelar</PanelButton>
+            <PanelButton variant="primary" size="md" disabled={editName.trim().length < 3} onClick={() => void saveEdit()}>Salvar alterações</PanelButton>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <Field label="Nome completo" htmlFor="edit-employee-name">
+            <input id="edit-employee-name" className="af-input" value={editName} onChange={(event) => setEditName(event.target.value)} />
+          </Field>
+          {editing?.role !== "owner" && (
+            <Field label="Função" htmlFor="edit-employee-role" hint="Administradores acessam serviços, equipe e configurações.">
+              <select id="edit-employee-role" className="af-input" value={editRole} onChange={(event) => setEditRole(event.target.value as Employee["role"])}>
+                <option value="employee">Profissional</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </Field>
+          )}
+        </div>
+      </PanelDialog>
+
+      <ConfirmDialog
+        open={toDelete !== null}
+        onOpenChange={(open) => !open && setToDelete(null)}
+        title="Remover da equipe?"
+        description={`${toDelete?.full_name ?? "O profissional"} perde o acesso ao painel. Essa ação não pode ser desfeita.`}
+        confirmLabel="Remover"
+        onConfirm={() => void handleDelete()}
+      />
+    </Page>
   );
 }

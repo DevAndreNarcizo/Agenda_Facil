@@ -2,10 +2,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
 
-interface Employee {
+export interface Employee {
   id: string;
   full_name: string;
-  email?: string;
+  email?: string | null;
   role: "admin" | "owner" | "employee" | "staff";
   created_at?: string;
   organization_id?: string;
@@ -22,7 +22,7 @@ export function useEmployees() {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, role, created_at, organization_id")
+        .select("id, full_name, email, role, created_at, organization_id")
         .eq("organization_id", profile.organization_id)
         .order("full_name");
 

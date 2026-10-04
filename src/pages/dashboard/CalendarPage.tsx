@@ -1,848 +1,387 @@
-import { type FormEvent, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-  Calendar,
-  dateFnsLocalizer,
-  type Event as CalendarEvent,
-  type SlotInfo,
-} from "react-big-calendar";
-import { format, getDay, parse, startOfWeek } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
-import "react-big-calendar/lib/css/react-big-calendar.css";
-import {
-  type Appointment,
-  type AppointmentBlock,
-  type AppointmentStatus,
-  useAppointments,
-} from "@/hooks/use-appointments";
+import { useAppointments } from "@/hooks/use-appointments";
 import { useEmployees } from "@/hooks/use-employees";
-import { useAuth } from "@/hooks/use-auth";
+import { useServices } from "@/hooks/use-services";
+import { getAgendaWindow, useBusinessHours } from "@/hooks/use-business-hours";
+import { ConfirmDialog } from "@/components/panel/confirm-dialog";
+import { Icon, Page, PageHeader, PanelButton, Segmented, ToolbarSelect } from "@/components/panel/primitives";
+import { normalizeAppointmentFilters, type AppointmentView } from "@/lib/appointment-filters";
+import { ACTIVE_STATUSES, STATUS_META } from "@/lib/appointment-status";
 import {
-  normalizeAppointmentFilters,
-  type AppointmentFilters,
-} from "@/lib/appointment-filters";
-import { supabase } from "@/lib/supabase";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  addDaysToKey, formatDateKey, getZonedParts, mondayOfWeek, todayKey, zonedDateTimeToUtc,
+} from "@/lib/agenda-time";
+import { buildAgendaItems, type AgendaItem } from "./calendar/agenda-model";
+import { AppointmentPanel } from "./calendar/AppointmentPanel";
+import { AppointmentDialog, type AppointmentDraft } from "./calendar/AppointmentDialog";
+import { BlockDialog, type BlockDraft } from "./calendar/BlockDialog";
+import { MonthGrid } from "./calendar/MonthGrid";
+import { WeekGrid } from "./calendar/WeekGrid";
 
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek,
-  getDay,
-  locales: { "pt-BR": ptBR },
-});
-
-interface ServiceOption {
-  id: string;
-  name: string;
-  duration_minutes: number;
-}
-
-interface AppointmentForm {
-  appointmentId?: string;
-  customerName: string;
-  customerPhone: string;
-  employeeId: string;
-  notes: string;
-  serviceId: string;
-  startTime: Date;
-}
-
-interface BlockForm {
-  employeeId: string;
-  endTime: Date;
-  reason: string;
-  startTime: Date;
-}
-
-type AgendaEvent =
-  | (CalendarEvent & {
-      kind: "appointment";
-      appointment: Appointment;
-      resource: string | null;
-    })
-  | (CalendarEvent & {
-      kind: "block";
-      block: AppointmentBlock;
-      resource: string | null;
-    });
-
-const EMPTY_APPOINTMENT_FORM = (startTime: Date): AppointmentForm => ({
-  customerName: "",
-  customerPhone: "",
-  employeeId: "",
-  notes: "",
-  serviceId: "",
-  startTime,
-});
+/** A grade carrega o período inteiro de uma vez (limite máximo aceito pelos filtros). */
+const AGENDA_PAGE_SIZE = 100;
 
 /**
- * Formata valores para o timezone operacional da agenda.
+ * Título do período exibido: "21 – 27 de setembro", "Sexta, 25 de setembro" ou "Setembro de 2026".
  *
- * @author André Narcizo
+ * @author André Narcizo - andre.narcizo@sysout.com.br
  */
-function formatAgendaDate(
-  date: Date,
-  options: Intl.DateTimeFormatOptions,
-): string {
-  return new Intl.DateTimeFormat("pt-BR", {
-    timeZone: "America/Sao_Paulo",
-    ...options,
-  }).format(date);
+function periodTitle(view: AppointmentView, dateKey: string): string {
+  if (view === "day") return formatDateKey(dateKey, { weekday: "long", day: "numeric", month: "long" });
+  if (view === "month") return formatDateKey(dateKey, { month: "long", year: "numeric" });
+  const start = mondayOfWeek(dateKey);
+  const end = addDaysToKey(start, 6);
+  return start.slice(5, 7) === end.slice(5, 7)
+    ? `${Number(start.slice(8))} – ${formatDateKey(end, { day: "numeric", month: "long" })}`
+    : `${formatDateKey(start, { day: "numeric", month: "short" })} – ${formatDateKey(end, { day: "numeric", month: "short" })}`;
 }
 
 /**
- * Extrai a data civil do calendário no timezone operacional.
+ * Desloca a data de referência conforme a visão (dia, semana ou mês).
  *
- * @author André Narcizo
+ * @author André Narcizo - andre.narcizo@sysout.com.br
  */
-function getAgendaDateKey(date: Date): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Sao_Paulo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-  const values = Object.fromEntries(
-    parts
-      .filter((part) => part.type !== "literal")
-      .map((part) => [part.type, part.value]),
-  );
-
-  return `${values.year}-${values.month}-${values.day}`;
+function shiftDate(view: AppointmentView, dateKey: string, direction: 1 | -1): string {
+  if (view === "day") return addDaysToKey(dateKey, direction);
+  if (view === "week") return addDaysToKey(dateKey, 7 * direction);
+  const [year, month] = dateKey.split("-").map(Number);
+  const target = new Date(Date.UTC(year, month - 1 + direction, 1, 12));
+  return target.toISOString().slice(0, 10);
 }
 
 /**
- * Converte a data persistida na URL em um instante seguro para navegação do calendário.
+ * Próximo horário cheio ou meia hora a partir de agora (para "Novo agendamento" sem slot).
  *
- * @author André Narcizo
+ * @author André Narcizo - andre.narcizo@sysout.com.br
  */
-function dateFromFilter(date: string): Date {
-  return new Date(`${date}T12:00:00.000Z`);
+function nextHalfHour(): number {
+  const { minutes } = getZonedParts(new Date());
+  return Math.min(23 * 60, Math.ceil((minutes + 1) / 30) * 30);
 }
 
 /**
- * Gerencia agenda, filtros, reagendamentos e bloqueios pela Edge Function autorizada.
+ * Agenda do painel: grade própria (dia/semana/mês), detalhe lateral sem modal,
+ * clique em horário vazio para agendar e bloqueios — tudo via Edge Function autorizada.
  *
- * @author André Narcizo
+ * @author André Narcizo - andre.narcizo@sysout.com.br
  */
 export default function CalendarPage() {
-  const { profile } = useAuth();
-  const { employees } = useEmployees();
   const [searchParams, setSearchParams] = useSearchParams();
   const filters = useMemo(
-    () => normalizeAppointmentFilters(searchParams),
+    () => ({ ...normalizeAppointmentFilters(searchParams), page: 1, pageSize: AGENDA_PAGE_SIZE }),
     [searchParams],
   );
   const {
-    appointments,
-    blocks,
-    totalAppointments,
-    loading,
-    error,
-    createAppointment,
-    rescheduleAppointment,
-    updateAppointmentStatus,
-    cancelAppointment,
-    createAppointmentBlock,
-    deleteAppointmentBlock,
-    creating,
-    rescheduling,
-    updatingStatus,
-    cancelling,
-    changingBlock,
+    appointments, blocks, totalAppointments, loading, error,
+    createAppointment, rescheduleAppointment, updateAppointmentStatus, cancelAppointment,
+    createAppointmentBlock, deleteAppointmentBlock,
+    creating, rescheduling, updatingStatus, cancelling, changingBlock,
   } = useAppointments(filters);
-  const [form, setForm] = useState<AppointmentForm | null>(null);
-  const [blockForm, setBlockForm] = useState<BlockForm | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<AgendaEvent | null>(null);
+  const { employees } = useEmployees();
+  const { services } = useServices();
+  const { days: businessDays } = useBusinessHours();
 
-  const servicesQuery = useQuery({
-    queryKey: ["appointment-services", profile?.organization_id],
-    queryFn: async () => {
-      if (!profile?.organization_id) return [];
-      const { data, error: queryError } = await supabase
-        .from("services")
-        .select("id, name, duration_minutes")
-        .eq("organization_id", profile.organization_id)
-        .eq("is_active", true)
-        .order("name");
-      if (queryError) throw queryError;
-      return (data ?? []) as ServiceOption[];
-    },
-    enabled: Boolean(profile?.organization_id),
-  });
-  const services = servicesQuery.data ?? [];
+  const [appointmentDraft, setAppointmentDraft] = useState<AppointmentDraft | null>(null);
+  const [blockDraft, setBlockDraft] = useState<BlockDraft | null>(null);
+  const [pendingCancel, setPendingCancel] = useState<AgendaItem | null>(null);
 
-  const events = useMemo<AgendaEvent[]>(() => {
-    const statuses =
-      filters.statuses.length > 0
-        ? filters.statuses
-        : (["pending", "confirmed", "completed"] as AppointmentStatus[]);
+  const visibleStatuses = filters.statuses.length > 0 ? filters.statuses : ACTIVE_STATUSES;
+  const items = useMemo(() => buildAgendaItems(appointments, blocks, visibleStatuses), [appointments, blocks, visibleStatuses]);
+  // Conflitos consideram tudo que está ativo, mesmo que o filtro de status esconda.
+  const conflictItems = useMemo(() => buildAgendaItems(appointments, blocks, ACTIVE_STATUSES), [appointments, blocks]);
 
-    const appointmentEvents = appointments
-      .filter((appointment) => statuses.includes(appointment.status))
-      .map((appointment) => ({
-        id: appointment.id,
-        title: `${appointment.customer_name} - ${appointment.service?.name || "Serviço"}`,
-        start: new Date(appointment.start_time),
-        end: new Date(appointment.end_time),
-        appointment,
-        kind: "appointment" as const,
-        resource: appointment.employee_id ?? null,
-      }));
+  const selectedKey = searchParams.get("appointment")
+    ? `a:${searchParams.get("appointment")}`
+    : searchParams.get("block") ? `b:${searchParams.get("block")}` : null;
+  const selected = selectedKey ? items.find((item) => item.key === selectedKey) ?? null : null;
 
-    const blockEvents = blocks.map((block) => ({
-      id: `block-${block.id}`,
-      title: `Bloqueio${block.reason ? `: ${block.reason}` : ""}`,
-      start: new Date(block.start_time),
-      end: new Date(block.end_time),
-      block,
-      kind: "block" as const,
-      resource: block.employee_id,
-    }));
-
-    return [...appointmentEvents, ...blockEvents];
-  }, [appointments, blocks, filters.statuses]);
+  const columns = filters.view === "day"
+    ? [filters.date]
+    : Array.from({ length: 7 }, (_, index) => addDaysToKey(mondayOfWeek(filters.date), index));
+  const agendaWindow = useMemo(() => {
+    const base = getAgendaWindow(businessDays);
+    // Expande a janela se houver itens fora do expediente (ex.: encaixe às 7h).
+    const visible = items.filter((item) => columns.includes(item.dateKey));
+    const start = Math.min(base.start, ...visible.map((item) => Math.floor(item.startMin / 60) * 60));
+    const end = Math.max(base.end, ...visible.map((item) => Math.ceil(item.endMin / 60) * 60));
+    return { start, end: Math.min(24 * 60, end) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- columns deriva de filters.
+  }, [businessDays, items, filters.date, filters.view]);
 
   /**
-   * Atualiza filtros de URL sem perder a navegação compartilhável da agenda.
+   * Atualiza parâmetros de URL mantendo a agenda compartilhável.
    *
-   * @author André Narcizo
+   * @author André Narcizo - andre.narcizo@sysout.com.br
    */
-  const updateFilters = (
-    changes: Partial<
-      Record<keyof AppointmentFilters, string | number | undefined>
-    >,
-  ): void => {
-    setSearchParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        Object.entries(changes).forEach(([key, value]) => {
-          const param =
-            key === "employeeId"
-              ? "employee"
-              : key === "statuses"
-                ? "status"
-                : key;
-          if (value === undefined || value === "") next.delete(param);
-          else next.set(param, String(value));
-        });
-        if (!("page" in changes)) next.set("page", "1");
-        return next;
-      },
-      { replace: true },
+  const updateParams = (changes: Record<string, string | null>) => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      Object.entries(changes).forEach(([key, value]) => (value === null || value === "" ? next.delete(key) : next.set(key, value)));
+      next.delete("page");
+      next.delete("pageSize");
+      return next;
+    }, { replace: true });
+  };
+
+  const selectItem = (item: AgendaItem | null) => updateParams({
+    appointment: item?.kind === "appointment" ? item.appointment?.id ?? null : null,
+    block: item?.kind === "block" ? item.block?.id ?? null : null,
+  });
+
+  /**
+   * Abre o modal de novo agendamento com dia e hora preenchidos.
+   *
+   * @author André Narcizo - andre.narcizo@sysout.com.br
+   */
+  const openCreate = (dateKey: string, startMin: number) => {
+    const activeServices = services.filter((service) => service.is_active);
+    setAppointmentDraft({
+      dateKey,
+      startMin,
+      serviceId: activeServices[0]?.id ?? "",
+      employeeId: filters.employeeId ?? employees[0]?.id ?? "",
+      customerName: "",
+      customerPhone: "",
+      notes: "",
+    });
+  };
+
+  // "Novo agendamento" do cabeçalho chega como ?new=1.
+  useEffect(() => {
+    if (searchParams.get("new") !== "1") return;
+    const today = todayKey();
+    openCreate(filters.date, filters.date === today ? nextHalfHour() : 9 * 60);
+    updateParams({ new: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dispara apenas pelo parâmetro.
+  }, [searchParams]);
+
+  /**
+   * Executa uma ação da agenda com feedback padronizado de sucesso/erro.
+   *
+   * @author André Narcizo - andre.narcizo@sysout.com.br
+   */
+  const run = async (action: () => Promise<unknown>, success: string, fallback: string): Promise<boolean> => {
+    try {
+      await action();
+      toast.success(success);
+      return true;
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : fallback);
+      return false;
+    }
+  };
+
+  /**
+   * Cria ou reagenda; a duração e a disponibilidade final são validadas no servidor.
+   *
+   * @author André Narcizo - andre.narcizo@sysout.com.br
+   */
+  const submitAppointment = async (draft: AppointmentDraft) => {
+    const startTime = zonedDateTimeToUtc(draft.dateKey, draft.startMin).toISOString();
+    const ok = draft.appointmentId
+      ? await run(
+          () => rescheduleAppointment({ appointmentId: draft.appointmentId as string, employeeId: draft.employeeId || null, serviceId: draft.serviceId, startTime }),
+          "Agendamento reagendado.",
+          "Não foi possível reagendar.",
+        )
+      : await run(
+          () => createAppointment({
+            customerName: draft.customerName.trim(),
+            customerPhone: draft.customerPhone.trim() || null,
+            employeeId: draft.employeeId || null,
+            notes: draft.notes.trim() || null,
+            serviceId: draft.serviceId,
+            startTime,
+          }),
+          `Agendamento criado para ${draft.customerName.trim().split(" ")[0]}.`,
+          "Não foi possível criar o agendamento.",
+        );
+    if (!ok) return;
+    setAppointmentDraft(null);
+    if (draft.dateKey !== filters.date && !columns.includes(draft.dateKey)) updateParams({ date: draft.dateKey });
+  };
+
+  const submitBlock = async (draft: BlockDraft) => {
+    const ok = await run(
+      () => createAppointmentBlock({
+        employeeId: draft.employeeId || null,
+        startTime: zonedDateTimeToUtc(draft.dateKey, draft.startMin).toISOString(),
+        endTime: zonedDateTimeToUtc(draft.dateKey, draft.endMin).toISOString(),
+        reason: draft.reason.trim() || null,
+      }),
+      "Bloqueio criado.",
+      "Não foi possível criar o bloqueio.",
     );
+    if (ok) setBlockDraft(null);
   };
 
-  /**
-   * Abre a criação de um agendamento no intervalo selecionado.
-   *
-   * @author André Narcizo
-   */
-  const handleSelectSlot = (slot: SlotInfo): void => {
-    setForm(EMPTY_APPOINTMENT_FORM(slot.start));
+  const openReschedule = (item: AgendaItem) => {
+    const appointment = item.appointment;
+    if (!appointment) return;
+    setAppointmentDraft({
+      appointmentKey: item.key,
+      appointmentId: appointment.id,
+      dateKey: item.dateKey,
+      startMin: item.startMin,
+      serviceId: appointment.service_id,
+      employeeId: appointment.employee_id ?? "",
+      customerName: appointment.customer_name,
+      customerPhone: appointment.customer_phone,
+      notes: appointment.notes ?? "",
+    });
   };
 
-  /**
-   * Cria ou reagenda usando duração derivada do serviço no servidor.
-   *
-   * @author André Narcizo
-   */
-  const handleSaveAppointment = async (
-    event: FormEvent<HTMLFormElement>,
-  ): Promise<void> => {
-    event.preventDefault();
-    if (!form) return;
-
-    try {
-      if (form.appointmentId) {
-        await rescheduleAppointment({
-          appointmentId: form.appointmentId,
-          employeeId: form.employeeId || null,
-          serviceId: form.serviceId,
-          startTime: form.startTime.toISOString(),
-        });
-        toast.success("Agendamento reagendado.");
-      } else {
-        await createAppointment({
-          customerName: form.customerName,
-          customerPhone: form.customerPhone || null,
-          employeeId: form.employeeId || null,
-          notes: form.notes || null,
-          serviceId: form.serviceId,
-          startTime: form.startTime.toISOString(),
-        });
-        toast.success("Agendamento criado.");
-      }
-      setForm(null);
-      setSelectedEvent(null);
-    } catch (cause) {
-      toast.error(
-        cause instanceof Error
-          ? cause.message
-          : "Não foi possível salvar o agendamento.",
-      );
-    }
-  };
-
-  /**
-   * Cria um bloqueio operacional sem gravar a tabela diretamente no browser.
-   *
-   * @author André Narcizo
-   */
-  const handleCreateBlock = async (
-    event: FormEvent<HTMLFormElement>,
-  ): Promise<void> => {
-    event.preventDefault();
-    if (!blockForm) return;
-
-    try {
-      await createAppointmentBlock({
-        employeeId: blockForm.employeeId || null,
-        startTime: blockForm.startTime.toISOString(),
-        endTime: blockForm.endTime.toISOString(),
-        reason: blockForm.reason || null,
-      });
-      toast.success("Bloqueio criado.");
-      setBlockForm(null);
-    } catch (cause) {
-      toast.error(
-        cause instanceof Error
-          ? cause.message
-          : "Não foi possível criar o bloqueio.",
-      );
-    }
-  };
-
-  /**
-   * Executa uma transição autorizada de status.
-   *
-   * @author André Narcizo
-   */
-  const handleStatusChange = async (
-    appointment: Appointment,
-    status: AppointmentStatus,
-  ): Promise<void> => {
-    try {
-      if (status === "cancelled") await cancelAppointment(appointment.id);
-      else await updateAppointmentStatus(appointment.id, status);
-      toast.success(
-        status === "cancelled"
-          ? "Agendamento cancelado."
-          : "Status atualizado.",
-      );
-      setSelectedEvent(null);
-    } catch (cause) {
-      toast.error(
-        cause instanceof Error
-          ? cause.message
-          : "Não foi possível atualizar o agendamento.",
-      );
-    }
-  };
-
-  /**
-   * Remove bloqueio selecionado pelo comando autorizado do servidor.
-   *
-   * @author André Narcizo
-   */
-  const handleDeleteBlock = async (block: AppointmentBlock): Promise<void> => {
-    try {
-      await deleteAppointmentBlock(block.id);
-      toast.success("Bloqueio removido.");
-      setSelectedEvent(null);
-    } catch (cause) {
-      toast.error(
-        cause instanceof Error
-          ? cause.message
-          : "Não foi possível remover o bloqueio.",
-      );
-    }
-  };
-
-  /**
-   * Diferencia visualmente bloqueios, pendências e confirmações.
-   *
-   * @author André Narcizo
-   */
-  const eventStyleGetter = (event: AgendaEvent) => ({
-    style: {
-      backgroundColor:
-        event.kind === "block"
-          ? "#7c2d12"
-          : event.appointment.status === "confirmed"
-            ? "#5343d4"
-            : event.appointment.status === "completed"
-              ? "#047857"
-              : "#00616f",
-      border: "none",
-      borderRadius: "8px",
-      color: "white",
-      fontSize: "12px",
-      fontWeight: "bold",
-      opacity: 0.9,
-      padding: "4px",
-    },
-  });
-
-  const currentDate = dateFromFilter(filters.date);
-  const totalPages = Math.max(
-    1,
-    Math.ceil(totalAppointments / filters.pageSize),
-  );
+  const today = todayKey();
+  const legend = (["confirmed", "pending", "completed", "block"] as const).map((status) => STATUS_META[status]);
+  const truncated = totalAppointments > appointments.length;
 
   return (
-    <div className="space-y-8 p-8 max-w-7xl mx-auto animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <p className="text-stitch-on-surface-variant text-sm font-medium mb-1 uppercase tracking-wider">
-            Gestão de Agenda
-          </p>
-          <h1 className="font-headline text-4xl font-black tracking-tight text-stitch-on-surface">
-            Calendário Mestre
-          </h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Badge
-            variant="outline"
-            className="border-stitch-primary text-stitch-primary px-3 py-1 font-black"
-          >
-            PRO
-          </Badge>
-          <Button
-            type="button"
-            onClick={() => setForm(EMPTY_APPOINTMENT_FORM(currentDate))}
-          >
-            Novo agendamento
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() =>
-              setBlockForm({
-                employeeId: filters.employeeId ?? "",
-                startTime: currentDate,
-                endTime: new Date(currentDate.getTime() + 60 * 60 * 1000),
-                reason: "",
-              })
-            }
+    <Page>
+      <PageHeader
+        eyebrow="Agenda"
+        title={<span className="inline-block first-letter:uppercase">{periodTitle(filters.view, filters.date)}</span>}
+        actions={
+          <PanelButton
+            icon="block"
+            onClick={() => setBlockDraft({ dateKey: filters.date, startMin: 12 * 60, endMin: 13 * 60, employeeId: filters.employeeId ?? "", reason: "" })}
           >
             Novo bloqueio
-          </Button>
+          </PanelButton>
+        }
+      />
+
+      <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex h-8 items-center rounded-lg border border-af-line bg-af-surface">
+          <button type="button" aria-label="Período anterior" onClick={() => updateParams({ date: shiftDate(filters.view, filters.date, -1) })} className="flex h-full items-center px-1.5 text-af-ink2 hover:text-af-ink">
+            <Icon name="chevron_left" />
+          </button>
+          <button
+            type="button"
+            onClick={() => updateParams({ date: today })}
+            className="flex h-full items-center border-x border-af-line px-2 text-[13px] font-medium hover:bg-af-surface2"
+          >
+            Hoje
+          </button>
+          <button type="button" aria-label="Próximo período" onClick={() => updateParams({ date: shiftDate(filters.view, filters.date, 1) })} className="flex h-full items-center px-1.5 text-af-ink2 hover:text-af-ink">
+            <Icon name="chevron_right" />
+          </button>
         </div>
+        <Segmented
+          label="Visualização"
+          value={filters.view}
+          onChange={(view) => updateParams({ view })}
+          options={[{ value: "day", label: "Dia" }, { value: "week", label: "Semana" }, { value: "month", label: "Mês" }]}
+        />
+        <div className="flex-1" />
+        <ToolbarSelect
+          label="Profissional"
+          value={filters.employeeId ?? ""}
+          onChange={(employee) => updateParams({ employee })}
+          options={[{ value: "", label: "Toda a equipe" }, ...employees.map((employee) => ({ value: employee.id, label: employee.full_name }))]}
+        />
+        <ToolbarSelect
+          label="Status"
+          value={filters.statuses.join(",")}
+          onChange={(status) => updateParams({ status })}
+          options={[
+            { value: "", label: "Ativos" },
+            { value: "pending", label: "Pendentes" },
+            { value: "confirmed", label: "Confirmados" },
+            { value: "completed", label: "Concluídos" },
+            { value: "cancelled", label: "Cancelados" },
+          ]}
+        />
       </div>
 
-      <section className="grid gap-3 rounded-2xl bg-stitch-surface-container-low p-4 md:grid-cols-3">
-        <label className="space-y-1 text-sm font-semibold">
-          Profissional
-          <select
-            className="h-10 w-full rounded-lg bg-stitch-surface-container px-3"
-            value={filters.employeeId ?? ""}
-            onChange={(event) =>
-              updateFilters({ employeeId: event.target.value || undefined })
-            }
-          >
-            <option value="">Toda a equipe</option>
-            {employees.map((employee) => (
-              <option key={employee.id} value={employee.id}>
-                {employee.full_name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="space-y-1 text-sm font-semibold">
-          Status
-          <select
-            className="h-10 w-full rounded-lg bg-stitch-surface-container px-3"
-            value={filters.statuses.join(",")}
-            onChange={(event) =>
-              updateFilters({ statuses: event.target.value || undefined })
-            }
-          >
-            <option value="">Ativos (padrão)</option>
-            <option value="pending">Pendente</option>
-            <option value="confirmed">Confirmado</option>
-            <option value="completed">Concluído</option>
-            <option value="cancelled">Cancelado</option>
-          </select>
-        </label>
-        <label className="space-y-1 text-sm font-semibold">
-          Itens por página
-          <select
-            className="h-10 w-full rounded-lg bg-stitch-surface-container px-3"
-            value={filters.pageSize}
-            onChange={(event) =>
-              updateFilters({ pageSize: Number(event.target.value) })
-            }
-          >
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
-        </label>
-      </section>
+      {error && <p role="alert" className="m-0 rounded-af bg-af-bad-soft px-4 py-3 text-[13px] text-af-bad">{error}</p>}
 
-      {error && (
-        <p
-          role="alert"
-          className="rounded-xl bg-red-950/40 px-4 py-3 text-sm font-semibold text-red-200"
-        >
-          {error}
-        </p>
+      <div className="flex flex-wrap items-start gap-4 min-[720px]:flex-nowrap">
+        <section aria-busy={loading} className="min-w-0 flex-1 overflow-x-auto rounded-af-lg border border-af-line bg-af-surface">
+          {filters.view === "month" ? (
+            <MonthGrid
+              monthKey={filters.date}
+              items={items}
+              selectedKey={selectedKey}
+              onSelect={selectItem}
+              onOpenDay={(dateKey) => updateParams({ view: "day", date: dateKey })}
+            />
+          ) : (
+            <WeekGrid
+              days={columns}
+              items={items}
+              window={agendaWindow}
+              businessDays={businessDays}
+              selectedKey={selectedKey}
+              onSelect={selectItem}
+              onCreate={openCreate}
+            />
+          )}
+        </section>
+
+        {selected && (
+          <AppointmentPanel
+            key={selected.key}
+            item={selected}
+            employees={employees}
+            busy={updatingStatus || cancelling || changingBlock}
+            onClose={() => selectItem(null)}
+            onConfirm={() => void run(() => updateAppointmentStatus(selected.appointment!.id, "confirmed"), "Agendamento confirmado.", "Não foi possível confirmar.")}
+            onComplete={() => void run(() => updateAppointmentStatus(selected.appointment!.id, "completed"), "Atendimento concluído.", "Não foi possível concluir.")}
+            onReschedule={() => openReschedule(selected)}
+            onCancel={() => setPendingCancel(selected)}
+            onRemoveBlock={() => setPendingCancel(selected)}
+          />
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-5 text-xs text-af-ink2">
+        {legend.map((meta) => (
+          <span key={meta.label} className="flex items-center gap-1.5">
+            <span className={`h-2.5 w-2.5 rounded-[3px] border ${meta.bg} ${meta.border}`} />
+            {meta.label}
+          </span>
+        ))}
+        {loading && <span className="text-af-ink3">Atualizando agenda…</span>}
+        {truncated && <span className="text-af-pend">Mostrando os primeiros {appointments.length} de {totalAppointments} agendamentos do período. Filtre por profissional para ver todos.</span>}
+      </div>
+
+      {appointmentDraft && (
+        <AppointmentDialog
+          key={`${appointmentDraft.appointmentId ?? "new"}-${appointmentDraft.dateKey}-${appointmentDraft.startMin}`}
+          draft={appointmentDraft}
+          services={services}
+          employees={employees}
+          items={conflictItems}
+          saving={creating || rescheduling}
+          onClose={() => setAppointmentDraft(null)}
+          onSubmit={(draft) => void submitAppointment(draft)}
+        />
       )}
 
-      <Card className="rounded-[2.5rem] border-none shadow-2xl overflow-hidden bg-stitch-surface-container-low/30 backdrop-blur-xl p-6 border border-white/5 min-h-[700px]">
-        <Calendar
-          localizer={localizer}
-          events={events}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ height: 650 }}
-          culture="pt-BR"
-          messages={{
-            next: "Próximo",
-            previous: "Anterior",
-            today: "Hoje",
-            month: "Mês",
-            week: "Semana",
-            day: "Dia",
-            agenda: "Agenda",
-            date: "Data",
-            time: "Hora",
-            event: "Evento",
-            noEventsInRange: loading
-              ? "Carregando agenda..."
-              : "Sem eventos neste período.",
-          }}
-          view={filters.view}
-          onView={(view) => updateFilters({ view })}
-          date={currentDate}
-          onNavigate={(nextDate) =>
-            updateFilters({ date: getAgendaDateKey(nextDate) })
+      {blockDraft && (
+        <BlockDialog draft={blockDraft} employees={employees} saving={changingBlock} onClose={() => setBlockDraft(null)} onSubmit={(draft) => void submitBlock(draft)} />
+      )}
+
+      <ConfirmDialog
+        open={pendingCancel !== null}
+        onOpenChange={(open) => !open && setPendingCancel(null)}
+        title={pendingCancel?.kind === "block" ? "Remover bloqueio?" : "Cancelar agendamento?"}
+        description={pendingCancel?.kind === "block" ? "O horário volta a ficar disponível para reservas." : "O horário é liberado e o cliente será avisado."}
+        confirmLabel={pendingCancel?.kind === "block" ? "Remover bloqueio" : "Cancelar agendamento"}
+        busy={cancelling || changingBlock}
+        onConfirm={async () => {
+          const item = pendingCancel;
+          if (!item) return;
+          const ok = item.kind === "block"
+            ? await run(() => deleteAppointmentBlock(item.block!.id), "Bloqueio removido.", "Não foi possível remover o bloqueio.")
+            : await run(() => cancelAppointment(item.appointment!.id), "Agendamento cancelado.", "Não foi possível cancelar.");
+          if (ok) {
+            setPendingCancel(null);
+            selectItem(null);
           }
-          eventPropGetter={eventStyleGetter}
-          selectable
-          onSelectSlot={handleSelectSlot}
-          onSelectEvent={(event) => setSelectedEvent(event as AgendaEvent)}
-        />
-      </Card>
-
-      <nav
-        className="flex items-center justify-end gap-3"
-        aria-label="Paginação da agenda"
-      >
-        <Button
-          type="button"
-          variant="outline"
-          disabled={filters.page === 1}
-          onClick={() => updateFilters({ page: filters.page - 1 })}
-        >
-          Anterior
-        </Button>
-        <span className="text-sm font-semibold">
-          Página {filters.page} de {totalPages}
-        </span>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={filters.page >= totalPages}
-          onClick={() => updateFilters({ page: filters.page + 1 })}
-        >
-          Próxima
-        </Button>
-      </nav>
-
-      <Dialog
-        open={form !== null}
-        onOpenChange={(open) => !open && setForm(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {form?.appointmentId
-                ? "Reagendar atendimento"
-                : "Novo agendamento"}
-            </DialogTitle>
-            <DialogDescription>
-              {form &&
-                formatAgendaDate(form.startTime, {
-                  dateStyle: "short",
-                  timeStyle: "short",
-                })}
-            </DialogDescription>
-          </DialogHeader>
-          {form && (
-            <form className="space-y-4" onSubmit={handleSaveAppointment}>
-              {!form.appointmentId && (
-                <>
-                  <label className="space-y-1 block">
-                    <Label htmlFor="appointment-customer-name">
-                      Nome do cliente
-                    </Label>
-                    <Input
-                      id="appointment-customer-name"
-                      required
-                      maxLength={160}
-                      value={form.customerName}
-                      onChange={(event) =>
-                        setForm({ ...form, customerName: event.target.value })
-                      }
-                    />
-                  </label>
-                  <label className="space-y-1 block">
-                    <Label htmlFor="appointment-customer-phone">Telefone</Label>
-                    <Input
-                      id="appointment-customer-phone"
-                      maxLength={30}
-                      value={form.customerPhone}
-                      onChange={(event) =>
-                        setForm({ ...form, customerPhone: event.target.value })
-                      }
-                    />
-                  </label>
-                </>
-              )}
-              <label className="space-y-1 block">
-                <Label htmlFor="appointment-service">Serviço</Label>
-                <select
-                  id="appointment-service"
-                  required
-                  className="h-12 w-full rounded-stitch-md bg-stitch-surface-container px-3"
-                  value={form.serviceId}
-                  onChange={(event) =>
-                    setForm({ ...form, serviceId: event.target.value })
-                  }
-                >
-                  <option value="">Selecione um serviço</option>
-                  {services.map((service) => (
-                    <option key={service.id} value={service.id}>
-                      {service.name} ({service.duration_minutes} min)
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-1 block">
-                <Label htmlFor="appointment-employee">Profissional</Label>
-                <select
-                  id="appointment-employee"
-                  className="h-12 w-full rounded-stitch-md bg-stitch-surface-container px-3"
-                  value={form.employeeId}
-                  onChange={(event) =>
-                    setForm({ ...form, employeeId: event.target.value })
-                  }
-                >
-                  <option value="">Sem profissional</option>
-                  {employees.map((employee) => (
-                    <option key={employee.id} value={employee.id}>
-                      {employee.full_name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {!form.appointmentId && (
-                <label className="space-y-1 block">
-                  <Label htmlFor="appointment-notes">Observações</Label>
-                  <textarea
-                    id="appointment-notes"
-                    className="min-h-24 w-full rounded-stitch-md bg-stitch-surface-container p-3"
-                    maxLength={2000}
-                    value={form.notes}
-                    onChange={(event) =>
-                      setForm({ ...form, notes: event.target.value })
-                    }
-                  />
-                </label>
-              )}
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={creating || rescheduling || servicesQuery.isLoading}
-              >
-                {form.appointmentId ? "Reagendar" : "Criar agendamento"}
-              </Button>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={blockForm !== null}
-        onOpenChange={(open) => !open && setBlockForm(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Novo bloqueio</DialogTitle>
-            <DialogDescription>
-              Impede novos agendamentos no período selecionado.
-            </DialogDescription>
-          </DialogHeader>
-          {blockForm && (
-            <form className="space-y-4" onSubmit={handleCreateBlock}>
-              <label className="space-y-1 block">
-                <Label htmlFor="block-employee">Profissional</Label>
-                <select
-                  id="block-employee"
-                  className="h-12 w-full rounded-stitch-md bg-stitch-surface-container px-3"
-                  value={blockForm.employeeId}
-                  onChange={(event) =>
-                    setBlockForm({
-                      ...blockForm,
-                      employeeId: event.target.value,
-                    })
-                  }
-                >
-                  <option value="">Toda a organização</option>
-                  {employees.map((employee) => (
-                    <option key={employee.id} value={employee.id}>
-                      {employee.full_name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-1 block">
-                <Label htmlFor="block-reason">Motivo</Label>
-                <Input
-                  id="block-reason"
-                  maxLength={500}
-                  value={blockForm.reason}
-                  onChange={(event) =>
-                    setBlockForm({ ...blockForm, reason: event.target.value })
-                  }
-                />
-              </label>
-              <p className="text-sm text-stitch-on-surface-variant">
-                {formatAgendaDate(blockForm.startTime, {
-                  dateStyle: "short",
-                  timeStyle: "short",
-                })}{" "}
-                até{" "}
-                {formatAgendaDate(blockForm.endTime, { timeStyle: "short" })}
-              </p>
-              <Button type="submit" className="w-full" disabled={changingBlock}>
-                Criar bloqueio
-              </Button>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={selectedEvent !== null}
-        onOpenChange={(open) => !open && setSelectedEvent(null)}
-      >
-        <DialogContent>
-          {selectedEvent?.kind === "appointment" && (
-            <>
-              <DialogHeader>
-                <DialogTitle>
-                  {selectedEvent.appointment.customer_name}
-                </DialogTitle>
-                <DialogDescription>
-                  {formatAgendaDate(
-                    new Date(selectedEvent.appointment.start_time),
-                    { dateStyle: "short", timeStyle: "short" },
-                  )}{" "}
-                  · {selectedEvent.appointment.status}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex flex-wrap gap-3">
-                {selectedEvent.appointment.status === "pending" && (
-                  <Button
-                    type="button"
-                    onClick={() =>
-                      handleStatusChange(selectedEvent.appointment, "confirmed")
-                    }
-                    disabled={updatingStatus}
-                  >
-                    Confirmar
-                  </Button>
-                )}
-                {selectedEvent.appointment.status === "confirmed" && (
-                  <Button
-                    type="button"
-                    onClick={() =>
-                      handleStatusChange(selectedEvent.appointment, "completed")
-                    }
-                    disabled={updatingStatus}
-                  >
-                    Concluir
-                  </Button>
-                )}
-                {(selectedEvent.appointment.status === "pending" ||
-                  selectedEvent.appointment.status === "confirmed") && (
-                  <>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() =>
-                        setForm({
-                          appointmentId: selectedEvent.appointment.id,
-                          customerName: selectedEvent.appointment.customer_name,
-                          customerPhone:
-                            selectedEvent.appointment.customer_phone,
-                          employeeId:
-                            selectedEvent.appointment.employee_id ?? "",
-                          notes: selectedEvent.appointment.notes ?? "",
-                          serviceId: selectedEvent.appointment.service_id,
-                          startTime: new Date(
-                            selectedEvent.appointment.start_time,
-                          ),
-                        })
-                      }
-                    >
-                      Reagendar
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={() =>
-                        handleStatusChange(
-                          selectedEvent.appointment,
-                          "cancelled",
-                        )
-                      }
-                      disabled={cancelling || updatingStatus}
-                    >
-                      Cancelar
-                    </Button>
-                  </>
-                )}
-              </div>
-            </>
-          )}
-          {selectedEvent?.kind === "block" && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Bloqueio de agenda</DialogTitle>
-                <DialogDescription>
-                  {selectedEvent.block.reason || "Sem motivo informado"}
-                </DialogDescription>
-              </DialogHeader>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => handleDeleteBlock(selectedEvent.block)}
-                disabled={changingBlock}
-              >
-                Remover bloqueio
-              </Button>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+        }}
+      />
+    </Page>
   );
 }

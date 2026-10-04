@@ -34,41 +34,43 @@ test.describe("agenda operacional", () => {
     await loginAsTestOwner(page);
     await page.goto("/dashboard/calendar?view=day");
 
-    await page.getByRole("button", { name: "Novo agendamento" }).click();
+    await page.getByRole("button", { name: "Novo agendamento", exact: true }).click();
     await page.locator("#appointment-customer-name").fill(firstCustomer);
     await page.locator("#appointment-customer-phone").fill("62999990000");
-    await page.locator("#appointment-service").selectOption(serviceId ?? "");
+    await page.locator(`[data-service-id="${serviceId}"]`).click();
     const createButton = page.getByRole("button", {
       name: "Criar agendamento",
     });
     await expect(createButton).toBeEnabled();
     await createButton.click();
 
-    const firstEvent = page.locator(".rbc-event", { hasText: firstCustomer });
+    const firstEvent = page.locator("[data-agenda-event]", { hasText: firstCustomer });
     await expect(firstEvent).toBeVisible();
     await firstEvent.click();
-    await page.getByRole("button", { name: "Reagendar" }).click();
-    await page.getByRole("button", { name: "Reagendar" }).click();
+    // Painel lateral → modal de reagendamento → confirmar.
+    await page.getByRole("button", { name: "Reagendar", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Reagendar", exact: true }).click();
     await expect(firstEvent).toBeVisible();
 
     await firstEvent.click();
-    await page.getByRole("button", { name: "Confirmar" }).click();
+    await page.getByRole("button", { name: "Confirmar agendamento" }).click();
     await expect(firstEvent).toBeVisible();
     await firstEvent.click();
-    await page.getByRole("button", { name: "Concluir" }).click();
+    await page.getByRole("button", { name: "Marcar como concluído" }).click();
     await expect(firstEvent).toBeVisible();
 
-    await page.getByRole("button", { name: "Novo agendamento" }).click();
+    await page.getByRole("button", { name: "Novo agendamento", exact: true }).click();
     await page.locator("#appointment-customer-name").fill(secondCustomer);
     await page.locator("#appointment-customer-phone").fill("62999990001");
-    await page.locator("#appointment-service").selectOption(serviceId ?? "");
+    await page.locator(`[data-service-id="${serviceId}"]`).click();
     await expect(createButton).toBeEnabled();
     await createButton.click();
 
-    const secondEvent = page.locator(".rbc-event", { hasText: secondCustomer });
+    const secondEvent = page.locator("[data-agenda-event]", { hasText: secondCustomer });
     await expect(secondEvent).toBeVisible();
     await secondEvent.click();
-    await page.getByRole("button", { name: "Cancelar" }).click();
+    await page.getByRole("button", { name: "Cancelar agendamento" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Cancelar agendamento" }).click();
     await expect(secondEvent).toHaveCount(0);
   });
 });

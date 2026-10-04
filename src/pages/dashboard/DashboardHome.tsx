@@ -1,206 +1,275 @@
-import { StatsCard } from "@/components/ui/stats-card";
-import { useAppointments } from "@/hooks/use-appointments";
-import {
-  formatInSaoPaulo,
-  isSameDayInSaoPaulo,
-  useDashboardStats,
-} from "@/hooks/use-dashboard-stats";
-import { useEmployees } from "@/hooks/use-employees";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Card } from "@/components/ui/card";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
+import { useAppointments, type Appointment } from "@/hooks/use-appointments";
+import { useDashboardStats } from "@/hooks/use-dashboard-stats";
+import { useEmployees } from "@/hooks/use-employees";
+import { useBusinessHours } from "@/hooks/use-business-hours";
+import {
+  EmptyState, Icon, InitialsAvatar, KpiStrip, Page, Panel, PanelHeader, Segmented, Skeleton, StatusDot,
+} from "@/components/panel/primitives";
+import { formatDateKey, formatInstant, formatMinutes, getZonedParts, todayKey } from "@/lib/agenda-time";
+import { formatCurrency, formatRelativeShort, getInitials, plural } from "@/lib/format";
+import { cn } from "@/lib/utils";
+
+const ACTIVITY_BY_SOURCE: Record<string, string> = {
+  direct: "agendou diretamente",
+  site: "reservou pelo site",
+  qr: "reservou pelo QR code",
+  instagram: "reservou pelo Instagram",
+  google: "reservou pelo Google",
+  referral: "reservou por indicação",
+};
 
 /**
- * Exibe as métricas e a agenda diária no fuso operacional America/Sao_Paulo.
+ * Saudação conforme o horário local de São Paulo.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+function greeting(minutes: number): string {
+  if (minutes < 12 * 60) return "Bom dia";
+  if (minutes < 18 * 60) return "Boa tarde";
+  return "Boa noite";
+}
+
+/**
+ * Duração do atendimento em minutos (fim − início).
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+function durationMinutes(appointment: Appointment): number {
+  return Math.max(0, Math.round((new Date(appointment.end_time).getTime() - new Date(appointment.start_time).getTime()) / 60_000));
+}
+
+/**
+ * Formata o horário (HH:MM) de um instante ISO no fuso operacional.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+function timeOf(iso: string): string {
+  return formatInstant(iso, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+}
+
+/**
+ * Início do painel: métricas do dia, agenda por profissional, pendências e atividade recente.
  *
  * @author André Narcizo - andre.narcizo@sysout.com.br
  */
 export default function DashboardHome() {
   const { profile } = useAuth();
-  const { appointments, loading: loadingApts } = useAppointments();
-  const { employees, loading: loadingEmps } = useEmployees();
   const navigate = useNavigate();
-  
+  const { appointments, loading: loadingApts, updateAppointmentStatus, updatingStatus } = useAppointments();
+  const { employees, loading: loadingEmps } = useEmployees();
+  const { days } = useBusinessHours();
   const stats = useDashboardStats(appointments);
-  const loading = loadingApts || loadingEmps;
+  const today = todayKey();
 
-  const todayApts = appointments.filter(
-    (appointment) => appointment.status !== "cancelled"
-      && isSameDayInSaoPaulo(new Date(appointment.start_time)),
-  );
+  const view = useMemo(() => {
+    const now = new Date();
+    const nowParts = getZonedParts(now);
+    const active = appointments.filter((appointment) => appointment.status !== "cancelled");
+    const todays = active
+      .filter((appointment) => getZonedParts(new Date(appointment.start_time)).dateKey === today)
+      .sort((a, b) => a.start_time.localeCompare(b.start_time));
+    const pending = active
+      .filter((appointment) => appointment.status === "pending" && new Date(appointment.end_time) >= now)
+      .sort((a, b) => a.start_time.localeCompare(b.start_time));
+    const next = todays.find((appointment) => appointment.status !== "completed" && new Date(appointment.start_time) >= now);
 
-  if (loading) {
+    // Ocupação = minutos reservados hoje / (expediente de hoje × profissionais).
+    const businessDay = days.find((day) => day.dayOfWeek === nowParts.weekday);
+    const capacity = businessDay?.isActive ? (businessDay.end - businessDay.start) * Math.max(1, employees.length) : 0;
+    const booked = todays.reduce((sum, appointment) => sum + durationMinutes(appointment), 0);
+    const occupancy = capacity > 0 ? Math.min(100, Math.round((booked / capacity) * 100)) : null;
+
+    const recent = [...appointments]
+      .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))
+      .slice(0, 4);
+
+    return { nowMinutes: nowParts.minutes, todays, pending, next, occupancy, recent };
+  }, [appointments, days, employees.length, today]);
+
+  /**
+   * Confirma uma pendência direto do Início, pela Edge Function autorizada.
+   *
+   * @author André Narcizo - andre.narcizo@sysout.com.br
+   */
+  const confirm = async (appointment: Appointment) => {
+    try {
+      await updateAppointmentStatus(appointment.id, "confirmed");
+      toast.success(`Agendamento de ${appointment.customer_name} confirmado.`);
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Não foi possível confirmar o agendamento.");
+    }
+  };
+
+  /**
+   * Abre o agendamento no painel lateral da Agenda.
+   *
+   * @author André Narcizo - andre.narcizo@sysout.com.br
+   */
+  const openInAgenda = (appointment: Appointment) => {
+    const { dateKey } = getZonedParts(new Date(appointment.start_time));
+    navigate(`/dashboard/calendar?date=${dateKey}&appointment=${appointment.id}`);
+  };
+
+  if (loadingApts || loadingEmps) {
     return (
-      <div className="space-y-12 animate-pulse p-8 max-w-7xl mx-auto">
-        <div className="space-y-2">
-          <div className="h-4 w-24 bg-stitch-surface-container rounded-full" />
-          <div className="h-10 w-64 bg-stitch-surface-container rounded-xl" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-32 w-full rounded-[2rem] bg-stitch-surface-container" />
-          ))}
-        </div>
-        <div className="h-[600px] w-full rounded-[2.5rem] bg-stitch-surface-container/50 overflow-hidden relative">
-           <div className="absolute inset-x-0 top-0 h-20 bg-stitch-surface-container" />
-           <div className="p-8 mt-20 space-y-6">
-             <div className="h-12 w-full bg-stitch-surface-container/50 rounded-2xl" />
-             <div className="h-12 w-full bg-stitch-surface-container/50 rounded-2xl" />
-             <div className="h-12 w-full bg-stitch-surface-container/50 rounded-2xl" />
-           </div>
-        </div>
-      </div>
+      <Page>
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-[106px]" />
+        <Skeleton className="h-[420px]" />
+      </Page>
     );
   }
 
+  const firstName = profile?.full_name?.split(" ")[0] ?? "";
+
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000 pb-20 max-w-7xl mx-auto p-8">
-      <div>
-        <p className="text-stitch-on-surface-variant text-sm font-medium mb-1 uppercase tracking-wider">Visão Geral</p>
-        <h1 className="font-headline text-4xl font-black tracking-tight text-stitch-on-surface">Bem-vindo, {profile?.full_name?.split(' ')[0] || 'Usuário'}</h1>
-      </div>
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatsCard
-          title="Agendamentos Hoje"
-          value={stats.todayAppointments}
-          icon="event_available"
-          colorClass="border-stitch-primary"
-          description={`${stats.todayAppointments} agendamentos`}
-        />
-        <StatsCard
-          title="Total no Mês"
-          value={stats.monthAppointments}
-          icon="person_add"
-          colorClass="border-stitch-secondary"
-          description="Acompanhamento mensal"
-        />
-        <StatsCard
-          title="Faturamento Previsto"
-          value={`R$ ${stats.monthRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
-          icon="payments"
-          colorClass="border-stitch-tertiary"
-          description="Baseado em agendamentos pagos"
-        />
-        <StatsCard
-          title="Capacidade"
-          value={`${stats.completedRate}%`}
-          icon="speed"
-          colorClass="border-stitch-outline"
-          description="Status atual"
-        />
-      </div>
-
-      {/* Agenda Visualization Section */}
-      <div className="bg-stitch-surface-container-low/30 p-8 rounded-[32px] shadow-sm border border-stitch-outline-variant/10">
-        <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
-          <h3 className="text-2xl font-black font-headline flex items-center gap-3 text-stitch-on-surface">
-            <span className="material-symbols-outlined text-stitch-primary text-3xl">calendar_month</span>
-            Agenda do Dia - {formatInSaoPaulo(new Date(), { day: "2-digit", month: "long" })}
-          </h3>
-          <div className="flex bg-stitch-surface-container-lowest p-1.5 rounded-2xl shadow-sm border border-stitch-outline-variant/5">
-            <Button variant="default" size="sm" onClick={() => navigate('/dashboard/calendar?view=day')} className="rounded-xl shadow-none font-black text-[10px] tracking-widest uppercase">Hoje</Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/calendar?view=week')} className="rounded-xl text-stitch-on-surface-variant font-black text-[10px] tracking-widest uppercase">Semana</Button>
-          </div>
+    <Page>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-none flex-col gap-1.5">
+          <span className="text-[13px] text-af-ink3 first-letter:uppercase">{formatDateKey(today, { weekday: "long", day: "numeric", month: "long" })}</span>
+          <h1 className="m-0 text-[28px] font-bold leading-[1.15] tracking-[-0.02em]">
+            {greeting(view.nowMinutes)}{firstName ? `, ${firstName}` : ""}
+          </h1>
         </div>
+        {view.next && (
+          <span className="text-[13px] text-af-ink2 [text-wrap:pretty]">
+            Próximo atendimento às <strong className="font-semibold text-af-ink">{timeOf(view.next.start_time)}</strong> · {view.next.customer_name}
+          </span>
+        )}
+      </div>
 
-        {/* Professional Columns Grid - Dynamic from Employees */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 overflow-x-auto pb-4">
+      <KpiStrip
+        items={[
+          { label: "Agendamentos hoje", value: stats.todayAppointments, sub: `${view.pending.length} aguardando confirmação` },
+          { label: "Agendamentos no mês", value: stats.monthAppointments, sub: <span className="inline-block first-letter:uppercase">{formatDateKey(today, { month: "long", year: "numeric" })}</span> },
+          { label: "Faturamento previsto", value: formatCurrency(stats.monthRevenue, { compact: true }), sub: "Com base em agendamentos pagos" },
+          { label: "Ocupação da agenda", value: view.occupancy === null ? "—" : `${view.occupancy}%`, sub: view.occupancy === null ? "Fechado hoje" : "Capacidade usada hoje" },
+        ]}
+      />
+
+      <div className="flex flex-wrap items-start gap-5">
+        <Panel className="min-w-0 flex-[2_1_560px] overflow-hidden">
+          <PanelHeader
+            title="Agenda de hoje"
+            action={
+              <Segmented
+                label="Período"
+                size="sm"
+                value="today"
+                onChange={(value) => value === "week" && navigate("/dashboard/calendar")}
+                options={[{ value: "today", label: "Hoje" }, { value: "week", label: "Semana" }]}
+              />
+            }
+          />
           {employees.length === 0 ? (
-            <div className="col-span-full py-20 text-center text-stitch-on-surface-variant opacity-60 italic">
-                Nenhum profissional cadastrado. Adicione-os na aba "Equipe".
-            </div>
+            <EmptyState icon="badge" title="Nenhum profissional cadastrado" description="Adicione a equipe em Profissionais para distribuir os atendimentos." />
           ) : (
-            employees.map((emp) => (
-              <div key={emp.id} className="space-y-6 min-w-[280px]">
-                <div className="flex items-center gap-4 mb-2 p-2">
-                  <Avatar className="h-12 w-12 border-2 border-stitch-surface-container-highest shadow-sm">
-                    <AvatarFallback className="font-black bg-stitch-primary/10 text-stitch-primary uppercase">
-                       {emp.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-black text-sm text-stitch-on-surface">{emp.full_name}</p>
-                    <p className="text-[10px] text-stitch-on-surface-variant font-black uppercase tracking-wider opacity-60">{emp.role === 'admin' ? 'Administrador' : 'Profissional'}</p>
-                  </div>
-                </div>
-                
-                {todayApts.filter(apt => apt.employee_id === emp.id).length === 0 ? (
-                  <div className="p-10 border-4 border-dashed border-stitch-outline-variant/10 rounded-[28px] flex flex-col items-center justify-center text-stitch-on-surface-variant opacity-40">
-                    <p className="text-xs font-bold uppercase tracking-widest">Sem agendamentos</p>
-                  </div>
-                ) : (
-                  todayApts.filter(apt => apt.employee_id === emp.id).map(apt => (
-                    <Card key={apt.id} className="p-5 border-l-4 border-stitch-secondary bg-stitch-surface-container-lowest group hover:scale-[1.02] transition-all border-y-0 border-r-0 rounded-2xl shadow-sm">
-                      <div className="flex justify-between items-start mb-3">
-                        <p className="text-[10px] font-black text-stitch-primary uppercase tracking-tight">
-                          {formatInSaoPaulo(new Date(apt.start_time), { hour: "2-digit", minute: "2-digit", hourCycle: "h23" })} - {formatInSaoPaulo(new Date(apt.end_time), { hour: "2-digit", minute: "2-digit", hourCycle: "h23" })}
-                        </p>
-                        {apt.status === 'completed' && (
-                          <span className="material-symbols-outlined text-emerald-500 text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                        )}
+            // Divisórias via box-shadow à direita/abaixo: a última coluna/linha é recortada pelo overflow,
+            // evitando o bloco vazio que o gap-px deixava quando a última linha fica incompleta.
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))]">
+              {employees.map((employee) => {
+                const items = view.todays.filter((appointment) => appointment.employee_id === employee.id);
+                return (
+                  <div key={employee.id} className="flex flex-col bg-af-surface [box-shadow:1px_0_0_var(--af-line),0_1px_0_var(--af-line)]">
+                    <div className="flex items-center gap-2.5 px-4 py-3.5">
+                      <InitialsAvatar initials={getInitials(employee.full_name)} size={28} muted />
+                      <div className="flex min-w-0 flex-col">
+                        <span className="truncate text-[13px] font-medium">{employee.full_name}</span>
+                        <span className="text-[11px] text-af-ink3">{plural(items.length, "atendimento")}</span>
                       </div>
-                      <h4 className="font-black text-stitch-on-surface text-lg">{apt.customer_name}</h4>
-                      <p className="text-xs text-stitch-on-surface-variant mb-5 font-bold italic opacity-70">{apt.service?.name}</p>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="secondary" 
-                          size="sm" 
-                          onClick={() => navigate('/dashboard/calendar')}
-                          className="flex-1 text-[10px] font-black tracking-widest uppercase rounded-xl bg-stitch-surface-container hover:bg-stitch-primary hover:text-white transition-colors"
+                    </div>
+                    <div className="flex flex-col gap-1.5 px-3 pb-3.5">
+                      {items.length === 0 && <span className="px-2.5 py-2 text-xs text-af-ink3">Sem atendimentos hoje</span>}
+                      {items.map((appointment) => (
+                        <button
+                          key={appointment.id}
+                          type="button"
+                          onClick={() => openInAgenda(appointment)}
+                          className="grid grid-cols-[44px_minmax(0,1fr)] gap-2.5 rounded-af p-2.5 text-left hover:bg-af-surface2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-af-accent"
                         >
-                          GERENCIAR
-                        </Button>
-                      </div>
-                    </Card>
-                  ))
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Activity Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
-        <Card className="p-8 bg-stitch-surface-container-low/30 backdrop-blur-xl border border-stitch-outline-variant/10 rounded-[32px] shadow-sm">
-          <h3 className="text-xl font-black mb-6 flex items-center gap-3 text-stitch-on-surface">
-            <span className="material-symbols-outlined text-stitch-primary text-2xl">history</span>
-            Atividade Recente
-          </h3>
-          <div className="space-y-4">
-            {appointments.slice(0, 3).map((apt) => (
-              <div key={apt.id} className="flex items-start gap-4 p-4 hover:bg-stitch-surface-container/30 rounded-2xl transition-all cursor-pointer group border border-transparent hover:border-stitch-outline-variant/10">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-stitch-primary/10 text-stitch-primary">
-                  <span className="material-symbols-outlined text-lg">event</span>
-                </div>
-                <div>
-                  <p className="text-sm font-black text-stitch-on-surface">Agendamento de {apt.customer_name}</p>
-                  <p className="text-[10px] text-stitch-on-surface-variant uppercase tracking-wider mt-1 opacity-50 font-black">
-                     Status: {apt.status === 'confirmed' ? 'Confirmado' : apt.status}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <div className="bg-stitch-primary text-white p-10 rounded-[40px] overflow-hidden relative shadow-2xl shadow-stitch-primary/20 flex flex-col justify-center group cursor-pointer" onClick={() => navigate('/dashboard/subscription')}>
-          <div className="relative z-10 space-y-4">
-            <div className="bg-white/20 w-16 h-16 rounded-3xl flex items-center justify-center mb-6 backdrop-blur-md group-hover:scale-110 transition-transform duration-500">
-              <span className="material-symbols-outlined text-4xl text-white">card_membership</span>
+                          <span className="pt-px text-xs text-af-ink2">{timeOf(appointment.start_time)}</span>
+                          <span className="flex min-w-0 flex-col gap-[3px]">
+                            <span className={cn("truncate text-[13px] font-medium", appointment.status === "completed" ? "text-af-ink2" : "text-af-ink")}>
+                              {appointment.customer_name}
+                            </span>
+                            <span className="truncate text-xs text-af-ink3">
+                              {appointment.service?.name ?? "Serviço"} · {durationMinutes(appointment)} min
+                            </span>
+                            <StatusDot status={appointment.status} />
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <h3 className="text-3xl font-black leading-tight text-white uppercase tracking-tighter">Upgrade Premium</h3>
-            <p className="text-sm font-bold opacity-80 max-w-xs leading-relaxed text-white">Libere agendamentos ilimitados e notificações WhatsApp profissionais.</p>
-            <Button className="w-fit bg-white text-stitch-primary hover:bg-white/90 mt-4 py-6 px-10 text-[10px] tracking-[0.2em] font-black rounded-2xl transition-all shadow-xl group-hover:translate-x-2 uppercase">VER PLANOS</Button>
-          </div>
-          <div className="absolute top-0 right-0 p-10">
-            <span className="material-symbols-outlined text-[120px] opacity-10 rotate-12 text-white">crown</span>
-          </div>
+          )}
+        </Panel>
+
+        <div className="flex min-w-0 flex-[1_1_300px] flex-col gap-5">
+          <Panel>
+            <PanelHeader title="A confirmar" action={<span className="whitespace-nowrap text-xs text-af-ink3">{plural(view.pending.length, "pendente")}</span>} />
+            {view.pending.length === 0 ? (
+              <p className="m-0 px-5 py-4 text-[13px] text-af-ink2">Nenhuma reserva aguardando confirmação.</p>
+            ) : (
+              view.pending.slice(0, 5).map((appointment) => {
+                const parts = getZonedParts(new Date(appointment.start_time));
+                const dayLabel = parts.dateKey === today ? "Hoje" : formatDateKey(parts.dateKey, { weekday: "short" });
+                return (
+                  <div key={appointment.id} className="flex items-center gap-3 border-t border-af-line px-5 py-3 first:border-t-0">
+                    <button type="button" onClick={() => openInAgenda(appointment)} className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
+                      <span className="truncate text-[13px] font-medium">{appointment.customer_name}</span>
+                      <span className="truncate text-xs text-af-ink3 first-letter:uppercase">
+                        {dayLabel}, {formatMinutes(parts.minutes)} · {appointment.service?.name ?? "Serviço"}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={updatingStatus}
+                      onClick={() => void confirm(appointment)}
+                      className="rounded-md border border-af-line2 px-2.5 py-[5px] text-xs font-medium hover:bg-af-surface2 disabled:opacity-45"
+                    >
+                      Confirmar
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </Panel>
+
+          <Panel>
+            <PanelHeader title="Atividade recente" />
+            {view.recent.length === 0 ? (
+              <p className="m-0 px-5 py-4 text-[13px] text-af-ink2">As novas reservas aparecem aqui.</p>
+            ) : (
+              <div className="flex flex-col py-1.5">
+                {view.recent.map((appointment) => {
+                  const icon = appointment.status === "completed" ? "check_circle" : appointment.status === "cancelled" ? "event_busy" : "event_available";
+                  const what = appointment.status === "completed"
+                    ? "atendimento concluído"
+                    : appointment.status === "cancelled"
+                      ? "agendamento cancelado"
+                      : ACTIVITY_BY_SOURCE[appointment.booking_source ?? "direct"] ?? ACTIVITY_BY_SOURCE.direct;
+                  return (
+                    <div key={appointment.id} className="grid grid-cols-[20px_minmax(0,1fr)_auto] items-start gap-2.5 px-5 py-[9px]">
+                      <Icon name={icon} size={17} className="text-af-ink3" />
+                      <span className="text-[13px] text-af-ink2 [text-wrap:pretty]">
+                        <span className="font-medium text-af-ink">{appointment.customer_name}</span> {what}
+                      </span>
+                      <span className="whitespace-nowrap text-[11px] text-af-ink3">{appointment.created_at ? formatRelativeShort(appointment.created_at) : ""}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Panel>
         </div>
       </div>
-    </div>
+    </Page>
   );
 }
