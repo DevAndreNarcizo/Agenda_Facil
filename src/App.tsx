@@ -1,27 +1,48 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import LoginPage from "./pages/auth/LoginPage";
-import RegisterPage from "./pages/auth/RegisterPage";
-import ForgotPassword from "./pages/auth/ForgotPassword";
-import ResetPassword from "./pages/auth/ResetPassword";
-import { DashboardLayout } from "./layouts/DashboardLayout";
-import DashboardHome from "./pages/dashboard/DashboardHome";
-import EmployeesPage from "./pages/dashboard/EmployeesPage";
-import CustomersPage from "./pages/dashboard/CustomersPage";
-import ServicesPage from "./pages/dashboard/ServicesPage";
-import SettingsPage from "./pages/dashboard/SettingsPage";
-import ThemeCustomization from "./pages/dashboard/ThemeCustomization";
-import AnalyticsPage from "./pages/dashboard/AnalyticsPage";
-import SubscriptionPage from "./pages/dashboard/SubscriptionPage";
-import CalendarPage from "./pages/dashboard/CalendarPage";
-import PortalLogin from "./pages/portal/PortalLogin";
-import PortalLayout from "./pages/portal/PortalLayout";
-import PortalHome from "./pages/portal/PortalHome";
-import PortalBooking from "./pages/portal/PortalBooking";
-import PublicBookingPage from "./pages/public-booking/PublicBookingPage";
-import OnboardingPage from "./pages/onboarding/OnboardingPage";
 import { Toaster } from "@/components/ui/sonner";
+
+/**
+ * Páginas carregadas sob demanda: cada rota vira um chunk próprio, então o visitante da
+ * reserva pública não baixa o painel e vice-versa.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+const DashboardLayout = lazy(() => import("./layouts/DashboardLayout").then((module) => ({ default: module.DashboardLayout })));
+const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
+const RegisterPage = lazy(() => import("./pages/auth/RegisterPage"));
+const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
+const DashboardHome = lazy(() => import("./pages/dashboard/DashboardHome"));
+const EmployeesPage = lazy(() => import("./pages/dashboard/EmployeesPage"));
+const CustomersPage = lazy(() => import("./pages/dashboard/CustomersPage"));
+const ServicesPage = lazy(() => import("./pages/dashboard/ServicesPage"));
+const SettingsPage = lazy(() => import("./pages/dashboard/SettingsPage"));
+const ThemeCustomization = lazy(() => import("./pages/dashboard/ThemeCustomization"));
+const AnalyticsPage = lazy(() => import("./pages/dashboard/AnalyticsPage"));
+const SubscriptionPage = lazy(() => import("./pages/dashboard/SubscriptionPage"));
+const CalendarPage = lazy(() => import("./pages/dashboard/CalendarPage"));
+const PortalLogin = lazy(() => import("./pages/portal/PortalLogin"));
+const PortalLayout = lazy(() => import("./pages/portal/PortalLayout"));
+const PortalHome = lazy(() => import("./pages/portal/PortalHome"));
+const PortalBooking = lazy(() => import("./pages/portal/PortalBooking"));
+const PublicBookingPage = lazy(() => import("./pages/public-booking/PublicBookingPage"));
+const OnboardingPage = lazy(() => import("./pages/onboarding/OnboardingPage"));
+
+/**
+ * Indicador neutro exibido enquanto o chunk da rota é baixado.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+function RouteFallback() {
+  return (
+    <div role="status" aria-label="Carregando" className="flex min-h-screen items-center justify-center bg-background">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
+    </div>
+  );
+}
 
 // Componente Principal da Aplicação
 // Responsável por configurar o roteamento e os provedores de contexto globais
@@ -32,6 +53,7 @@ function App() {
       {/* AuthProvider: Envolve a aplicação para fornecer o estado de autenticação (usuário logado, funções, etc) */}
       <AuthProvider>
         {/* Routes: Container para definir as rotas da aplicação */}
+        <Suspense fallback={<RouteFallback />}>
         <Routes>
           {/* Rota Raiz: Redireciona para Login */}
           <Route path="/" element={<Navigate to="/login" replace />} />
@@ -91,6 +113,7 @@ function App() {
           </Route>
 
         </Routes>
+        </Suspense>
         <Toaster />
       </AuthProvider>
     </BrowserRouter>

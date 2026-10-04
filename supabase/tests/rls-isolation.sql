@@ -159,7 +159,7 @@ BEGIN
       NULL;
   END;
 
-  -- Desde a migration 20261004_000001 o owner gerencia a equipe, mas a promoção a owner
+  -- Desde a migration 20261004000001 o owner gerencia a equipe, mas a promoção a owner
   -- é recusada explicitamente pelo WITH CHECK (antes resultava em 0 linhas).
   BEGIN
     UPDATE public.profiles

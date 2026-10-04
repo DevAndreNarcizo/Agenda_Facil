@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import type { UserRole } from "@/context/auth-context-types";
 import { useOrganizationTheme } from "@/hooks/use-organization-theme";
 import { useOrganization, useTodayAppointmentCount } from "@/hooks/use-organization";
 import { useThemeMode } from "@/hooks/use-theme-mode";
-import { Icon, IconAction, InitialsAvatar, PanelButton } from "@/components/panel/primitives";
+import { Icon, IconAction, InitialsAvatar, PanelButton, Skeleton } from "@/components/panel/primitives";
 import { RowMenu } from "@/components/panel/row-menu";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -240,7 +240,10 @@ export function DashboardLayout() {
         </header>
 
         <main className="box-border w-full flex-1 px-4 pb-6 pt-5 min-[720px]:px-8 min-[720px]:pb-12 min-[720px]:pt-7 min-[1400px]:px-12 min-[1400px]:pb-14 min-[1400px]:pt-8">
-          <Outlet />
+          {/* Suspense local: ao trocar de tela, só o conteúdo carrega; menu e cabeçalho permanecem. */}
+          <Suspense fallback={<div role="status" aria-label="Carregando" className="flex flex-col gap-5"><Skeleton className="h-16 w-72" /><Skeleton className="h-[106px]" /><Skeleton className="h-[360px]" /></div>}>
+            <Outlet />
+          </Suspense>
         </main>
 
         <nav aria-label="Navegação inferior" style={{ gridTemplateColumns: `repeat(${mobileNavigation.length}, minmax(0, 1fr))` }} className="sticky bottom-0 grid flex-shrink-0 border-t border-af-line bg-af-surface px-1 pb-2.5 pt-1.5 min-[720px]:hidden">

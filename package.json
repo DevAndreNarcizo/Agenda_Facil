@@ -13,7 +13,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:concurrency": "node --env-file-if-exists=.env scripts/run-agenda-concurrency-e2e.mjs",
-    "seed:demo": "node --env-file-if-exists=.env scripts/seed-demo.mjs"
+    "seed:demo": "node --env-file-if-exists=.env scripts/seed-demo.mjs",
+    "icons:sync": "node scripts/sync-material-icons.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -29,13 +30,10 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "i18next": "^25.6.3",
     "lucide-react": "^0.554.0",
-    "next-themes": "^0.4.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.66.1",
-    "react-i18next": "^16.3.5",
     "react-router-dom": "^7.9.6",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",

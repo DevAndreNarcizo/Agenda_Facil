@@ -25,7 +25,7 @@ type SortKey = "name" | "recent" | "visits";
  */
 export default function CustomersPage() {
   const { profile } = useAuth();
-  // Exclusão é restrita a owner/admin no banco (migration 20261004_000001); a interface acompanha.
+  // Exclusão é restrita a owner/admin no banco (migration 20261004000001); a interface acompanha.
   const canDelete = profile?.role === "owner" || profile?.role === "admin";
   const { customers, loading, newThisMonth, totalCustomers, createCustomer, updateCustomer, deleteCustomer } = useCustomers();
   const [searchParams, setSearchParams] = useSearchParams();

@@ -1096,6 +1096,21 @@ export type Database = {
           status: string
         }[]
       }
+      get_booking_source_counts: {
+        Args: never
+        Returns: {
+          booking_source: string
+          total: number
+        }[]
+      }
+      get_customer_stats: {
+        Args: never
+        Returns: {
+          customer_id: string
+          last_appointment: string
+          total_appointments: number
+        }[]
+      }
       get_dashboard_stats: {
         Args: never
         Returns: {

@@ -3,8 +3,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { bookingSources, type BookingSource } from '@/lib/public-booking-source';
 import { supabase } from '@/lib/supabase';
 
-const APPOINTMENTS_PAGE_SIZE = 1_000;
-
 export const bookingSourceLabels: Record<BookingSource, string> = {
   direct: 'Direto',
   google: 'Google',
@@ -14,8 +12,10 @@ export const bookingSourceLabels: Record<BookingSource, string> = {
   site: 'Site / widget',
 };
 
+/** Contagem agregada por canal (RPC get_booking_source_counts). */
 type BookingSourceRow = {
   booking_source: string | null;
+  total: number;
 };
 
 export type BookingSourceMetric = {
@@ -35,7 +35,7 @@ function normalizeBookingSource(value: string | null): BookingSource {
 }
 
 /**
- * Agrupa agendamentos por origem de aquisição para uso nas telas autenticadas.
+ * Consolida as contagens por canal (origens legadas/inválidas somam em "direto") e calcula a participação.
  *
  * @author André Narcizo
  */
@@ -44,10 +44,10 @@ export function buildBookingSourceMetrics(rows: BookingSourceRow[]): BookingSour
 
   for (const row of rows) {
     const source = normalizeBookingSource(row.booking_source);
-    counts.set(source, (counts.get(source) ?? 0) + 1);
+    counts.set(source, (counts.get(source) ?? 0) + Number(row.total));
   }
 
-  const total = rows.length;
+  const total = [...counts.values()].reduce((sum, count) => sum + count, 0);
   return bookingSources.map((source) => ({
     count: counts.get(source) ?? 0,
     label: bookingSourceLabels[source],
@@ -57,30 +57,14 @@ export function buildBookingSourceMetrics(rows: BookingSourceRow[]): BookingSour
 }
 
 /**
- * Busca todos os canais da organização em páginas para não truncar métricas acima do limite padrão da API.
+ * Contagem por canal agregada no banco (antes: paginação de todos os agendamentos no navegador).
  *
- * @author André Narcizo
+ * @author André Narcizo - andre.narcizo@sysout.com.br
  */
-async function getOrganizationBookingSources(organizationId: string): Promise<BookingSourceRow[]> {
-  const rows: BookingSourceRow[] = [];
-  let page = 0;
-
-  while (true) {
-    const start = page * APPOINTMENTS_PAGE_SIZE;
-    const { data, error } = await supabase
-      .from('appointments')
-      .select('booking_source')
-      .eq('organization_id', organizationId)
-      .order('id', { ascending: true })
-      .range(start, start + APPOINTMENTS_PAGE_SIZE - 1);
-
-    if (error) throw error;
-
-    const currentPage = (data ?? []) as BookingSourceRow[];
-    rows.push(...currentPage);
-    if (currentPage.length < APPOINTMENTS_PAGE_SIZE) return rows;
-    page += 1;
-  }
+async function getOrganizationBookingSources(): Promise<BookingSourceRow[]> {
+  const { data, error } = await supabase.rpc('get_booking_source_counts');
+  if (error) throw error;
+  return (data ?? []) as BookingSourceRow[];
 }
 
 /**
@@ -93,7 +77,7 @@ export function useBookingSourceMetrics() {
   const organizationId = profile?.organization_id;
   const query = useQuery({
     enabled: Boolean(organizationId),
-    queryFn: async () => buildBookingSourceMetrics(await getOrganizationBookingSources(organizationId as string)),
+    queryFn: async () => buildBookingSourceMetrics(await getOrganizationBookingSources()),
     queryKey: ['booking-source-metrics', organizationId],
     staleTime: 60_000,
   });

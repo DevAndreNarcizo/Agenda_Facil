@@ -1,4 +1,4 @@
--- Teste transacional da migration 20261004_000001 (permissões do painel e analytics).
+-- Teste transacional da migration 20261004000001 (permissões do painel e analytics).
 -- Execute somente em ambiente de teste/staging com uma role administrativa.
 -- Todas as fixtures são descartadas ao final com ROLLBACK.
 --
@@ -38,11 +38,11 @@ VALUES
 INSERT INTO public.customers (id, organization_id, name, phone)
 VALUES ('a6000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'Cliente A', '5511999990001');
 
-INSERT INTO public.appointments (organization_id, service_id, employee_id, customer_name, start_time, end_time, status, amount_paid, payment_status)
+INSERT INTO public.appointments (organization_id, service_id, employee_id, customer_name, start_time, end_time, status, amount_paid, payment_status, customer_id)
 VALUES
-  ('a0000000-0000-4000-8000-000000000001', 'a5000000-0000-4000-8000-000000000001', 'a3000000-0000-4000-8000-000000000003', 'Cliente A', now() - interval '2 days', now() - interval '2 days' + interval '1 hour', 'completed', 0, 'paid'),
-  ('a0000000-0000-4000-8000-000000000001', 'a5000000-0000-4000-8000-000000000001', 'a3000000-0000-4000-8000-000000000003', 'Cliente A', now() + interval '1 day', now() + interval '1 day 1 hour', 'pending', 0, 'pending'),
-  ('b0000000-0000-4000-8000-000000000002', 'b5000000-0000-4000-8000-000000000001', 'b1000000-0000-4000-8000-000000000001', 'Cliente B', now() - interval '1 day', now() - interval '1 day' + interval '1 hour', 'completed', 999, 'paid');
+  ('a0000000-0000-4000-8000-000000000001', 'a5000000-0000-4000-8000-000000000001', 'a3000000-0000-4000-8000-000000000003', 'Cliente A', now() - interval '2 days', now() - interval '2 days' + interval '1 hour', 'completed', 0, 'paid', 'a6000000-0000-4000-8000-000000000001'),
+  ('a0000000-0000-4000-8000-000000000001', 'a5000000-0000-4000-8000-000000000001', 'a3000000-0000-4000-8000-000000000003', 'Cliente A', now() + interval '1 day', now() + interval '1 day 1 hour', 'pending', 0, 'pending', 'a6000000-0000-4000-8000-000000000001'),
+  ('b0000000-0000-4000-8000-000000000002', 'b5000000-0000-4000-8000-000000000001', 'b1000000-0000-4000-8000-000000000001', 'Cliente B', now() - interval '1 day', now() - interval '1 day' + interval '1 hour', 'completed', 999, 'paid', NULL);
 
 SET LOCAL ROLE authenticated;
 
@@ -87,6 +87,15 @@ BEGIN
   SELECT * INTO stats FROM public.get_period_summary(now() - interval '7 days', now() + interval '7 days');
   IF stats.total <> 2 OR stats.pending <> 1 OR stats.paid_revenue <> 100 THEN
     RAISE EXCEPTION 'Resumo do período incorreto: total %, pendentes %, receita %', stats.total, stats.pending, stats.paid_revenue;
+  END IF;
+
+  -- Agregações da migration 20261004234712: por cliente e por canal, só da própria organização.
+  SELECT * INTO stats FROM public.get_customer_stats();
+  IF (SELECT count(*) FROM public.get_customer_stats()) <> 1 OR stats.total_appointments <> 2 THEN
+    RAISE EXCEPTION 'Estatística de clientes incorreta: % agendamentos', stats.total_appointments;
+  END IF;
+  IF (SELECT sum(total) FROM public.get_booking_source_counts()) <> 2 THEN
+    RAISE EXCEPTION 'Contagem por canal vazou ou errou';
   END IF;
 
   -- Admin não edita o owner nem o próprio papel.

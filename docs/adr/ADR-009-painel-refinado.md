@@ -21,6 +21,6 @@ O painel autenticado usava o visual "Stitch" (índigo, negrito/caixa-alta, canto
 ## Consequências
 
 - Horário de funcionamento (`organization_business_hours`) passa a ser editável em Configurações e define a janela visível da agenda e a ocupação do Início.
-- A grade carrega o período inteiro em lotes de 1.000 (`useAppointments(filters, { fetchAll: true })`). Métricas do Início e da Assinatura vêm da RPC `get_period_summary` (migration 20261004_000001), sem depender de listas paginadas.
+- A grade carrega o período inteiro em lotes de 1.000 (`useAppointments(filters, { fetchAll: true })`). Métricas do Início e da Assinatura vêm da RPC `get_period_summary` (migration 20261004000001), sem depender de listas paginadas.
 - O e2e da agenda usa `data-agenda-event` e `data-service-id` como seletores estáveis.
 - Fontes (Inter e Material Symbols) seguem via Google Fonts; empacotá-las localmente é recomendado para não depender da CDN.

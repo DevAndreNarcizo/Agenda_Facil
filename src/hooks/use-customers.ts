@@ -36,34 +36,17 @@ export function useCustomers() {
       }
       if (error) throw error;
 
-      // Buscar último agendamento e total para cada cliente
-      const customerIds = (data || []).map((c: { id: string }) => c.id);
+      // Última visita e total vêm agregados do banco (RPC get_customer_stats), em vez de
+      // `.in(customer_id, [todos os ids])`, que estourava o limite de URL com muitos clientes.
+      const { data: appointmentStats, error: statsError } = await supabase.rpc("get_customer_stats");
+      if (statsError) throw statsError;
 
-      if (customerIds.length === 0) return data as Customer[];
-
-      const { data: appointmentStats } = await supabase
-        .from("appointments")
-        .select("customer_id, start_time, status")
-        .in("customer_id", customerIds)
-        .neq("status", "cancelled")
-        .order("start_time", { ascending: false });
-
-      const statsMap = new Map<string, { last_appointment: string | null; total_appointments: number }>();
-
-      for (const apt of (appointmentStats || [])) {
-        if (!apt.customer_id) {
-          continue;
-        }
-        const existing = statsMap.get(apt.customer_id);
-        if (existing) {
-          existing.total_appointments += 1;
-        } else {
-          statsMap.set(apt.customer_id, {
-            last_appointment: apt.start_time,
-            total_appointments: 1,
-          });
-        }
-      }
+      const statsMap = new Map<string, { last_appointment: string | null; total_appointments: number }>(
+        (appointmentStats ?? []).map((row) => [
+          row.customer_id,
+          { last_appointment: row.last_appointment, total_appointments: Number(row.total_appointments) },
+        ]),
+      );
 
       return (data || []).map((customer) => ({
         ...customer,

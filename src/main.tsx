@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from './lib/react-query'
 import './index.css'
-import './i18n/config' // Configuração i18n
 import App from './App.tsx'
 
 // Aplicar tema salvo antes do primeiro render (evita flash de tema errado)
