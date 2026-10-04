@@ -1,267 +1,382 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
-import { ThemeCustomizationContent } from "@/components/dashboard/settings/theme-customization-content";
+import { useAuth } from "@/hooks/use-auth";
+import { useBusinessHours, type BusinessDay } from "@/hooks/use-business-hours";
+import { useOrganization } from "@/hooks/use-organization";
+import { useThemeMode } from "@/hooks/use-theme-mode";
 import { PublicBookingSettings } from "@/components/dashboard/settings/public-booking-settings";
+import {
+  Field, Page, PageHeader, Panel, PanelButton, PanelSwitch, Segmented, SettingsSection, Skeleton,
+} from "@/components/panel/primitives";
+import { formatMinutes, timeToMinutes } from "@/lib/agenda-time";
+import { cn } from "@/lib/utils";
 
-export default function SettingsPage() {
-  const { profile } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [company, setCompany] = useState<{ name: string; slug: string; plan_name: string; subscription_status: string } | null>(null);
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
+type TabId = "profile" | "look" | "booking" | "billing";
 
-  useEffect(() => {
-    if (profile?.organization_id) {
-      fetchCompanyDetails();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.organization_id]);
+const TABS: { id: TabId; label: string }[] = [
+  { id: "profile", label: "Perfil geral" },
+  { id: "look", label: "Aparência" },
+  { id: "booking", label: "Reserva online" },
+  { id: "billing", label: "Plano e faturas" },
+];
 
-  const fetchCompanyDetails = async () => {
-    if (!profile?.organization_id) return;
-    const { data } = await supabase
-      .from("organizations")
-      .select("*")
-      .eq("id", profile.organization_id)
-      .single();
-    
-    if (data) {
-      setCompany({
-        name: data.name,
-        slug: data.slug ?? '',
-        plan_name: data.plan_name ?? 'starter',
-        subscription_status: data.subscription_status ?? 'trialing',
+const WEEKDAY_LABELS = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+/** Ordem de exibição: segunda → domingo. */
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
+const BRAND_SWATCHES = [
+  { name: "Azul AgendaFácil", hex: "#087bf5" },
+  { name: "Navy", hex: "#092343" },
+  { name: "Beleza", hex: "#f04f7d" },
+  { name: "Bem-estar", hex: "#7040e8" },
+  { name: "Pet", hex: "#27ad59" },
+  { name: "Grafite", hex: "#334155" },
+];
+
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+interface ProfileForm {
+  name: string;
+  slug: string;
+  specialty: string;
+  instagram: string;
+  address: string;
+  number: string;
+  city: string;
+  state: string;
+  cep: string;
+}
+
+/**
+ * Lê um campo textual do JSON de endereço salvo no onboarding.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+function addressField(address: unknown, key: string): string {
+  if (address && typeof address === "object" && !Array.isArray(address)) {
+    const value = (address as Record<string, unknown>)[key];
+    return typeof value === "string" ? value : "";
+  }
+  return "";
+}
+
+/**
+ * Aba Perfil geral: dados do negócio (organizations + organization_settings) e horário de funcionamento.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+function ProfileTab() {
+  const { organization, settings, loading, updateOrganization, saving } = useOrganization();
+  const { days, loading: loadingHours, saveBusinessHours, saving: savingHours } = useBusinessHours();
+  const [form, setForm] = useState<ProfileForm | null>(null);
+  const [schedule, setSchedule] = useState<BusinessDay[] | null>(null);
+
+  // Inicializa os formulários quando os dados chegam (e após salvar/descartar).
+  const initialForm: ProfileForm | null = organization
+    ? {
+        name: organization.name,
+        slug: organization.slug ?? "",
+        specialty: settings?.specialty ?? "",
+        instagram: settings?.instagram ?? "",
+        address: addressField(settings?.address, "address"),
+        number: addressField(settings?.address, "number"),
+        city: addressField(settings?.address, "city"),
+        state: addressField(settings?.address, "state"),
+        cep: addressField(settings?.address, "cep"),
+      }
+    : null;
+  const current = form ?? initialForm;
+  const currentSchedule = schedule ?? days;
+  const update = (patch: Partial<ProfileForm>) => current && setForm({ ...current, ...patch });
+  const slugValid = !current || SLUG_PATTERN.test(current.slug);
+
+  /**
+   * Salva identidade, link e endereço em uma única ação.
+   *
+   * @author André Narcizo - andre.narcizo@sysout.com.br
+   */
+  const saveProfile = async () => {
+    if (!current || !slugValid || current.name.trim().length < 2) return;
+    try {
+      await updateOrganization({
+        organization: { name: current.name.trim(), slug: current.slug },
+        settings: {
+          specialty: current.specialty.trim(),
+          instagram: current.instagram.trim(),
+          address: { address: current.address.trim(), number: current.number.trim(), city: current.city.trim(), state: current.state.trim(), cep: current.cep.trim() },
+        },
       });
-      setName(data.name);
-      setSlug(data.slug || "");
+      setForm(null);
+      toast.success("Dados do negócio salvos.");
+    } catch (cause) {
+      const message = cause instanceof Error && /duplicate|unique/i.test(cause.message) ? "Esse link já está em uso. Escolha outro." : "Não foi possível salvar os dados.";
+      toast.error(message);
     }
   };
 
-  const handleUpdateCompany = async () => {
-    const organizationId = profile?.organization_id;
-    if (!organizationId) {
-      toast.error('Organização não encontrada.');
+  const saveSchedule = async () => {
+    try {
+      await saveBusinessHours(currentSchedule);
+      setSchedule(null);
+      toast.success("Horário de funcionamento salvo.");
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Não foi possível salvar o horário.");
+    }
+  };
+
+  const updateDay = (dayOfWeek: number, patch: Partial<BusinessDay>) =>
+    setSchedule(currentSchedule.map((day) => (day.dayOfWeek === dayOfWeek ? { ...day, ...patch } : day)));
+
+  if (loading || !current) return <Skeleton className="h-[420px]" />;
+
+  const text = (key: keyof ProfileForm, label: string, options: { span?: boolean; placeholder?: string; hint?: string; maxLength?: number } = {}) => (
+    <Field label={label} htmlFor={`org-${key}`} hint={options.hint} className={options.span ? "col-span-full" : undefined}>
+      <input id={`org-${key}`} className="af-input" maxLength={options.maxLength ?? 160} placeholder={options.placeholder} value={current[key]} onChange={(event) => update({ [key]: event.target.value })} />
+    </Field>
+  );
+
+  return (
+    <>
+      <SettingsSection title="Dados do negócio" description="Como seus clientes identificam sua marca na reserva online e nas mensagens.">
+        <Panel>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,240px),1fr))] gap-[18px] p-5">
+            {text("name", "Nome comercial", { placeholder: "Ex.: Studio Lumière" })}
+            {text("specialty", "Especialidade", { placeholder: "Ex.: Estética facial", maxLength: 120 })}
+            <Field
+              label="Link de reserva"
+              htmlFor="org-slug"
+              className="col-span-full"
+              error={slugValid ? undefined : "Use letras minúsculas, números e hífens (ex.: studio-lumiere)."}
+              hint="Usado no link de reserva e no QR code. Alterar quebra links já divulgados."
+            >
+              <div className="flex h-[38px] items-center overflow-hidden rounded-lg border border-af-line2 bg-af-bg text-sm focus-within:border-af-accent">
+                <span className="flex h-full items-center whitespace-nowrap border-r border-af-line bg-af-surface2 px-2.5 text-af-ink3">{window.location.host}/reservar/</span>
+                <input id="org-slug" className="h-full min-w-0 flex-1 bg-transparent px-3 text-af-ink outline-none" value={current.slug} onChange={(event) => update({ slug: event.target.value.toLowerCase().replace(/\s+/g, "-") })} />
+              </div>
+            </Field>
+            {text("instagram", "Instagram", { placeholder: "@seuperfil", maxLength: 100 })}
+            {text("cep", "CEP", { placeholder: "00000-000", maxLength: 20 })}
+            {text("address", "Endereço", { span: true, placeholder: "Rua, bairro" })}
+            {text("number", "Número", { maxLength: 20 })}
+            {text("city", "Cidade", { maxLength: 100 })}
+            {text("state", "Estado", { maxLength: 50 })}
+            <Field label="Fuso horário" hint="A agenda opera no horário de Brasília.">
+              <div className="flex h-[38px] items-center rounded-lg border border-af-line bg-af-surface2 px-3 text-sm text-af-ink2">America/Sao_Paulo (GMT−3)</div>
+            </Field>
+          </div>
+          <div className="flex justify-end gap-2 border-t border-af-line px-5 py-3.5">
+            <PanelButton variant="ghost" size="md" disabled={!form} onClick={() => setForm(null)}>Descartar</PanelButton>
+            <PanelButton variant="primary" size="md" disabled={!form || !slugValid || saving} onClick={() => void saveProfile()}>
+              {saving ? "Salvando…" : "Salvar alterações"}
+            </PanelButton>
+          </div>
+        </Panel>
+      </SettingsSection>
+
+      <div className="h-px bg-af-line" />
+
+      <SettingsSection title="Horário de funcionamento" description="Define os horários disponíveis para reserva e a janela exibida na Agenda.">
+        {loadingHours ? <Skeleton className="h-[340px]" /> : (
+          <Panel className="overflow-hidden">
+            {WEEK_ORDER.map((dayOfWeek) => {
+              const day = currentSchedule.find((entry) => entry.dayOfWeek === dayOfWeek)!;
+              const invalid = day.isActive && day.end <= day.start;
+              return (
+                <div key={dayOfWeek} className="grid grid-cols-[minmax(110px,1fr)_44px_minmax(0,1.4fr)] items-center gap-4 border-t border-af-line px-5 py-2.5 first:border-t-0">
+                  <span className={cn("text-sm", day.isActive ? "text-af-ink" : "text-af-ink3")}>{WEEKDAY_LABELS[dayOfWeek]}</span>
+                  <PanelSwitch checked={day.isActive} onCheckedChange={(isActive) => updateDay(dayOfWeek, { isActive })} aria-label={`Aberto ${WEEKDAY_LABELS[dayOfWeek]}`} />
+                  {day.isActive ? (
+                    <span className="flex items-center gap-2 text-[13px] text-af-ink2">
+                      <input type="time" step={1800} aria-label={`Abertura ${WEEKDAY_LABELS[dayOfWeek]}`} className="af-input h-8 w-[124px] px-2" value={formatMinutes(day.start)} onChange={(event) => event.target.value && updateDay(dayOfWeek, { start: timeToMinutes(event.target.value) })} />
+                      –
+                      <input type="time" step={1800} aria-label={`Fechamento ${WEEKDAY_LABELS[dayOfWeek]}`} aria-invalid={invalid} className={cn("af-input h-8 w-[124px] px-2", invalid && "border-af-bad")} value={formatMinutes(day.end)} onChange={(event) => event.target.value && updateDay(dayOfWeek, { end: timeToMinutes(event.target.value) })} />
+                    </span>
+                  ) : (
+                    <span className="text-[13px] text-af-ink3">Fechado</span>
+                  )}
+                </div>
+              );
+            })}
+            <div className="flex justify-end gap-2 border-t border-af-line px-5 py-3.5">
+              <PanelButton variant="ghost" size="md" disabled={!schedule} onClick={() => setSchedule(null)}>Descartar</PanelButton>
+              <PanelButton variant="primary" size="md" disabled={!schedule || savingHours} onClick={() => void saveSchedule()}>
+                {savingHours ? "Salvando…" : "Salvar horário"}
+              </PanelButton>
+            </div>
+          </Panel>
+        )}
+      </SettingsSection>
+    </>
+  );
+}
+
+/**
+ * Aba Aparência: logo, cor da marca (aplicada na reserva e no portal) e tema do painel.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+function AppearanceTab() {
+  const { organization, updateOrganization, saving } = useOrganization();
+  const { mode, setMode } = useThemeMode();
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  // Guarda a URL que falhou ao carregar; trocar a URL limpa o erro sem efeito colateral.
+  const [brokenLogo, setBrokenLogo] = useState<string | null>(null);
+  const currentLogo = logoUrl ?? organization?.logo_url ?? "";
+  const logoBroken = brokenLogo === currentLogo;
+  const brand = (organization?.primary_color ?? "").toLowerCase();
+
+  const saveLogo = async () => {
+    const value = currentLogo.trim();
+    if (value && !/^https:\/\//.test(value)) {
+      toast.error("Use um endereço que comece com https://");
       return;
     }
-
-    setLoading(true);
     try {
-      const { error } = await supabase
-        .from("organizations")
-        .update({ name, slug })
-        .eq("id", organizationId);
-      
-      if (error) throw error;
-      toast.success("Configurações salvas com sucesso!");
-      fetchCompanyDetails();
+      await updateOrganization({ organization: { logo_url: value || null } });
+      setLogoUrl(null);
+      toast.success("Logo atualizado.");
     } catch {
-      toast.error("Erro ao salvar configurações.");
-    } finally {
-      setLoading(false);
+      toast.error("Não foi possível salvar o logo.");
+    }
+  };
+
+  const pickBrand = async (hex: string) => {
+    try {
+      await updateOrganization({ organization: { primary_color: hex } });
+      toast.success("Cor da marca atualizada na reserva online.");
+    } catch {
+      toast.error("Não foi possível salvar a cor.");
     }
   };
 
   return (
-    <div className="space-y-10 p-8 max-w-[1600px] mx-auto animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 bg-stitch-surface-container-low/10 p-10 rounded-[3rem] border border-white/5 relative overflow-hidden group">
-        <div className="relative z-10">
-          <Badge className="bg-stitch-primary/10 text-stitch-primary border-0 px-4 py-1 rounded-full mb-4 font-black uppercase tracking-[0.2em] text-[10px]">Painel de Gestão</Badge>
-          <h1 className="font-headline text-5xl font-black tracking-tight text-stitch-on-surface">Configurações</h1>
-          <p className="text-stitch-on-surface-variant font-bold mt-2 opacity-60 max-w-lg">Gerencie a identidade, equipe e faturamento da sua empresa em um só lugar.</p>
-        </div>
-        
-        <div className="relative z-10 flex flex-col items-end gap-2">
-           <div className="flex -space-x-3">
-              {/* Avatares renderizados pelo componente pai via profile data */}
-           </div>
-           <p className="text-[10px] font-black uppercase tracking-widest text-stitch-on-surface-variant opacity-40">Painel de Gestão Ativo</p>
+    <SettingsSection title="Identidade visual" description="Logo e cor aplicados na página de reserva e no portal do cliente.">
+      <Panel className="flex flex-col gap-[22px] p-5">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-af-lg border border-dashed border-af-line2 bg-[repeating-linear-gradient(45deg,var(--af-surface2)_0_6px,var(--af-surface)_6px_12px)] font-mono text-[10px] text-af-ink3">
+            {currentLogo && !logoBroken ? <img src={currentLogo} alt="Logo atual" className="h-full w-full bg-white object-contain" onError={() => setBrokenLogo(currentLogo)} /> : "logo"}
+          </div>
+          <div className="flex min-w-[220px] flex-1 flex-col gap-1.5">
+            <span className="text-sm font-medium">Logo</span>
+            <input aria-label="Endereço do logo" className="af-input" placeholder="https://… (PNG ou SVG, fundo transparente)" value={currentLogo} onChange={(event) => setLogoUrl(event.target.value)} />
+            <span className="text-xs text-af-ink3">Mínimo 256 × 256 px.</span>
+          </div>
+          <PanelButton disabled={logoUrl === null || saving} onClick={() => void saveLogo()}>Salvar logo</PanelButton>
         </div>
 
-        {/* Decorative background element */}
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-stitch-primary/5 rounded-full blur-[100px] group-hover:bg-stitch-primary/10 transition-colors duration-1000" />
+        <div className="flex flex-col gap-2.5">
+          <span className="text-sm font-medium">Cor da marca</span>
+          <div role="radiogroup" aria-label="Cor da marca" className="flex flex-wrap gap-2.5">
+            {BRAND_SWATCHES.map((swatch) => {
+              const selected = brand === swatch.hex;
+              return (
+                <button
+                  key={swatch.hex}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  aria-label={swatch.name}
+                  title={swatch.name}
+                  disabled={saving}
+                  onClick={() => void pickBrand(swatch.hex)}
+                  className="h-8 w-8 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-af-accent focus-visible:ring-offset-2"
+                  style={{ background: swatch.hex, boxShadow: selected ? `0 0 0 2px var(--af-surface), 0 0 0 4px ${swatch.hex}` : "none" }}
+                />
+              );
+            })}
+          </div>
+          <Link to="/dashboard/theme" className="text-xs font-medium text-af-accent hover:underline">Personalização avançada de cores</Link>
+        </div>
+
+        <div className="flex flex-col gap-2.5">
+          <span className="text-sm font-medium">Tema do painel</span>
+          <Segmented label="Tema do painel" value={mode} onChange={setMode} options={[{ value: "light", label: "Claro" }, { value: "dark", label: "Escuro" }]} />
+        </div>
+      </Panel>
+    </SettingsSection>
+  );
+}
+
+/**
+ * Aba Plano e faturas: resumo do plano com atalho para a Assinatura.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+function BillingTab() {
+  const { profile } = useAuth();
+  const { subscription } = useOrganization();
+  return (
+    <Panel className="flex flex-wrap items-center gap-4 p-5">
+      <div className="flex min-w-[220px] flex-1 flex-col gap-1">
+        <span className="text-[15px] font-semibold">Plano {subscription.plan.name}{subscription.isTrial ? " · teste grátis" : ""}</span>
+        <span className="text-[13px] text-af-ink2">
+          {subscription.isTrial && subscription.trialDaysLeft !== null
+            ? `${subscription.trialDaysLeft} dias restantes. Depois, R$ ${subscription.plan.monthlyPrice},00 por mês.`
+            : `R$ ${subscription.plan.monthlyPrice},00 por mês.`}
+        </span>
       </div>
-      
-      <Tabs defaultValue="profile" className="space-y-12">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6 border-b border-white/5 pb-6">
-          <TabsList className="bg-stitch-surface-container-low/50 p-1.5 rounded-2xl border border-white/5">
-            <TabsTrigger value="profile" className="rounded-xl px-8 py-3 data-[state=active]:bg-stitch-primary data-[state=active]:text-white font-black transition-all">Perfil Geral</TabsTrigger>
-            <TabsTrigger value="appearance" className="rounded-xl px-8 py-3 data-[state=active]:bg-stitch-primary data-[state=active]:text-white font-black transition-all">Aparência</TabsTrigger>
-            <TabsTrigger value="billing" className="rounded-xl px-8 py-3 data-[state=active]:bg-stitch-primary data-[state=active]:text-white font-black transition-all">Plano e Faturas</TabsTrigger>
-          </TabsList>
-          
-          <div className="hidden lg:flex items-center gap-4 text-xs font-black uppercase tracking-widest text-stitch-on-surface-variant opacity-40">
-            <span className="material-symbols-outlined text-sm">lock</span>
-            Conexão Segura SSL/256
-          </div>
-        </div>
-          <TabsContent value="profile" className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
-            <div className="xl:col-span-8 space-y-10">
-              <Card className="rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden bg-stitch-surface-container-low/20 backdrop-blur-2xl border border-white/5 relative">
-                {/* Decorative Banner */}
-                <div className="h-32 bg-gradient-to-r from-stitch-primary/20 via-stitch-primary/10 to-transparent absolute top-0 left-0 right-0 pointer-events-none" />
-                
-                <CardHeader className="p-12 pb-8 relative z-10">
-                  <div className="flex items-center gap-6 mb-2">
-                    <div className="w-16 h-16 rounded-[1.5rem] bg-stitch-primary/10 flex items-center justify-center text-stitch-primary shadow-inner">
-                      <span className="material-symbols-outlined text-4xl">storefront</span>
-                    </div>
-                    <div>
-                      <CardTitle className="text-3xl font-black font-headline text-stitch-on-surface">Dados do Negócio</CardTitle>
-                      <CardDescription className="text-sm font-bold text-stitch-on-surface-variant opacity-60">Como seus clientes identificam sua marca.</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-12 pt-0 space-y-10 relative z-10">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    <div className="space-y-3">
-                      <Label htmlFor="orgName" className="text-xs font-black uppercase tracking-widest text-stitch-on-surface-variant ml-2">Nome Comercial</Label>
-                      <Input
-                        id="orgName"
-                        className="h-16 px-6 rounded-2xl border-none bg-[#1a1c1e] text-white font-black text-lg placeholder:text-white/10 shadow-inner focus-visible:ring-2 focus-visible:ring-stitch-primary/50 transition-all"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Ex: Studio Alessa"
-                      />
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <Label htmlFor="orgSlug" className="text-xs font-black uppercase tracking-widest text-stitch-on-surface-variant ml-2">URL do Catálogo (Slug)</Label>
-                      <div className="flex items-center gap-3">
-                        <div className="h-16 px-5 rounded-2xl bg-[#1a1c1e]/50 border border-white/5 flex items-center text-stitch-primary font-black text-xs xl:text-sm shadow-sm backdrop-blur-sm">
-                          agendafacil.io/p/
-                        </div>
-                        <Input
-                          id="orgSlug"
-                          className="h-16 flex-1 px-6 rounded-2xl border-none bg-[#1a1c1e] text-white font-black text-lg placeholder:text-white/10 shadow-inner focus-visible:ring-2 focus-visible:ring-stitch-primary/50 transition-all min-w-0"
-                          value={slug}
-                          onChange={(e) => setSlug(e.target.value)}
-                          placeholder="studio-alessa"
-                        />
-                      </div>
-                    </div>
-                  </div>
+      {profile?.role === "owner" ? (
+        <Link to="/dashboard/subscription" className="inline-flex h-[34px] items-center rounded-lg bg-af-accent px-3.5 text-[13px] font-medium text-af-on-accent no-underline hover:bg-af-accent-hover">
+          Gerenciar assinatura
+        </Link>
+      ) : (
+        <span className="text-xs text-af-ink3">Somente a proprietária(o) gerencia a assinatura.</span>
+      )}
+    </Panel>
+  );
+}
 
-                  <div className="pt-6 flex justify-end">
-                    <Button onClick={handleUpdateCompany} disabled={loading} className="h-18 px-14 rounded-[2rem] font-black text-xl shadow-2xl shadow-stitch-primary/30 transition-all hover:scale-[1.05] active:scale-95 bg-stitch-primary text-white border-0">
-                      {loading ? (
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
-                          Processando...
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          <span className="material-symbols-outlined text-2xl">verified_user</span>
-                          Salvar Identidade
-                        </div>
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+/**
+ * Configurações em abas (estado na URL ?tab= para links diretos).
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+export default function SettingsPage() {
+  const { profile } = useAuth();
+  const { organization } = useOrganization();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = (TABS.find((item) => item.id === searchParams.get("tab"))?.id ?? "profile") as TabId;
 
-              {profile?.organization_id && slug && <PublicBookingSettings organizationId={profile.organization_id} slug={slug} />}
+  return (
+    <Page>
+      <PageHeader eyebrow={organization?.name ?? "Seu negócio"} title="Configurações" />
 
-              {/* Quick Actions Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <Link to="/dashboard/services" className="group">
-                  <Card className="rounded-[2.5rem] p-10 border-none bg-stitch-surface-container-low/20 backdrop-blur-md hover:bg-stitch-primary/5 transition-all shadow-xl hover:shadow-2xl border border-white/5 relative overflow-hidden h-full">
-                    <div className="relative z-10 flex items-center gap-8">
-                      <div className="w-16 h-16 bg-stitch-primary/10 rounded-2xl flex items-center justify-center text-stitch-primary shadow-sm group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                        <span className="material-symbols-outlined text-4xl">content_cut</span>
-                      </div>
-                      <div>
-                        <h4 className="text-xl font-black font-headline text-stitch-on-surface mb-1">Catálogo de Serviços</h4>
-                        <p className="text-sm text-stitch-on-surface-variant font-bold opacity-50">Gerencie preços, tempos e categorias.</p>
-                      </div>
-                    </div>
-                    <span className="material-symbols-outlined absolute -right-6 -bottom-6 text-9xl text-stitch-primary opacity-5 group-hover:opacity-10 transition-opacity">content_cut</span>
-                  </Card>
-                </Link>
+      <div role="tablist" aria-label="Seções de configurações" className="flex gap-1 overflow-x-auto overflow-y-hidden border-b border-af-line">
+        {TABS.map((item) => {
+          const active = item.id === tab;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setSearchParams({ tab: item.id }, { replace: true })}
+              className={cn(
+                "-mb-px whitespace-nowrap border-b-2 px-3 py-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-af-accent",
+                active ? "border-af-accent font-medium text-af-ink" : "border-transparent text-af-ink2 hover:text-af-ink",
+              )}
+            >
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
 
-                <Link to="/dashboard/employees" className="group">
-                  <Card className="rounded-[2.5rem] p-10 border-none bg-stitch-surface-container-low/20 backdrop-blur-md hover:bg-stitch-secondary/5 transition-all shadow-xl hover:shadow-2xl border border-white/5 relative overflow-hidden h-full">
-                    <div className="relative z-10 flex items-center gap-8">
-                      <div className="w-16 h-16 bg-stitch-secondary/10 rounded-2xl flex items-center justify-center text-stitch-secondary shadow-sm group-hover:scale-110 group-hover:-rotate-6 transition-all duration-500">
-                        <span className="material-symbols-outlined text-4xl">badge</span>
-                      </div>
-                      <div>
-                        <h4 className="text-xl font-black font-headline text-stitch-on-surface mb-1">Equipe Profissional</h4>
-                        <p className="text-sm text-stitch-on-surface-variant font-bold opacity-50">Controle permissões e horários.</p>
-                      </div>
-                    </div>
-                    <span className="material-symbols-outlined absolute -right-6 -bottom-6 text-9xl text-stitch-secondary opacity-5 group-hover:opacity-10 transition-opacity">badge</span>
-                  </Card>
-                </Link>
-              </div>
-            </div>
-
-            <div className="xl:col-span-4 space-y-10">
-              <Card className="rounded-[3rem] p-12 bg-stitch-primary/5 border-2 border-stitch-primary/10 relative overflow-hidden transition-all hover:bg-stitch-primary/10 group h-full flex flex-col justify-center">
-                <div className="relative z-10 text-center space-y-8">
-                  <div className="w-24 h-24 bg-stitch-primary/20 rounded-[2rem] mx-auto flex items-center justify-center text-stitch-primary shadow-lg transform group-hover:rotate-12 transition-transform duration-700">
-                    <span className="material-symbols-outlined text-5xl">auto_awesome</span>
-                  </div>
-                  <div className="space-y-4">
-                    <h4 className="text-stitch-primary font-black uppercase tracking-[0.3em] text-xs">Sucesso do Cliente</h4>
-                    <p className="text-stitch-on-surface font-black text-2xl leading-tight font-headline">
-                      Complete seu perfil para vender mais
-                    </p>
-                    <p className="text-stitch-on-surface-variant font-bold text-sm leading-relaxed opacity-60">
-                      Um perfil completo com logo e descrição passa 3x mais confiança para novos agendamentos online.
-                    </p>
-                  </div>
-                  <Button className="w-full h-14 rounded-2xl font-black bg-stitch-primary text-white hover:scale-105 transition-all shadow-xl shadow-stitch-primary/20" asChild>
-                     <Link to="/dashboard/theme">Personalizar Estilo</Link>
-                  </Button>
-                </div>
-                {/* Decorative glows */}
-                <div className="absolute -top-40 -left-40 w-80 h-80 bg-stitch-primary/20 rounded-full blur-[100px] pointer-events-none" />
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="appearance" className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <ThemeCustomizationContent />
-        </TabsContent>
-
-        <TabsContent value="billing" className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-           <Link to="/dashboard/subscription" className="block outline-none">
-            <Card className="rounded-[3rem] bg-[#0f1113] p-12 text-white shadow-2xl relative overflow-hidden group ring-1 ring-white/10 transition-all hover:scale-[1.01]">
-              <div className="relative z-10 max-w-lg">
-                <Badge className="bg-stitch-primary text-white border-0 px-6 py-1.5 rounded-full mb-8 font-black uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-stitch-primary/20">
-                    {company?.plan_name ? company.plan_name.toUpperCase() : "FREE TRIAL"}
-                </Badge>
-                <h3 className="text-5xl font-black font-headline mb-4 tracking-tighter">Assinatura Premium</h3>
-                <p className="text-xl font-bold opacity-60 mb-10 leading-relaxed">
-                  Gerencie seu plano, faturas e métodos de pagamento com segurança através do Stripe.
-                </p>
-                <div className="flex gap-4">
-                  <Button className="bg-white text-[#0f1113] h-16 px-10 rounded-2xl font-black text-lg hover:bg-stitch-primary hover:text-white transition-all shadow-xl">
-                    {company?.subscription_status === 'active' ? "Gerenciar Assinatura" : "Ver Planos & Ativar"}
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Decorative elements */}
-              <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:scale-125 transition-transform duration-1000">
-                <span className="material-symbols-outlined text-[300px] text-stitch-primary">workspace_premium</span>
-              </div>
-              <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-stitch-primary/10 rounded-full blur-[100px]" />
-            </Card>
-           </Link>
-        </TabsContent>
-      </Tabs>
-    </div>
+      <div role="tabpanel" className="flex flex-col gap-5 min-[720px]:gap-7">
+        {tab === "profile" && <ProfileTab />}
+        {tab === "look" && <AppearanceTab />}
+        {tab === "booking" && (
+          <SettingsSection title="Reserva online" description="Página pública onde clientes escolhem serviço, profissional e horário.">
+            {profile?.organization_id && organization?.slug ? (
+              <PublicBookingSettings organizationId={profile.organization_id} slug={organization.slug} />
+            ) : (
+              <Skeleton className="h-[320px]" />
+            )}
+          </SettingsSection>
+        )}
+        {tab === "billing" && <BillingTab />}
+      </div>
+    </Page>
   );
 }

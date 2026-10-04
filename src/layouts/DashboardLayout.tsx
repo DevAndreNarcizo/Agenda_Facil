@@ -1,251 +1,265 @@
-import { useState, useEffect } from "react";
-import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
-import type { Profile } from "@/context/auth-context-types";
+import type { UserRole } from "@/context/auth-context-types";
 import { useOrganizationTheme } from "@/hooks/use-organization-theme";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useOrganization, useTodayAppointmentCount } from "@/hooks/use-organization";
+import { useThemeMode } from "@/hooks/use-theme-mode";
+import { Icon, IconAction, InitialsAvatar, PanelButton } from "@/components/panel/primitives";
+import { RowMenu } from "@/components/panel/row-menu";
+import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import logoMark from "@/assets/logo-mark.png";
 
 interface NavigationItem {
   name: string;
   href: string;
   icon: string;
+  /** Perfis com acesso; ausente = todos os membros. Espelha as ProtectedRoute do App. */
+  roles?: UserRole[];
+  /** Exibido na barra inferior do celular. */
+  mobile?: boolean;
 }
 
-interface SidebarProps {
-  navigation: NavigationItem[];
-  profile: Profile | null;
-  location: { pathname: string };
-  navigate: (path: string) => void;
-  setIsMobileMenuOpen: (open: boolean) => void;
-  onSignOut: () => void;
+const NAVIGATION: NavigationItem[] = [
+  { name: "Início", href: "/dashboard", icon: "space_dashboard", mobile: true },
+  { name: "Agenda", href: "/dashboard/calendar", icon: "calendar_month", mobile: true },
+  { name: "Clientes", href: "/dashboard/customers", icon: "group", mobile: true },
+  { name: "Profissionais", href: "/dashboard/employees", icon: "badge", roles: ["owner", "admin"] },
+  { name: "Serviços", href: "/dashboard/services", icon: "spa", roles: ["owner", "admin"], mobile: true },
+  { name: "Analytics", href: "/dashboard/analytics", icon: "monitoring", mobile: true },
+  { name: "Assinatura", href: "/dashboard/subscription", icon: "credit_card", roles: ["owner"] },
+  { name: "Configurações", href: "/dashboard/settings", icon: "settings", roles: ["owner", "admin"] },
+];
+
+const ROLE_LABELS: Record<string, string> = { owner: "Proprietária(o)", admin: "Administrador", employee: "Profissional", staff: "Equipe" };
+
+/**
+ * Verifica se a rota atual pertence ao item de navegação (Início só casa exatamente).
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+function isActiveRoute(pathname: string, href: string): boolean {
+  return href === "/dashboard" ? pathname === "/dashboard" || pathname === "/dashboard/" : pathname.startsWith(href);
 }
 
-const SidebarContent = ({ navigation, profile, location, navigate, setIsMobileMenuOpen, onSignOut }: SidebarProps) => (
-  <div className="flex h-full flex-col bg-stitch-surface text-stitch-on-surface border-r border-stitch-outline-variant/10">
-    {/* Brand Identity */}
-    <div className="flex items-center gap-3 px-6 py-10 mb-2">
-      <div className="w-10 h-10 bg-stitch-primary rounded-xl flex items-center justify-center text-stitch-on-primary shadow-lg shadow-stitch-primary/20">
-        <span className="material-symbols-outlined font-black">content_cut</span>
-      </div>
-      <div>
-        <h1 className="text-xl font-black text-stitch-primary tracking-tight">AgendaFácil</h1>
-        <p className="text-[10px] uppercase tracking-widest text-stitch-on-surface-variant font-black">Premium Wellness</p>
-      </div>
-    </div>
-
-    {/* Navigation */}
-    <nav className="flex-1 px-4 space-y-2">
-      {navigation.map((item) => {
-        const isActive = location.pathname === item.href;
-        const isCurrent = (isActive || (item.href === '/dashboard' && location.pathname === '/dashboard'));
-        return (
-          <Link
-            key={item.name}
-            to={item.href}
-            className={cn(
-              "flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300",
-              isCurrent 
-                ? "text-stitch-primary font-black border-r-4 border-stitch-primary bg-stitch-primary/10 rounded-l-xl" 
-                : "text-stitch-on-surface-variant hover:text-stitch-primary hover:bg-stitch-primary/5 font-bold"
-            )}
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: isCurrent ? "'FILL' 1" : "" }}>{item.icon}</span>
-            <span className="font-label">{item.name}</span>
-          </Link>
-        );
-      })}
-    </nav>
-
-    {/* User Profile Section */}
-    <div className="p-4 mt-auto border-t border-stitch-outline-variant/5 pt-6 mx-2">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <div className="flex items-center justify-between bg-stitch-surface-container-low/50 p-4 rounded-2xl border border-stitch-outline-variant/5 cursor-pointer group transition-all hover:bg-stitch-surface-container-low">
-            <div className="flex items-center gap-3 overflow-hidden">
-              <Avatar className="h-10 w-10 border-2 border-stitch-surface-container-highest shadow-sm shrink-0 group-hover:scale-105 transition-transform">
-                 <AvatarImage src="" />
-                 <AvatarFallback className="bg-stitch-primary/10 text-stitch-primary font-black">
-                   {profile?.full_name?.charAt(0) || "U"}
-                 </AvatarFallback>
-              </Avatar>
-              <div className="overflow-hidden">
-                <p className="text-sm font-black truncate text-stitch-on-surface font-headline">{profile?.full_name || "Usuário"}</p>
-                <p className="text-[10px] text-stitch-on-surface-variant uppercase font-black tracking-wider opacity-50">
-                   {profile?.role === 'owner' ? 'Proprietário' : 
-                    profile?.role === 'admin' ? 'Administrador' : 'Colaborador'}
-                </p>
-              </div>
-            </div>
-            <span className="material-symbols-outlined text-stitch-on-surface-variant transition-transform group-hover:rotate-180">expand_less</span>
-          </div>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-[calc(var(--radix-dropdown-menu-trigger-width)-1rem)] ml-2 mb-2 rounded-xl bg-stitch-surface text-stitch-on-surface border border-stitch-outline-variant/10 shadow-xl" side="top" align="center">
-          <DropdownMenuLabel className="font-black text-xs uppercase tracking-widest text-stitch-on-surface-variant/80 px-4 py-2">Configurações Rápidas</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => navigate('/dashboard/analytics')} className="gap-3 font-bold cursor-pointer py-3 px-4 focus:bg-stitch-primary/5 focus:text-stitch-primary">
-            <span className="material-symbols-outlined text-lg">insights</span> Analytics
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/dashboard/theme')} className="gap-3 font-bold cursor-pointer py-3 px-4 focus:bg-stitch-primary/5 focus:text-stitch-primary">
-            <span className="material-symbols-outlined text-lg">palette</span> Customizar Cores
-          </DropdownMenuItem>
-          <div className="h-px bg-stitch-outline-variant/10 my-1 mx-2" />
-          <DropdownMenuItem 
-            onClick={onSignOut} 
-            className="gap-3 font-bold cursor-pointer py-3 px-4 text-stitch-error focus:bg-stitch-error/10 focus:text-stitch-error group"
-          >
-            <span className="material-symbols-outlined text-lg group-hover:scale-110 transition-transform">logout</span> Encerrar Sessão
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  </div>
-);
-
-// Layout Principal do Dashboard
+/**
+ * Layout do painel refinado: sidebar 232px (≥1100), rail de ícones 64px (720–1099)
+ * e barra inferior no celular (<720), com cabeçalho fixo de 56px.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
 export function DashboardLayout() {
   const { signOut, profile, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { organization, subscription } = useOrganization();
+  const todayCount = useTodayAppointmentCount();
+  const { mode, toggle } = useThemeMode();
+  const [search, setSearch] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
 
   useOrganizationTheme();
 
-  // Se profile carregou mas não tem organization_id, redirecionar para onboarding
+  // Perfil sem organização ainda precisa concluir o onboarding.
   useEffect(() => {
     if (!loading && profile && !profile.organization_id) {
-      navigate('/onboarding', { replace: true });
+      navigate("/onboarding", { replace: true });
     }
   }, [profile, loading, navigate]);
 
-  // Enquanto carrega ou redireciona, não mostra nada
+  // Atalho ⌘K / Ctrl+K foca a busca global do cabeçalho.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   if (loading || (profile && !profile.organization_id)) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-stitch-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-stitch-primary/20 border-t-stitch-primary rounded-full animate-spin" />
-          <p className="text-sm font-bold text-stitch-on-surface-variant">Carregando...</p>
+      <div className="af-root flex min-h-screen items-center justify-center bg-af-bg">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-af-line border-t-af-accent" />
+          <p className="text-[13px] text-af-ink2">Carregando…</p>
         </div>
       </div>
     );
   }
 
+  const role = profile?.role ?? "employee";
+  const navigation = NAVIGATION.filter((item) => !item.roles || item.roles.includes(role));
+  const mobileNavigation = navigation.filter((item) => item.mobile).slice(0, 5);
+  const current = navigation.find((item) => isActiveRoute(location.pathname, item.href));
+  const isCalendar = location.pathname.startsWith("/dashboard/calendar");
+
+  /**
+   * Encerra a sessão e volta ao login.
+   *
+   * @author André Narcizo - andre.narcizo@sysout.com.br
+   */
   const handleSignOut = async () => {
     await signOut();
     navigate("/login");
   };
 
-  const navigation: NavigationItem[] = [
-    { name: "Dashboard", href: "/dashboard", icon: "dashboard" },
-    { name: "Calendário", href: "/dashboard/calendar", icon: "calendar_month" },
-    { name: "Clientes", href: "/dashboard/customers", icon: "person_search" },
-    { name: "Profissionais", href: "/dashboard/employees", icon: "group" },
-    { name: "Serviços", href: "/dashboard/services", icon: "content_cut" },
-    { name: "Analytics", href: "/dashboard/analytics", icon: "insights" },
-    { name: "Assinatura", href: "/dashboard/subscription", icon: "card_membership" },
-    { name: "Configurações", href: "/dashboard/settings", icon: "settings" },
-  ];
+  /**
+   * Busca global: leva à lista de clientes já filtrada pelo termo.
+   *
+   * @author André Narcizo - andre.narcizo@sysout.com.br
+   */
+  const handleSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const term = search.trim();
+    navigate(term ? `/dashboard/customers?q=${encodeURIComponent(term)}` : "/dashboard/customers");
+  };
 
-  const currentTitle = navigation.find(n => n.href === location.pathname)?.name || "Dashboard";
+  /**
+   * Abre o modal de novo agendamento na Agenda, preservando os filtros quando já está nela.
+   *
+   * @author André Narcizo - andre.narcizo@sysout.com.br
+   */
+  const openNewAppointment = () => {
+    const params = new URLSearchParams(isCalendar ? location.search : "");
+    params.set("new", "1");
+    navigate(`/dashboard/calendar?${params.toString()}`);
+  };
+
+  const trialLabel = subscription.isTrial
+    ? `Plano ${subscription.plan.name} · teste grátis${subscription.trialDaysLeft !== null ? `, ${subscription.trialDaysLeft} dias restantes` : ""}`
+    : `Plano ${subscription.plan.name}${subscription.status === "active" ? " · ativo" : ""}`;
 
   return (
-    <div className="flex min-h-screen w-full bg-stitch-background transition-colors duration-500">
-      
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col fixed left-0 top-0 h-full w-72 z-40">
-        <SidebarContent 
-          navigation={navigation} 
-          profile={profile} 
-          location={location} 
-          navigate={navigate}
-          setIsMobileMenuOpen={setIsMobileMenuOpen} 
-          onSignOut={handleSignOut}
+    <div className="af-root grid h-screen grid-cols-[minmax(0,1fr)] overflow-hidden bg-af-bg text-af-ink min-[720px]:grid-cols-[64px_minmax(0,1fr)] min-[1100px]:grid-cols-[232px_minmax(0,1fr)]">
+      <aside className="hidden h-screen flex-col overflow-y-auto border-r border-af-line bg-af-bg min-[720px]:flex">
+        <div className="flex items-center justify-center gap-2.5 px-[18px] pb-6 pt-5 min-[1100px]:justify-start">
+          <img src={logoMark} alt="AgendaFácil" className="h-9 w-9 flex-none object-contain" />
+          <div className="hidden flex-col gap-px min-[1100px]:flex">
+            <span className="text-[17px] font-bold leading-[1.1] tracking-[-0.03em]">
+              Agenda<span className="text-af-accent">Fácil</span>
+            </span>
+            <span className="truncate text-[11px] text-af-ink3">{organization?.name ?? " "}</span>
+          </div>
+        </div>
+
+        <nav aria-label="Navegação principal" className="flex flex-1 flex-col gap-0.5 px-3">
+          {navigation.map((item) => {
+            const active = isActiveRoute(location.pathname, item.href);
+            const badge = item.href === "/dashboard/calendar" && todayCount > 0 ? String(todayCount) : "";
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                title={item.name}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "flex h-9 items-center justify-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors hover:bg-af-surface2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-af-accent min-[1100px]:justify-start",
+                  active ? "bg-af-surface font-medium text-af-ink" : "text-af-ink2",
+                )}
+              >
+                <Icon name={item.icon} size={19} fill={active} className={active ? "text-af-accent" : "text-af-ink3"} />
+                <span className="hidden flex-1 whitespace-nowrap min-[1100px]:inline">{item.name}</span>
+                {badge && <span className="hidden text-[11px] text-af-ink3 min-[1100px]:inline">{badge}</span>}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {role === "owner" && (
+          <div className="m-3 hidden flex-col gap-2 rounded-af border border-af-line bg-af-surface p-3 min-[1100px]:flex">
+            <span className="text-xs text-af-ink2">{trialLabel}</span>
+            {subscription.isTrial && (
+              <div className="h-1 overflow-hidden rounded-sm bg-af-surface2">
+                <div className="h-full bg-af-accent" style={{ width: `${Math.round(subscription.trialProgress * 100)}%` }} />
+              </div>
+            )}
+            <Link to="/dashboard/subscription" className="text-xs font-medium text-af-accent hover:underline">
+              Gerenciar assinatura
+            </Link>
+          </div>
+        )}
+
+        <RowMenu
+          side="top"
+          align="start"
+          label="Menu da conta"
+          items={[
+            ...(role === "owner" || role === "admin" ? [{ label: "Configurações", icon: "settings", onSelect: () => navigate("/dashboard/settings") }] : []),
+            { label: mode === "dark" ? "Tema claro" : "Tema escuro", icon: mode === "dark" ? "light_mode" : "dark_mode", onSelect: toggle },
+            { label: "Encerrar sessão", icon: "logout", danger: true, onSelect: () => void handleSignOut() },
+          ]}
+          trigger={
+            <button
+              type="button"
+              className="flex w-full items-center justify-center gap-2.5 border-t border-af-line px-[18px] py-3.5 text-left hover:bg-af-surface2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-af-accent min-[1100px]:justify-start"
+            >
+              <InitialsAvatar initials={getInitials(profile?.full_name)} size={30} />
+              <span className="hidden min-w-0 flex-1 flex-col min-[1100px]:flex">
+                <span className="truncate text-[13px] font-medium">{profile?.full_name || "Usuário"}</span>
+                <span className="text-[11px] text-af-ink3">{ROLE_LABELS[role] ?? "Equipe"}</span>
+              </span>
+              <Icon name="unfold_more" size={18} className="hidden text-af-ink3 min-[1100px]:inline-block" />
+            </button>
+          }
         />
       </aside>
 
-      {/* Main Container */}
-      <div className="flex flex-col flex-1 md:pl-72">
-        
-        {/* Top Header */}
-        <header className="h-20 flex justify-between items-center px-8 bg-stitch-background/80 backdrop-blur-xl sticky top-0 z-30 border-b border-stitch-outline-variant/10">
-          <h2 className="font-black text-stitch-on-surface font-headline uppercase tracking-widest text-sm opacity-80">
-            {currentTitle}
-          </h2>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <div className="h-6 w-[1px] bg-stitch-outline-variant/20 mx-1"></div>
-            <button className="p-2.5 text-stitch-on-surface-variant hover:bg-stitch-primary/10 hover:text-stitch-primary transition-all rounded-full relative group">
-              <span className="material-symbols-outlined font-black">notifications</span>
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-stitch-primary rounded-full border-2 border-stitch-background"></span>
-            </button>
-          </div>
+      <div className="flex h-screen min-w-0 flex-col overflow-y-auto">
+        <header className="sticky top-0 z-[5] flex h-14 flex-shrink-0 items-center gap-3 border-b border-af-line bg-af-bg px-4 min-[720px]:px-8">
+          <img src={logoMark} alt="AgendaFácil" className="h-8 w-8 flex-shrink-0 object-contain min-[720px]:hidden" />
+          <span className="whitespace-nowrap text-sm text-af-ink2">{current?.name ?? "Início"}</span>
+          <div className="flex-1" />
+          <form
+            role="search"
+            onSubmit={handleSearch}
+            className="hidden h-8 min-w-0 flex-[0_1_280px] items-center gap-2 overflow-hidden whitespace-nowrap rounded-lg border border-af-line bg-af-surface px-2.5 text-[13px] text-af-ink3 focus-within:border-af-accent min-[860px]:flex"
+          >
+            <Icon name="search" size={17} />
+            <input
+              ref={searchRef}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar cliente"
+              aria-label="Buscar cliente"
+              className="min-w-0 flex-1 bg-transparent text-af-ink outline-none placeholder:text-af-ink3"
+            />
+            <kbd className="rounded border border-af-line px-[5px] py-px font-sans text-[11px]">⌘K</kbd>
+          </form>
+          <IconAction icon={mode === "dark" ? "light_mode" : "dark_mode"} label="Alternar tema" size={20} onClick={toggle} />
+          <span className="relative inline-flex p-1.5 text-af-ink2" title="Notificações">
+            <Icon name="notifications" size={20} />
+            <span className="absolute right-2 top-[7px] h-1.5 w-1.5 rounded-full bg-af-accent" />
+          </span>
+          <PanelButton variant="primary" icon="add" onClick={openNewAppointment} aria-label="Novo agendamento">
+            <span className="hidden min-[560px]:inline">Novo agendamento</span>
+          </PanelButton>
         </header>
 
-        {/* Dynamic Content */}
-        <main className="p-8 pb-32 md:pb-8 flex-1">
+        <main className="box-border w-full flex-1 px-4 pb-6 pt-5 min-[720px]:px-8 min-[720px]:pb-12 min-[720px]:pt-7 min-[1400px]:px-12 min-[1400px]:pb-14 min-[1400px]:pt-8">
           <Outlet />
         </main>
+
+        <nav aria-label="Navegação inferior" style={{ gridTemplateColumns: `repeat(${mobileNavigation.length}, minmax(0, 1fr))` }} className="sticky bottom-0 grid flex-shrink-0 border-t border-af-line bg-af-surface px-1 pb-2.5 pt-1.5 min-[720px]:hidden">
+          {mobileNavigation.map((item) => {
+            const active = isActiveRoute(location.pathname, item.href);
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                aria-current={active ? "page" : undefined}
+                className={cn("flex min-h-11 flex-col items-center gap-[3px] py-1.5", active ? "text-af-accent" : "text-af-ink3")}
+              >
+                <Icon name={item.icon} size={22} fill={active} />
+                <span className={cn("text-[11px]", active && "font-medium")}>{item.name}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-4 md:hidden bg-stitch-surface-container/95 backdrop-blur-md shadow-2xl border-t border-stitch-outline-variant/10 rounded-t-[32px]">
-        <Link to="/dashboard" className={cn(
-          "flex flex-col items-center justify-center p-2 rounded-2xl transition-all",
-          location.pathname === '/dashboard' ? 'bg-stitch-primary/10 text-stitch-primary' : 'text-stitch-on-surface-variant'
-        )}>
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: location.pathname === '/dashboard' ? "'FILL' 1" : "" }}>home</span>
-          <span className="text-[10px] font-black mt-1 uppercase tracking-tighter">Início</span>
-        </Link>
-        <Link to="/dashboard/calendar" className={cn(
-          "flex flex-col items-center justify-center p-2 rounded-2xl transition-all",
-          location.pathname.includes('calendar') ? 'bg-stitch-primary/10 text-stitch-primary' : 'text-stitch-on-surface-variant'
-        )}>
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: location.pathname.includes('calendar') ? "'FILL' 1" : "" }}>calendar_today</span>
-          <span className="text-[10px] font-black mt-1 uppercase tracking-tighter">Agenda</span>
-        </Link>
-        <Link to="/dashboard/customers" className={cn(
-          "flex flex-col items-center justify-center p-2 rounded-2xl transition-all",
-          location.pathname.includes('customers') ? 'bg-stitch-primary/10 text-stitch-primary' : 'text-stitch-on-surface-variant'
-        )}>
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: location.pathname.includes('customers') ? "'FILL' 1" : "" }}>groups</span>
-          <span className="text-[10px] font-black mt-1 uppercase tracking-tighter">Clientes</span>
-        </Link>
-        <button onClick={() => setIsMobileMenuOpen(true)} className="flex flex-col items-center justify-center p-2 text-stitch-on-surface-variant">
-          <span className="material-symbols-outlined">menu_open</span>
-          <span className="text-[10px] font-black mt-1 uppercase tracking-tighter">Menu</span>
-        </button>
-      </nav>
-
-      {/* Mobile Menu Overlay/Drawer */}
-      <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-        <SheetContent side="left" className="p-0 w-80 bg-stitch-background border-none rounded-r-[32px] shadow-2xl overflow-hidden">
-          <SidebarContent 
-            navigation={navigation} 
-            profile={profile} 
-            location={location} 
-            navigate={navigate}
-            setIsMobileMenuOpen={setIsMobileMenuOpen} 
-            onSignOut={handleSignOut}
-          />
-        </SheetContent>
-      </Sheet>
-
-      {/* Global FAB */}
-      <button 
-        onClick={() => navigate('/dashboard/employees')}
-        className="fixed bottom-28 right-6 md:bottom-10 md:right-10 w-16 h-16 bg-stitch-primary text-stitch-on-primary rounded-full shadow-2xl shadow-stitch-primary/40 flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 group"
-      >
-        <span className="material-symbols-outlined text-3xl group-hover:rotate-90 transition-transform duration-300 font-black">add</span>
-      </button>
     </div>
   );
 }

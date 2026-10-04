@@ -1,203 +1,166 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useServices, type Service, type ServiceInput } from "@/hooks/use-services";
+import { ConfirmDialog } from "@/components/panel/confirm-dialog";
+import { ListPrimaryCell, ListTable, type ListColumn } from "@/components/panel/list-table";
+import { EmptyState, IconAction, InitialsAvatar, Page, PageHeader, PanelButton, SearchField, ToolbarSelect } from "@/components/panel/primitives";
+import { RowMenu } from "@/components/panel/row-menu";
+import { formatCurrency, plural } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { ServiceForm } from "./components/ServiceForm";
-import { ServicesTable } from "./components/ServicesTable";
 
-interface Service {
-  id: string;
-  name: string;
-  duration_minutes: number;
-  price: number;
-  description: string | null;
-}
+const DEFAULT_FORM: ServiceInput = { name: "", duration_minutes: 30, price: 0, description: "" };
+type StatusFilter = "all" | "active" | "inactive";
 
-interface ServiceFormData {
-  name: string;
-  duration_minutes: number;
-  price: number;
-  description: string;
-}
-
-const DEFAULT_FORM: ServiceFormData = { name: "", duration_minutes: 30, price: 0, description: "" };
-
+/**
+ * Serviços: catálogo com busca, filtro de status, ativação e CRUD.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
 export default function ServicesPage() {
-  const { profile } = useAuth();
-  const [services, setServices] = useState<Service[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingService, setEditingService] = useState<Service | null>(null);
-  const [formData, setFormData] = useState<ServiceFormData>(DEFAULT_FORM);
+  const { services, loading, saveService, setServiceActive, deleteService, saving } = useServices();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<StatusFilter>("all");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Service | null>(null);
+  const [formData, setFormData] = useState<ServiceInput>(DEFAULT_FORM);
+  const [toDelete, setToDelete] = useState<Service | null>(null);
 
-  useEffect(() => {
-    if (profile?.organization_id) {
-      fetchServices();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.organization_id]);
+  const activeCount = services.filter((service) => service.is_active).length;
+  const rows = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return services.filter((service) =>
+      (status === "all" || (status === "active") === service.is_active)
+      && (!term || service.name.toLowerCase().includes(term) || service.description?.toLowerCase().includes(term)));
+  }, [services, search, status]);
 
-  const fetchServices = async () => {
-    const organizationId = profile?.organization_id;
-    if (!organizationId) {
-      return;
-    }
-
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("services")
-      .select("*")
-      .eq("organization_id", organizationId)
-      .order("name");
-
-    if (error) {
-      toast.error("Erro ao carregar serviços");
-    } else {
-      setServices(data || []);
-    }
-    setLoading(false);
+  const openModal = (service?: Service) => {
+    setEditing(service ?? null);
+    setFormData(service ? { name: service.name, duration_minutes: service.duration_minutes, price: service.price, description: service.description ?? "" } : DEFAULT_FORM);
+    setModalOpen(true);
   };
 
-  const handleSaveService = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name) return;
-    if (!profile?.organization_id) {
-      toast.error("Organização não encontrada. Tente fazer login novamente.");
-      return;
-    }
-
+  /**
+   * Persiste o serviço e fecha o modal em caso de sucesso.
+   *
+   * @author André Narcizo - andre.narcizo@sysout.com.br
+   */
+  const handleSave = async (event: React.FormEvent) => {
+    event.preventDefault();
     try {
-      if (editingService) {
-        const { error } = await supabase
-          .from("services")
-        .update({
-            name: formData.name,
-            duration_minutes: Number(formData.duration_minutes),
-            price: Number(formData.price),
-            description: formData.description,
-        })
-          .eq("id", editingService.id)
-          .eq('organization_id', profile.organization_id);
-        if (error) throw error;
-        toast.success("Serviço atualizado com sucesso!");
-      } else {
-        const { error } = await supabase
-          .from("services")
-          .insert({
-            organization_id: profile?.organization_id,
-            name: formData.name,
-            duration_minutes: Number(formData.duration_minutes),
-            price: Number(formData.price),
-            description: formData.description,
-          });
-        if (error) throw error;
-        toast.success("Novo serviço cadastrado!");
-      }
-
-      setIsModalOpen(false);
-      fetchServices();
-      resetForm();
+      await saveService(formData, editing?.id);
+      toast.success(editing ? "Serviço atualizado." : "Serviço cadastrado.");
+      setModalOpen(false);
     } catch {
-      toast.error("Erro ao salvar serviço. Verifique os dados.");
+      toast.error("Não foi possível salvar o serviço. Verifique os dados.");
     }
   };
 
-  const handleDeleteService = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este serviço?")) return;
+  const toggleActive = async (service: Service) => {
     try {
-      const organizationId = profile?.organization_id;
-      if (!organizationId) {
-        throw new Error('Organização não encontrada');
-      }
-      const { error } = await supabase.from("services").delete().eq("id", id).eq('organization_id', organizationId);
-      if (error) throw error;
+      await setServiceActive(service.id, !service.is_active);
+      toast.success(service.is_active ? "Serviço desativado. Ele some da reserva online." : "Serviço ativado.");
+    } catch {
+      toast.error("Não foi possível alterar o status do serviço.");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!toDelete) return;
+    try {
+      await deleteService(toDelete.id);
       toast.success("Serviço removido.");
-      fetchServices();
+      setToDelete(null);
     } catch {
-      toast.error("Erro ao remover serviço.");
+      toast.error("Não foi possível remover. Se houver agendamentos vinculados, desative o serviço.");
     }
   };
 
-  const resetForm = () => {
-    setEditingService(null);
-    setFormData(DEFAULT_FORM);
-  };
-
-  const openEditModal = (service: Service) => {
-    setEditingService(service);
-    setFormData({
-      name: service.name,
-      duration_minutes: service.duration_minutes,
-      price: service.price,
-      description: service.description || "",
-    });
-    setIsModalOpen(true);
-  };
+  const columns: ListColumn<Service>[] = [
+    {
+      key: "name", header: "Serviço",
+      render: (service) => <ListPrimaryCell leading={<InitialsAvatar icon="spa" square />} title={service.name} subtitle={service.description || "Sem descrição"} />,
+    },
+    { key: "duration", header: "Duração", render: (service) => <span className="whitespace-nowrap text-[13px] text-af-ink2">{service.duration_minutes} min</span> },
+    { key: "price", header: "Preço", align: "right", render: (service) => <span className="whitespace-nowrap text-[13px] text-af-ink">{formatCurrency(service.price)}</span> },
+    {
+      key: "status", header: "Status",
+      render: (service) => (
+        <span className={cn("flex items-center gap-1.5 whitespace-nowrap text-[13px]", service.is_active ? "text-af-ink" : "text-af-ink3")}>
+          <span className={cn("h-1.5 w-1.5 rounded-full", service.is_active ? "bg-af-ok" : "bg-af-ink3")} />
+          {service.is_active ? "Ativo" : "Inativo"}
+        </span>
+      ),
+    },
+    {
+      key: "actions", header: "", align: "right",
+      render: (service) => (
+        <div className="flex gap-0.5">
+          <IconAction icon="edit" label={`Editar ${service.name}`} className="text-af-ink3" onClick={() => openModal(service)} />
+          <RowMenu
+            items={[
+              { label: service.is_active ? "Desativar" : "Ativar", icon: service.is_active ? "visibility_off" : "visibility", onSelect: () => void toggleActive(service) },
+              { label: "Excluir serviço", icon: "delete", danger: true, onSelect: () => setToDelete(service) },
+            ]}
+          />
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="space-y-12 p-8 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <p className="text-stitch-on-surface-variant text-sm font-medium mb-1 uppercase tracking-wider">Catálogo</p>
-          <h1 className="font-headline text-4xl font-black tracking-tight text-stitch-on-surface">Gestão de Serviços</h1>
-        </div>
-        <ServiceForm
-          isOpen={isModalOpen}
-          onOpenChange={(open) => {
-            setIsModalOpen(open);
-            if (!open) resetForm();
-          }}
-          editingService={editingService}
-          formData={formData}
-          onFormChange={setFormData}
-          onSubmit={handleSaveService}
+    <Page>
+      <PageHeader
+        eyebrow={plural(activeCount, "serviço ativo", "serviços ativos")}
+        title="Serviços"
+        actions={<PanelButton icon="add" onClick={() => openModal()}>Novo serviço</PanelButton>}
+      />
+
+      <div className="flex flex-wrap items-center gap-2.5">
+        <SearchField value={search} onChange={setSearch} placeholder="Buscar serviço" />
+        <ToolbarSelect
+          label="Status"
+          value={status}
+          onChange={(value) => setStatus(value as StatusFilter)}
+          options={[{ value: "all", label: "Todos os status" }, { value: "active", label: "Ativos" }, { value: "inactive", label: "Inativos" }]}
         />
       </div>
 
-      {/* Search & Stats Bar */}
-      <section className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-end">
-        <div className="lg:col-span-3 space-y-3">
-          <Label className="text-sm font-bold text-stitch-on-surface-variant ml-1">Encontrar Serviço</Label>
-          <div className="relative group">
-            <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-stitch-primary opacity-50 group-focus-within:opacity-100 transition-opacity text-2xl">search</span>
-            <Input
-              className="h-16 pl-14 text-lg bg-[#1a1c1e] text-white border-none rounded-2xl shadow-xl font-bold placeholder:text-white/20"
-              placeholder="Nome ou descrição do serviço..."
-            />
-          </div>
-        </div>
-        <Card className="p-6 rounded-2xl bg-stitch-surface-container-low/30 border border-white/5 flex items-center justify-between h-16">
-          <span className="text-xs font-black uppercase tracking-widest text-stitch-on-surface-variant">Ativos:</span>
-          <span className="text-2xl font-black font-headline text-stitch-primary">{services.length}</span>
-        </Card>
-      </section>
-
-      <ServicesTable
-        services={services}
+      <ListTable
+        columns={columns}
+        template="minmax(0,2.4fr) minmax(0,0.8fr) minmax(0,0.8fr) minmax(0,0.9fr) 72px"
+        rows={rows}
+        rowKey={(service) => service.id}
         loading={loading}
-        onEdit={openEditModal}
-        onDelete={handleDeleteService}
-        onAddFirst={() => setIsModalOpen(true)}
+        empty={
+          <EmptyState
+            icon="spa"
+            title={services.length === 0 ? "Nenhum serviço cadastrado" : "Nenhum serviço encontrado"}
+            description={services.length === 0 ? "Cadastre seus serviços para abrir a agenda ao público." : "Tente outro termo ou status."}
+            action={services.length === 0 && <PanelButton variant="primary" icon="add" onClick={() => openModal()}>Cadastrar serviço</PanelButton>}
+          />
+        }
+        footer={<span>Mostrando {rows.length} de {plural(services.length, "serviço")}</span>}
       />
 
-      {/* Suggestion Bento Card */}
-      <div className="bg-stitch-primary text-white p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
-        <div className="relative z-10 max-w-lg">
-          <h3 className="text-3xl font-black font-headline mb-4">Aumente seus lucros com combos</h3>
-          <p className="text-stitch-on-primary-fixed-variant font-medium text-lg mb-8 opacity-90">
-            Combine serviços populares como "Corte + Barba" e ofereça descontos exclusivos para seus clientes fiéis.
-          </p>
-          <Button className="bg-white text-stitch-primary h-14 px-8 rounded-xl font-black text-lg hover:bg-stitch-surface-container-low transition-all">
-            Criar meu primeiro Combo
-          </Button>
-        </div>
-        <div className="absolute right-[-10%] top-[-20%] w-96 h-96 bg-white/10 rounded-full blur-[100px] group-hover:scale-110 transition-transform duration-700" />
-        <span className="material-symbols-outlined absolute right-12 bottom-12 text-[120px] opacity-10 group-hover:scale-125 group-hover:-rotate-12 transition-all duration-500">sell</span>
-      </div>
-    </div>
+      <ServiceForm
+        isOpen={modalOpen}
+        onOpenChange={setModalOpen}
+        isEditing={editing !== null}
+        formData={formData}
+        onFormChange={setFormData}
+        onSubmit={handleSave}
+        saving={saving}
+      />
+
+      <ConfirmDialog
+        open={toDelete !== null}
+        onOpenChange={(open) => !open && setToDelete(null)}
+        title="Excluir serviço?"
+        description={`${toDelete?.name ?? "O serviço"} sai do catálogo e da reserva online. Para manter o histórico, prefira desativar.`}
+        confirmLabel="Excluir serviço"
+        onConfirm={() => void handleDelete()}
+      />
+    </Page>
   );
 }

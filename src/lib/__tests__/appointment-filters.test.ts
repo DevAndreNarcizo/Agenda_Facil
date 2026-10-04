@@ -47,10 +47,17 @@ describe('normalizeAppointmentFilters', () => {
 });
 
 describe('getAppointmentUtcRange', () => {
-  it('retorna a semana em UTC a partir do domingo no fuso de São Paulo', () => {
+  it('retorna a semana em UTC a partir da segunda-feira no fuso de São Paulo', () => {
     const range = getAppointmentUtcRange('2026-03-10', 'week');
 
-    expect(range.start.toISOString()).toBe('2026-03-08T03:00:00.000Z');
-    expect(range.end.toISOString()).toBe('2026-03-15T03:00:00.000Z');
+    expect(range.start.toISOString()).toBe('2026-03-09T03:00:00.000Z');
+    expect(range.end.toISOString()).toBe('2026-03-16T03:00:00.000Z');
+  });
+
+  it('mantém o domingo na semana que começou na segunda anterior', () => {
+    const range = getAppointmentUtcRange('2026-03-15', 'week');
+
+    expect(range.start.toISOString()).toBe('2026-03-09T03:00:00.000Z');
+    expect(range.end.toISOString()).toBe('2026-03-16T03:00:00.000Z');
   });
 });

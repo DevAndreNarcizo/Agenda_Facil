@@ -1,149 +1,58 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-
-interface Service {
-  id: string;
-  name: string;
-  duration_minutes: number;
-  price: number;
-  description: string | null;
-}
-
-interface ServiceFormData {
-  name: string;
-  duration_minutes: number;
-  price: number;
-  description: string;
-}
+import { PanelDialog } from "@/components/panel/panel-dialog";
+import { Field, PanelButton } from "@/components/panel/primitives";
+import type { ServiceInput } from "@/hooks/use-services";
 
 interface ServiceFormProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  editingService: Service | null;
-  formData: ServiceFormData;
-  onFormChange: (data: ServiceFormData) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  isEditing: boolean;
+  formData: ServiceInput;
+  onFormChange: (data: ServiceInput) => void;
+  onSubmit: (event: React.FormEvent) => void;
+  saving: boolean;
 }
 
-export function ServiceForm({
-  isOpen,
-  onOpenChange,
-  editingService,
-  formData,
-  onFormChange,
-  onSubmit,
-}: ServiceFormProps) {
+/**
+ * Modal de cadastro/edição de serviço (nome, preço, duração e descrição).
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+export function ServiceForm({ isOpen, onOpenChange, isEditing, formData, onFormChange, onSubmit, saving }: ServiceFormProps) {
+  const valid = formData.name.trim().length > 1 && formData.duration_minutes >= 5 && formData.price >= 0;
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button className="h-16 px-10 rounded-2xl font-black text-lg gap-3 shadow-lg shadow-stitch-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
-          <span className="material-symbols-outlined text-2xl">add_box</span>
-          Novo Serviço
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[750px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden font-sans">
-        <DialogHeader className="p-10 pb-6 bg-stitch-surface-container-low/30">
-          <div className="flex items-center gap-4 mb-2">
-            <div className="w-14 h-14 rounded-2xl bg-stitch-primary/10 flex items-center justify-center text-stitch-primary">
-              <span className="material-symbols-outlined text-3xl">
-                {editingService ? "edit" : "service_toolbox"}
-              </span>
-            </div>
-            <div>
-              <DialogTitle className="text-2xl font-black font-headline text-stitch-on-surface">
-                {editingService ? "Editar Serviço" : "Novo Serviço"}
-              </DialogTitle>
-              <DialogDescription className="text-sm font-bold text-stitch-on-surface-variant opacity-60">
-                Configure os detalhes do seu serviço.
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
-
-        <form onSubmit={onSubmit} className="px-10 pb-10 space-y-6 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm font-bold ml-1">Nome do Serviço</Label>
-            <div className="relative group">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-primary opacity-50 group-focus-within:opacity-100 transition-opacity">content_cut</span>
-              <Input
-                id="name"
-                className="pl-12 h-14 rounded-xl border-none !bg-[#1a1c1e] text-white font-bold placeholder:text-white/20 transition-all focus-visible:ring-stitch-primary"
-                value={formData.name}
-                onChange={(e) => onFormChange({ ...formData, name: e.target.value })}
-                required
-                placeholder="Ex: Corte de Cabelo Premium"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="price" className="text-sm font-bold ml-1">Preço (R$)</Label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stitch-on-surface-variant font-black text-sm">R$</span>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  className="pl-12 h-14 rounded-xl border-none !bg-[#1a1c1e] text-white font-bold transition-all focus-visible:ring-stitch-primary"
-                  value={formData.price}
-                  onChange={(e) => onFormChange({ ...formData, price: Number(e.target.value) })}
-                  required
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="duration" className="text-sm font-bold ml-1">Duração (min)</Label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40">schedule</span>
-                <Input
-                  id="duration"
-                  type="number"
-                  className="pl-12 h-14 rounded-xl border-none !bg-[#1a1c1e] text-white font-bold transition-all focus-visible:ring-stitch-primary"
-                  value={formData.duration_minutes}
-                  onChange={(e) => onFormChange({ ...formData, duration_minutes: Number(e.target.value) })}
-                  required
-                  placeholder="30"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description" className="text-sm font-bold ml-1">Descrição (opcional)</Label>
-            <div className="relative group">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-stitch-on-surface-variant opacity-40 group-focus-within:opacity-100 transition-opacity">notes</span>
-              <Input
-                id="description"
-                className="pl-12 h-14 rounded-xl border-none !bg-[#1a1c1e] text-white font-bold placeholder:text-white/20 transition-all focus-visible:ring-stitch-primary"
-                value={formData.description}
-                onChange={(e) => onFormChange({ ...formData, description: e.target.value })}
-                placeholder="Ex: Inclui lavagem e finalização"
-              />
-            </div>
-          </div>
-
-          <div className="pt-4">
-            <Button
-              type="submit"
-              className="w-full h-16 rounded-[1.5rem] font-black text-lg gap-2 shadow-xl shadow-stitch-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <span className="material-symbols-outlined font-black">check_circle</span>
-              {editingService ? "Atualizar Serviço" : "Salvar Serviço"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <PanelDialog
+      open={isOpen}
+      onOpenChange={onOpenChange}
+      width={520}
+      title={isEditing ? "Editar serviço" : "Novo serviço"}
+      description="Preço e duração aparecem na reserva online e definem o término na agenda."
+      footer={
+        <>
+          <div className="flex-1" />
+          <PanelButton variant="ghost" size="md" onClick={() => onOpenChange(false)}>Cancelar</PanelButton>
+          <PanelButton variant="primary" size="md" type="submit" form="service-form" disabled={!valid || saving}>
+            {saving ? "Salvando…" : isEditing ? "Salvar alterações" : "Cadastrar serviço"}
+          </PanelButton>
+        </>
+      }
+    >
+      <form id="service-form" onSubmit={onSubmit} className="flex flex-col gap-4">
+        <Field label="Nome do serviço" htmlFor="service-name">
+          <input id="service-name" className="af-input" required autoFocus maxLength={120} value={formData.name} placeholder="Ex.: Limpeza de pele profunda" onChange={(event) => onFormChange({ ...formData, name: event.target.value })} />
+        </Field>
+        <div className="grid grid-cols-2 gap-3.5">
+          <Field label="Preço (R$)" htmlFor="service-price">
+            <input id="service-price" className="af-input" type="number" min={0} step="0.01" required value={formData.price} onChange={(event) => onFormChange({ ...formData, price: Number(event.target.value) })} />
+          </Field>
+          <Field label="Duração (min)" htmlFor="service-duration">
+            <input id="service-duration" className="af-input" type="number" min={5} step={5} required value={formData.duration_minutes} onChange={(event) => onFormChange({ ...formData, duration_minutes: Number(event.target.value) })} />
+          </Field>
+        </div>
+        <Field label="Descrição" htmlFor="service-description" optional>
+          <input id="service-description" className="af-input" maxLength={240} value={formData.description} placeholder="Ex.: Extração, esfoliação e máscara calmante" onChange={(event) => onFormChange({ ...formData, description: event.target.value })} />
+        </Field>
+      </form>
+    </PanelDialog>
   );
 }

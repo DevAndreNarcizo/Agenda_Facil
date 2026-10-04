@@ -64,9 +64,65 @@
     --stitch-surface-container: #e2e4e7;
     --stitch-surface-container-high: #dadce0;
     --stitch-surface-container-highest: #d2d4d8;
+
+    /**
+     * Tokens do painel refinado (direção A · Sóbrio do design system AgendaFácil).
+     * Escopo: área autenticada (/dashboard). Telas públicas seguem nos tokens stitch.
+     *
+     * @author André Narcizo - andre.narcizo@sysout.com.br
+     */
+    --af-bg: #f7f9fc;
+    --af-surface: #ffffff;
+    --af-surface2: #eef2f7;
+    --af-line: #e2e8f0;
+    --af-line2: #cbd5e1;
+    --af-ink: #092343;
+    --af-ink2: #475569;
+    --af-ink3: #64748b;
+    --af-accent: #087bf5;
+    --af-accent-hover: #0757b9;
+    --af-accent-soft: #ebf4ff;
+    --af-on-accent: #ffffff;
+    --af-ok: #146c38;
+    --af-ok-soft: #e8f7ee;
+    --af-pend: #8a5a00;
+    --af-pend-soft: #fef5de;
+    --af-warn: #475569;
+    --af-warn-soft: #eef2f7;
+    --af-bad: #b42318;
+    --af-bad-soft: #fdedec;
+    --af-c2: #7040e8;
+    --af-c3: #f04f7d;
+    --af-c4: #27ad59;
+    --af-overlay: rgba(10, 10, 14, 0.4);
   }
 
   .dark {
+    --af-bg: #07121f;
+    --af-surface: #0d1b2e;
+    --af-surface2: #132640;
+    --af-line: #1b2d47;
+    --af-line2: #2a3f5e;
+    --af-ink: #e6edf7;
+    --af-ink2: #afbfd4;
+    --af-ink3: #93a4bc;
+    --af-accent: #2b8df7;
+    --af-accent-hover: #4a9ef8;
+    --af-accent-soft: #0e2a4d;
+    --af-on-accent: #ffffff;
+    --af-ok: #6fd49a;
+    --af-ok-soft: #11301f;
+    --af-pend: #f2c45a;
+    --af-pend-soft: #33290f;
+    --af-warn: #93a4bc;
+    --af-warn-soft: #132640;
+    --af-bad: #f58b8e;
+    --af-bad-soft: #3a1719;
+    --af-c2: #b39cf3;
+    --af-c3: #f79ab5;
+    --af-c4: #86d6a3;
+    --af-overlay: rgba(0, 0, 0, 0.55);
+
     /* Dark Mode - Deep Midnight Blue */
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
@@ -147,6 +203,26 @@
     word-wrap: normal;
     white-space: nowrap;
     direction: ltr;
+  }
+}
+
+/**
+ * Base do painel refinado: Inter com números tabulares e ícones com peso leve.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+@layer components {
+  .af-root {
+    font-family: Inter, sans-serif;
+    font-feature-settings: 'tnum' 1, 'cv11' 1;
+    -webkit-font-smoothing: antialiased;
+  }
+  .af-root .material-symbols-outlined {
+    font-size: 20px;
+    font-variation-settings: 'FILL' 0, 'wght' 350, 'GRAD' 0, 'opsz' 20;
+  }
+  .af-input {
+    @apply h-[38px] w-full rounded-lg border border-af-line2 bg-af-bg px-3 text-sm text-af-ink outline-none transition-colors placeholder:text-af-ink3 focus:border-af-accent focus:ring-[3px] focus:ring-af-accent-soft;
   }
 }
 

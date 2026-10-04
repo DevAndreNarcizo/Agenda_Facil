@@ -53,6 +53,12 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Painel refinado (design system AgendaFácil · direção A)
+        af: Object.fromEntries(
+          ['bg', 'surface', 'surface2', 'line', 'line2', 'ink', 'ink2', 'ink3', 'accent', 'accent-hover', 'accent-soft', 'on-accent',
+            'ok', 'ok-soft', 'pend', 'pend-soft', 'warn', 'warn-soft', 'bad', 'bad-soft', 'c2', 'c3', 'c4', 'overlay']
+            .map((token) => [token, `var(--af-${token})`]),
+        ),
         // Google Stitch Design Tokens
         stitch: {
           "primary": "var(--stitch-primary)",
@@ -97,6 +103,9 @@ export default {
         'stitch-sm': '0.25rem',
         'stitch-md': '0.5rem',
         'stitch-lg': '0.75rem',
+        // Painel refinado: controles 10px, cards 12px
+        af: '10px',
+        'af-lg': '12px',
       },
       fontFamily: {
         sans: ["Inter", "sans-serif"],

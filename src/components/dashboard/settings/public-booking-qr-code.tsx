@@ -29,7 +29,7 @@ export function PublicBookingQrCode({ size = 208, value }: PublicBookingQrCodePr
   return (
     <img
       alt="QR Code para abrir a página de reserva online"
-      className="rounded-xl bg-white p-2 shadow-sm"
+      className="rounded-[10px] border border-af-line bg-white p-1.5"
       height={size}
       loading="lazy"
       referrerPolicy="no-referrer"
