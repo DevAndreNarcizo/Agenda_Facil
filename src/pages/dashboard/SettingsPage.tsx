@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { useBusinessHours, type BusinessDay } from "@/hooks/use-business-hours";
-import { useOrganization } from "@/hooks/use-organization";
+import { describeError, useOrganization } from "@/hooks/use-organization";
 import { useThemeMode } from "@/hooks/use-theme-mode";
 import { PublicBookingSettings } from "@/components/dashboard/settings/public-booking-settings";
 import {
@@ -110,7 +110,7 @@ function ProfileTab() {
       setForm(null);
       toast.success("Dados do negócio salvos.");
     } catch (cause) {
-      const message = cause instanceof Error && /duplicate|unique/i.test(cause.message) ? "Esse link já está em uso. Escolha outro." : "Não foi possível salvar os dados.";
+      const message = cause instanceof Error && /duplicate|unique/i.test(cause.message) ? "Esse link já está em uso. Escolha outro." : describeError(cause, "Não foi possível salvar os dados.");
       toast.error(message);
     }
   };
@@ -121,7 +121,7 @@ function ProfileTab() {
       setSchedule(null);
       toast.success("Horário de funcionamento salvo.");
     } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : "Não foi possível salvar o horário.");
+      toast.error(describeError(cause, cause instanceof Error ? cause.message : "Não foi possível salvar o horário."));
     }
   };
 
@@ -236,22 +236,22 @@ function AppearanceTab() {
       await updateOrganization({ organization: { logo_url: value || null } });
       setLogoUrl(null);
       toast.success("Logo atualizado.");
-    } catch {
-      toast.error("Não foi possível salvar o logo.");
+    } catch (cause) {
+      toast.error(describeError(cause, "Não foi possível salvar o logo."));
     }
   };
 
   const pickBrand = async (hex: string) => {
     try {
       await updateOrganization({ organization: { primary_color: hex } });
-      toast.success("Cor da marca atualizada na reserva online.");
-    } catch {
-      toast.error("Não foi possível salvar a cor.");
+      toast.success("Cor da marca atualizada. Ela aparece na página de reserva online.");
+    } catch (cause) {
+      toast.error(describeError(cause, "Não foi possível salvar a cor."));
     }
   };
 
   return (
-    <SettingsSection title="Identidade visual" description="Logo e cor aplicados na página de reserva e no portal do cliente.">
+    <SettingsSection title="Identidade visual" description="Logo e cor aplicados na página de reserva online.">
       <Panel className="flex flex-col gap-[22px] p-5">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-af-lg border border-dashed border-af-line2 bg-[repeating-linear-gradient(45deg,var(--af-surface2)_0_6px,var(--af-surface)_6px_12px)] font-mono text-[10px] text-af-ink3">

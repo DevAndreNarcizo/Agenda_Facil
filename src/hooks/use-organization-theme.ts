@@ -1,46 +1,27 @@
 import { useEffect } from 'react';
-import { useAuth } from '@/hooks/use-auth';
-import { supabase } from '@/lib/supabase';
+import { useOrganization } from '@/hooks/use-organization';
+import { hexToHslTriplet, isHexColor } from '@/lib/brand-color';
 
-// Hook para aplicar tema da organização automaticamente
+/**
+ * Aplica a cor da marca da organização às variáveis shadcn (`--primary`/`--ring`).
+ * Converte o hex salvo para o trio HSL esperado; antes, o hex cru gerava `hsl(#...)` inválido.
+ * O painel refinado usa os tokens `--af-*` e não é afetado. Reaproveita o cache de useOrganization.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
 export function useOrganizationTheme() {
-  const { profile } = useAuth();
+  const { organization } = useOrganization();
+  const primaryColor = organization?.primary_color;
 
   useEffect(() => {
-    const organizationId = profile?.organization_id;
-    if (!organizationId) return;
-
-    const fetchAndApplyTheme = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("organizations")
-          .select('primary_color, secondary_color, accent_color, logo_url')
-          .eq('id', organizationId)
-          .single();
-
-        if (error) return;
-
-        if (data) {
-          // Aplicar cores como CSS variables no :root
-          const root = document.documentElement;
-          
-          if (data.primary_color) {
-            root.style.setProperty('--primary', data.primary_color);
-          }
-          
-          if (data.secondary_color) {
-            root.style.setProperty('--secondary', data.secondary_color);
-          }
-          
-          if (data.accent_color) {
-            root.style.setProperty('--accent', data.accent_color);
-          }
-        }
-      } catch {
-        // Theme application failed silently
-      }
+    if (!isHexColor(primaryColor)) return;
+    const root = document.documentElement;
+    const triplet = hexToHslTriplet(primaryColor);
+    root.style.setProperty('--primary', triplet);
+    root.style.setProperty('--ring', triplet);
+    return () => {
+      root.style.removeProperty('--primary');
+      root.style.removeProperty('--ring');
     };
-
-    fetchAndApplyTheme();
-  }, [profile?.organization_id]);
+  }, [primaryColor]);
 }

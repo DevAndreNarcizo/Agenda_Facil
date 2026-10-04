@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { useAppointments } from "@/hooks/use-appointments";
-import { useDashboardStats } from "@/hooks/use-dashboard-stats";
+import { usePeriodSummary } from "@/hooks/use-period-summary";
 import { useEmployees } from "@/hooks/use-employees";
 import { PLANS, useOrganization, type PlanCode } from "@/hooks/use-organization";
 import { Icon, KpiCell, KpiStrip, Page, PageHeader, PanelButton, Skeleton, Tag } from "@/components/panel/primitives";
-import { formatInstant } from "@/lib/agenda-time";
+import { formatInstant, todayKey } from "@/lib/agenda-time";
 import { formatCurrency } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
@@ -26,8 +25,7 @@ const STATUS_LABELS: Record<string, string> = {
 export default function SubscriptionPage() {
   const { organization, subscription, loading } = useOrganization();
   const { employees } = useEmployees();
-  const { appointments } = useAppointments();
-  const stats = useDashboardStats(appointments);
+  const { summary: monthSummary } = usePeriodSummary(todayKey(), "month");
   const [loadingPlan, setLoadingPlan] = useState<PlanCode | null>(null);
   const current = subscription.plan;
   const currentIndex = PLANS.findIndex((plan) => plan.code === current.code);
@@ -94,7 +92,7 @@ export default function SubscriptionPage() {
         </KpiCell>
         <KpiCell
           label="Agendamentos no mês"
-          value={stats.monthAppointments}
+          value={monthSummary.total.toLocaleString("pt-BR")}
           sub={current.monthlyAppointmentLimit ? `Limite de ${current.monthlyAppointmentLimit} no plano ${current.name}` : `Ilimitado no plano ${current.name}`}
         />
       </KpiStrip>

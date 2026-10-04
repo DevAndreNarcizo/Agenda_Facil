@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { useAppointments, type Appointment } from "@/hooks/use-appointments";
-import { useDashboardStats } from "@/hooks/use-dashboard-stats";
+import { usePendingAppointments, useRecentActivity } from "@/hooks/use-dashboard-overview";
+import { usePeriodSummary } from "@/hooks/use-period-summary";
+import { normalizeAppointmentFilters } from "@/lib/appointment-filters";
 import { useEmployees } from "@/hooks/use-employees";
 import { useBusinessHours } from "@/hooks/use-business-hours";
 import {
@@ -59,36 +61,32 @@ function timeOf(iso: string): string {
 export default function DashboardHome() {
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const { appointments, loading: loadingApts, updateAppointmentStatus, updatingStatus } = useAppointments();
+  const today = todayKey();
+  // Lista de hoje carregada por completo; KPIs, pendências e atividade vêm de consultas agregadas/limitadas.
+  const todayFilters = useMemo(() => normalizeAppointmentFilters(new URLSearchParams(`view=day&date=${today}`)), [today]);
+  const { appointments, loading: loadingApts, updateAppointmentStatus, updatingStatus } = useAppointments(todayFilters, { fetchAll: true });
   const { employees, loading: loadingEmps } = useEmployees();
   const { days } = useBusinessHours();
-  const stats = useDashboardStats(appointments);
-  const today = todayKey();
+  const { summary: todaySummary } = usePeriodSummary(today, "day");
+  const { summary: monthSummary } = usePeriodSummary(today, "month");
+  const { pending, pendingTotal } = usePendingAppointments(5);
+  const { recent } = useRecentActivity(4);
 
   const view = useMemo(() => {
     const now = new Date();
     const nowParts = getZonedParts(now);
-    const active = appointments.filter((appointment) => appointment.status !== "cancelled");
-    const todays = active
-      .filter((appointment) => getZonedParts(new Date(appointment.start_time)).dateKey === today)
-      .sort((a, b) => a.start_time.localeCompare(b.start_time));
-    const pending = active
-      .filter((appointment) => appointment.status === "pending" && new Date(appointment.end_time) >= now)
+    const todays = appointments
+      .filter((appointment) => appointment.status !== "cancelled")
       .sort((a, b) => a.start_time.localeCompare(b.start_time));
     const next = todays.find((appointment) => appointment.status !== "completed" && new Date(appointment.start_time) >= now);
 
     // Ocupação = minutos reservados hoje / (expediente de hoje × profissionais).
     const businessDay = days.find((day) => day.dayOfWeek === nowParts.weekday);
     const capacity = businessDay?.isActive ? (businessDay.end - businessDay.start) * Math.max(1, employees.length) : 0;
-    const booked = todays.reduce((sum, appointment) => sum + durationMinutes(appointment), 0);
-    const occupancy = capacity > 0 ? Math.min(100, Math.round((booked / capacity) * 100)) : null;
+    const occupancy = capacity > 0 ? Math.min(100, Math.round((todaySummary.bookedMinutes / capacity) * 100)) : null;
 
-    const recent = [...appointments]
-      .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))
-      .slice(0, 4);
-
-    return { nowMinutes: nowParts.minutes, todays, pending, next, occupancy, recent };
-  }, [appointments, days, employees.length, today]);
+    return { nowMinutes: nowParts.minutes, todays, next, occupancy };
+  }, [appointments, days, employees.length, todaySummary.bookedMinutes]);
 
   /**
    * Confirma uma pendência direto do Início, pela Edge Function autorizada.
@@ -144,9 +142,9 @@ export default function DashboardHome() {
 
       <KpiStrip
         items={[
-          { label: "Agendamentos hoje", value: stats.todayAppointments, sub: `${view.pending.length} aguardando confirmação` },
-          { label: "Agendamentos no mês", value: stats.monthAppointments, sub: <span className="inline-block first-letter:uppercase">{formatDateKey(today, { month: "long", year: "numeric" })}</span> },
-          { label: "Faturamento previsto", value: formatCurrency(stats.monthRevenue, { compact: true }), sub: "Com base em agendamentos pagos" },
+          { label: "Agendamentos hoje", value: todaySummary.total, sub: `${pendingTotal} aguardando confirmação` },
+          { label: "Agendamentos no mês", value: monthSummary.total.toLocaleString("pt-BR"), sub: <span className="inline-block first-letter:uppercase">{formatDateKey(today, { month: "long", year: "numeric" })}</span> },
+          { label: "Faturamento previsto", value: formatCurrency(monthSummary.paidRevenue, { compact: true }), sub: "Com base em agendamentos pagos" },
           { label: "Ocupação da agenda", value: view.occupancy === null ? "—" : `${view.occupancy}%`, sub: view.occupancy === null ? "Fechado hoje" : "Capacidade usada hoje" },
         ]}
       />
@@ -213,11 +211,11 @@ export default function DashboardHome() {
 
         <div className="flex min-w-0 flex-[1_1_300px] flex-col gap-5">
           <Panel>
-            <PanelHeader title="A confirmar" action={<span className="whitespace-nowrap text-xs text-af-ink3">{plural(view.pending.length, "pendente")}</span>} />
-            {view.pending.length === 0 ? (
+            <PanelHeader title="A confirmar" action={<span className="whitespace-nowrap text-xs text-af-ink3">{plural(pendingTotal, "pendente")}</span>} />
+            {pending.length === 0 ? (
               <p className="m-0 px-5 py-4 text-[13px] text-af-ink2">Nenhuma reserva aguardando confirmação.</p>
             ) : (
-              view.pending.slice(0, 5).map((appointment) => {
+              pending.map((appointment) => {
                 const parts = getZonedParts(new Date(appointment.start_time));
                 const dayLabel = parts.dateKey === today ? "Hoje" : formatDateKey(parts.dateKey, { weekday: "short" });
                 return (
@@ -244,11 +242,11 @@ export default function DashboardHome() {
 
           <Panel>
             <PanelHeader title="Atividade recente" />
-            {view.recent.length === 0 ? (
+            {recent.length === 0 ? (
               <p className="m-0 px-5 py-4 text-[13px] text-af-ink2">As novas reservas aparecem aqui.</p>
             ) : (
               <div className="flex flex-col py-1.5">
-                {view.recent.map((appointment) => {
+                {recent.map((appointment) => {
                   const icon = appointment.status === "completed" ? "check_circle" : appointment.status === "cancelled" ? "event_busy" : "event_available";
                   const what = appointment.status === "completed"
                     ? "atendimento concluído"

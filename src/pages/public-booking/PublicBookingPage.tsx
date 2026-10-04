@@ -15,6 +15,7 @@ import { resolveBookingSource } from '@/lib/public-booking-source';
 import { getPortalSession } from '@/lib/portal-api';
 import { usePublicBookingFunnel } from '@/hooks/use-public-booking-funnel';
 import { toast } from 'sonner';
+import { isHexColor } from '@/lib/brand-color';
 
 /**
  * Converte um slot ISO em horário brasileiro para a primeira versão do portal público.
@@ -193,13 +194,22 @@ export default function PublicBookingPage() {
   const minDate = format(new Date(), 'yyyy-MM-dd');
   const requiresEmployee = context.employees.length > 0;
 
+  // Identidade do negócio (Configurações > Aparência): a cor validada sobrescreve o token
+  // --stitch-primary só nesta página; o logo aparece se for uma URL https.
+  const brandColor = isHexColor(context.organization.primaryColor) ? context.organization.primaryColor : null;
+  const brandStyle = brandColor ? ({ '--stitch-primary': brandColor } as React.CSSProperties) : undefined;
+  const logoUrl = context.organization.logoUrl?.startsWith('https://') ? context.organization.logoUrl : null;
+
   return (
-    <main className="min-h-screen bg-stitch-surface py-8 px-4 text-stitch-on-surface">
+    <main className="min-h-screen bg-stitch-surface py-8 px-4 text-stitch-on-surface" style={brandStyle}>
       <section className="mx-auto max-w-2xl space-y-8">
-        <header className="rounded-[2rem] bg-white p-7 shadow-xl shadow-stitch-primary/5">
-          <p className="text-xs font-black uppercase tracking-widest text-stitch-primary">Reserva online</p>
-          <h1 className="mt-2 font-headline text-3xl font-black">{context.organization.name}</h1>
-          <p className="mt-2 text-stitch-on-surface-variant">Escolha um serviço e um horário disponível.</p>
+        <header className="flex items-center gap-5 rounded-[2rem] bg-white p-7 shadow-xl shadow-stitch-primary/5">
+          {logoUrl && <img src={logoUrl} alt={`Logo de ${context.organization.name}`} className="h-16 w-16 flex-none rounded-2xl object-contain" referrerPolicy="no-referrer" />}
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-stitch-primary">Reserva online</p>
+            <h1 className="mt-2 font-headline text-3xl font-black">{context.organization.name}</h1>
+            <p className="mt-2 text-stitch-on-surface-variant">Escolha um serviço e um horário disponível.</p>
+          </div>
         </header>
 
         <section className="space-y-6 rounded-[2rem] bg-white p-7 shadow-xl shadow-stitch-primary/5">

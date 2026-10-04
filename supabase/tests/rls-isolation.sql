@@ -159,14 +159,21 @@ BEGIN
       NULL;
   END;
 
-  UPDATE public.profiles
-  SET role = 'owner'
-  WHERE id = '11000000-0000-4000-8000-000000000002';
+  -- Desde a migration 20261004_000001 o owner gerencia a equipe, mas a promoção a owner
+  -- é recusada explicitamente pelo WITH CHECK (antes resultava em 0 linhas).
+  BEGIN
+    UPDATE public.profiles
+    SET role = 'owner'
+    WHERE id = '11000000-0000-4000-8000-000000000002';
 
-  GET DIAGNOSTICS affected_rows = ROW_COUNT;
-  IF affected_rows <> 0 THEN
-    RAISE EXCEPTION 'RLS falhou: escalação de privilégio foi aceita';
-  END IF;
+    GET DIAGNOSTICS affected_rows = ROW_COUNT;
+    IF affected_rows <> 0 THEN
+      RAISE EXCEPTION 'RLS falhou: escalação de privilégio foi aceita';
+    END IF;
+  EXCEPTION
+    WHEN insufficient_privilege THEN
+      NULL;
+  END;
 END;
 $$;
 

@@ -19,8 +19,6 @@ import { BlockDialog, type BlockDraft } from "./calendar/BlockDialog";
 import { MonthGrid } from "./calendar/MonthGrid";
 import { WeekGrid } from "./calendar/WeekGrid";
 
-/** A grade carrega o período inteiro de uma vez (limite máximo aceito pelos filtros). */
-const AGENDA_PAGE_SIZE = 100;
 
 /**
  * Título do período exibido: "21 – 27 de setembro", "Sexta, 25 de setembro" ou "Setembro de 2026".
@@ -69,15 +67,15 @@ function nextHalfHour(): number {
 export default function CalendarPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const filters = useMemo(
-    () => ({ ...normalizeAppointmentFilters(searchParams), page: 1, pageSize: AGENDA_PAGE_SIZE }),
+    () => normalizeAppointmentFilters(searchParams),
     [searchParams],
   );
   const {
-    appointments, blocks, totalAppointments, loading, error,
+    appointments, blocks, loading, error,
     createAppointment, rescheduleAppointment, updateAppointmentStatus, cancelAppointment,
     createAppointmentBlock, deleteAppointmentBlock,
     creating, rescheduling, updatingStatus, cancelling, changingBlock,
-  } = useAppointments(filters);
+  } = useAppointments(filters, { fetchAll: true });
   const { employees } = useEmployees();
   const { services } = useServices();
   const { days: businessDays } = useBusinessHours();
@@ -234,7 +232,6 @@ export default function CalendarPage() {
 
   const today = todayKey();
   const legend = (["confirmed", "pending", "completed", "block"] as const).map((status) => STATUS_META[status]);
-  const truncated = totalAppointments > appointments.length;
 
   return (
     <Page>
@@ -343,7 +340,6 @@ export default function CalendarPage() {
           </span>
         ))}
         {loading && <span className="text-af-ink3">Atualizando agenda…</span>}
-        {truncated && <span className="text-af-pend">Mostrando os primeiros {appointments.length} de {totalAppointments} agendamentos do período. Filtre por profissional para ver todos.</span>}
       </div>
 
       {appointmentDraft && (
