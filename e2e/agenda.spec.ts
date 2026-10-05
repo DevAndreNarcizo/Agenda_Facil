@@ -15,7 +15,7 @@ async function loginAsTestOwner(page: Page): Promise<void> {
   await page.goto("/login");
   await page.locator("#email").fill(ownerEmail ?? "");
   await page.locator("#password").fill(ownerPassword ?? "");
-  await page.getByRole("button", { name: "Entrar no Painel" }).click();
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard/);
 }
 
