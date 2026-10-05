@@ -4,7 +4,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "@/lib/supabase";
-import { PASSWORD_MIN_LENGTH, describeAuthError, getPasswordStrength, slugify } from "@/lib/auth-form";
+import { PASSWORD_MIN_LENGTH, describeAuthError, formatBrPhone, getPasswordStrength, phoneDigits, slugify } from "@/lib/auth-form";
 import {
   AuthAlert,
   AuthCheckbox,
@@ -15,7 +15,10 @@ import {
   AuthNotice,
   AuthSubmit,
   AuthSwitch,
+  LegalLink,
   PasswordStrengthMeter,
+  SegmentChips,
+  SocialAuth,
 } from "./auth-ui";
 
 const registerSchema = z.object({
@@ -27,6 +30,8 @@ const registerSchema = z.object({
     .min(3, "Use ao menos 3 caracteres.")
     .max(80, "Use no máximo 80 caracteres.")
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use letras minúsculas, números e hífens."),
+  phone: z.string().refine((value) => phoneDigits(value).length >= 10, "Informe DDD + número."),
+  segment: z.enum(["estetica", "beleza", "cabelo", "pet"], { message: "Escolha o segmento do negócio." }),
   email: z.string().trim().min(1, "Informe seu e-mail.").email("E-mail inválido."),
   password: z.string().min(PASSWORD_MIN_LENGTH, `Mínimo de ${PASSWORD_MIN_LENGTH} caracteres.`),
   terms: z.boolean().refine((accepted) => accepted, "Aceite os termos para continuar."),
@@ -51,13 +56,15 @@ export default function RegisterPage() {
     handleSubmit,
     setValue,
     control,
+    trigger,
     formState: { errors, isSubmitting },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { fullName: "", orgName: "", orgSlug: "", email: "", password: "", terms: false },
+    defaultValues: { fullName: "", orgName: "", orgSlug: "", phone: "", email: "", password: "", terms: false },
   });
 
   const slug = useWatch({ control, name: "orgSlug" });
+  const segment = useWatch({ control, name: "segment" });
   const strength = getPasswordStrength(useWatch({ control, name: "password" }));
 
   /**
@@ -73,7 +80,14 @@ export default function RegisterPage() {
       password: data.password,
       options: {
         emailRedirectTo: `${window.location.origin}/dashboard`,
-        data: { full_name: data.fullName, org_name: data.orgName, org_slug: data.orgSlug },
+        // O trigger handle_new_user valida e grava esses campos; organization_id/role nunca vêm daqui.
+        data: {
+          full_name: data.fullName,
+          org_name: data.orgName,
+          org_slug: data.orgSlug,
+          phone: phoneDigits(data.phone),
+          segment: data.segment,
+        },
       },
     });
     if (authError || !authData.user) {
@@ -139,6 +153,30 @@ export default function RegisterPage() {
           })}
         />
         <AuthField
+          id="phone"
+          label="WhatsApp"
+          icon="call"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel-national"
+          placeholder="(11) 90000-0000"
+          hint="Informe DDD + número."
+          error={errors.phone?.message}
+          {...register("phone", {
+            onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
+              setValue("phone", formatBrPhone(event.target.value));
+            },
+          })}
+        />
+        <SegmentChips
+          value={segment}
+          error={errors.segment?.message}
+          onChange={(value) => {
+            setValue("segment", value);
+            if (errors.segment) void trigger("segment");
+          }}
+        />
+        <AuthField
           id="email"
           label="E-mail"
           icon="mail"
@@ -163,7 +201,7 @@ export default function RegisterPage() {
         <AuthCheckbox
           id="terms"
           error={errors.terms?.message}
-          label={<>Li e aceito os <span className="text-af-accent">Termos de uso</span> e a <span className="text-af-accent">Política de privacidade</span>.</>}
+          label={<>Li e aceito os <LegalLink to="/termos">Termos de uso</LegalLink> e a <LegalLink to="/privacidade">Política de privacidade</LegalLink>.</>}
           {...register("terms")}
         />
         {error && <AuthAlert>{error}</AuthAlert>}
@@ -171,6 +209,7 @@ export default function RegisterPage() {
           Criar conta grátis
         </AuthSubmit>
       </form>
+      <SocialAuth onError={setError} />
       <AuthSwitch text="Já tem conta?" cta="Entrar" to="/login" />
     </AuthLayout>
   );

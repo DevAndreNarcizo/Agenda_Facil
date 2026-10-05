@@ -58,7 +58,12 @@ Deno.serve(async (request) => {
     if (!user) return jsonResponse({ error: 'Não autorizado.' }, 401);
 
     const { data: organizationId, error } = await admin.rpc('complete_onboarding', { p_payload: { ...payload, slug: slugify(payload.businessName) }, p_user_id: user.id });
-    if (error) return jsonResponse({ error: error.code === '23505' ? 'Nome de endereço indisponível.' : 'Não foi possível concluir o onboarding.' }, error.code === '23505' ? 409 : 400);
+    if (error) {
+      // 42501: perfil já vinculado a uma empresa da qual o chamador não é owner (bloqueado no banco).
+      if (error.code === '42501') return jsonResponse({ error: 'Somente o proprietário pode configurar a empresa.' }, 403);
+      if (error.code === '23505') return jsonResponse({ error: 'Nome de endereço indisponível.' }, 409);
+      return jsonResponse({ error: 'Não foi possível concluir o onboarding.' }, 400);
+    }
     return jsonResponse({ organizationId }, 200);
   } catch {
     return jsonResponse({ error: 'Não foi possível concluir o onboarding.' }, 500);

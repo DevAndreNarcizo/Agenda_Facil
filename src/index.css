@@ -217,6 +217,10 @@
     font-feature-settings: 'tnum' 1, 'cv11' 1;
     -webkit-font-smoothing: antialiased;
   }
+  /* O design system usa Inter também nos títulos (--display do protótipo), não a fonte headline global. */
+  .af-root h1, .af-root h2, .af-root h3, .af-root h4, .af-root h5, .af-root h6 {
+    font-family: inherit;
+  }
   .af-root .material-symbols-outlined {
     font-size: 20px;
     font-variation-settings: 'FILL' 0, 'wght' 350, 'GRAD' 0, 'opsz' 20;

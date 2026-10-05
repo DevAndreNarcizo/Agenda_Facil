@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
+import { authStorage } from './auth-storage';
 
 // Carrega as variáveis de ambiente definidas no arquivo .env
 // VITE_SUPABASE_URL: URL do seu projeto Supabase
@@ -14,4 +15,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // Cria e exporta uma instância única do cliente Supabase
 // Esta instância será usada em toda a aplicação para fazer requisições ao banco de dados e auth
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+// A sessão usa authStorage para respeitar "Manter conectado" (localStorage x sessionStorage).
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: { storage: authStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+});
+
+/** URL e chave pública, para chamadas que não passam pelo SDK (ex.: GET /auth/v1/settings). */
+export const supabaseConfig = { url: supabaseUrl, anonKey: supabaseAnonKey };

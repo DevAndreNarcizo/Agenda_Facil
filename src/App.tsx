@@ -30,6 +30,8 @@ const PortalHome = lazy(() => import("./pages/portal/PortalHome"));
 const PortalBooking = lazy(() => import("./pages/portal/PortalBooking"));
 const PublicBookingPage = lazy(() => import("./pages/public-booking/PublicBookingPage"));
 const OnboardingPage = lazy(() => import("./pages/onboarding/OnboardingPage"));
+const WhatsAppLoginPage = lazy(() => import("./pages/auth/WhatsAppLoginPage"));
+const LegalPage = lazy(() => import("./pages/legal/LegalPage"));
 
 /**
  * Indicador neutro exibido enquanto o chunk da rota é baixado.
@@ -60,6 +62,7 @@ function App() {
           
           {/* Rota Pública: Página de Login */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/login/whatsapp" element={<WhatsAppLoginPage />} />
           
           {/* Rota Pública: Página de Registro (Cadastro) */}
           <Route path="/register" element={<RegisterPage />} />
@@ -67,6 +70,10 @@ function App() {
           {/* Rotas Públicas: Recuperação de Senha */}
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+
+          {/* Rotas Públicas: documentos legais (linkados no cadastro e no rodapé do login) */}
+          <Route path="/termos" element={<LegalPage document="termos" />} />
+          <Route path="/privacidade" element={<LegalPage document="privacidade" />} />
           
           {/* Rotas de Onboarding */}
           <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />

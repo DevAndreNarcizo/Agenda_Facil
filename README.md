@@ -137,6 +137,25 @@ Sistema completo de gestão e agendamento para pequenas e médias empresas (sal�
 
 ---
 
+## 🔑 Métodos de login (opcional)
+
+As telas de acesso consultam `GET /auth/v1/settings` do Supabase e exibem **Google** e **WhatsApp**
+somente quando o provedor está ativo — basta ligar no painel, sem novo deploy.
+
+- **Google:** Supabase → Authentication → Sign In / Providers → Google. Informe o Client ID e o
+  Client Secret criados no Google Cloud Console (OAuth consent screen + credencial "Web application"
+  com o redirect `https://<projeto>.supabase.co/auth/v1/callback`). Em Authentication → URL
+  Configuration, inclua `https://<seu-dominio>/dashboard` nas Redirect URLs.
+- **WhatsApp:** Supabase → Authentication → Providers → Phone, com provedor **Twilio** (o canal
+  WhatsApp exige Twilio e um remetente WhatsApp aprovado na Meta). O código chega pelo WhatsApp
+  e a tela `/login/whatsapp` faz a verificação.
+- Contas criadas por Google/WhatsApp ainda não têm empresa e são levadas ao onboarding.
+- **Manter conectado:** desmarcado, a sessão fica em `sessionStorage` e termina ao fechar o navegador.
+
+**Documentos legais:** `/termos` e `/privacidade`. Defina `VITE_LEGAL_CONTACT_EMAIL` com o e-mail
+oficial do encarregado (LGPD art. 41) e revise o texto em `src/pages/legal/legal-content.ts` com
+seu jurídico antes de divulgar.
+
 ## 📱 WhatsApp Service (Opcional)
 
 Para envio de códigos OTP via WhatsApp:

@@ -1,9 +1,17 @@
 import * as React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logoMark from "@/assets/logo-mark.png";
 import { Icon } from "@/components/panel/primitives";
 import { cn } from "@/lib/utils";
-import { PASSWORD_STRENGTH_LABEL, type PasswordStrength } from "@/lib/auth-form";
+import { supabase } from "@/lib/supabase";
+import { useAuthProviders } from "@/hooks/use-auth-providers";
+import {
+  BUSINESS_SEGMENTS,
+  PASSWORD_STRENGTH_LABEL,
+  describeAuthError,
+  type BusinessSegment,
+  type PasswordStrength,
+} from "@/lib/auth-form";
 
 /**
  * Casca das telas de autenticação (entrar, criar conta, recuperar senha) no design system AgendaFácil:
@@ -28,6 +36,11 @@ export function AuthLayout({ lead, children }: { lead: React.ReactNode; children
         <div className="flex flex-col gap-5 sm:rounded-af-lg sm:border sm:border-af-line sm:bg-af-surface sm:p-7 sm:shadow-[0_1px_2px_rgba(9,35,67,0.04)]">
           {children}
         </div>
+        <footer className="mt-6 flex justify-center gap-4 text-xs text-af-ink3">
+          <Link to="/termos" className="hover:text-af-ink">Termos de uso</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/privacidade" className="hover:text-af-ink">Privacidade</Link>
+        </footer>
       </main>
     </div>
   );
@@ -275,6 +288,126 @@ export function AuthNotice({ icon, tone = "accent", title, children, action }: {
 export function AuthLink({ to, children, className }: { to: string; children: React.ReactNode; className?: string }) {
   return (
     <Link to={to} className={cn("text-[13px] font-medium text-af-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-af-accent", className)}>
+      {children}
+    </Link>
+  );
+}
+
+/**
+ * Bloco "ou" + botões Google/WhatsApp. Cada botão só aparece com o provedor ativo no Supabase
+ * (ver useAuthProviders); sem nenhum ativo, o bloco inteiro some.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+export function SocialAuth({ onError, beforeAuth }: { onError: (message: string) => void; beforeAuth?: () => void }) {
+  const providers = useAuthProviders();
+  const navigate = useNavigate();
+  const [redirecting, setRedirecting] = React.useState(false);
+
+  if (!providers.google && !providers.whatsapp) return null;
+
+  /**
+   * Inicia o OAuth do Google; o Supabase volta para /dashboard, e o ProtectedRoute leva ao
+   * onboarding quem ainda não tem empresa.
+   *
+   * @author André Narcizo - andre.narcizo@sysout.com.br
+   */
+  const signInWithGoogle = async (): Promise<void> => {
+    beforeAuth?.();
+    setRedirecting(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/dashboard` },
+    });
+    if (error) {
+      setRedirecting(false);
+      onError(describeAuthError(error, "Não foi possível entrar com o Google."));
+    }
+  };
+
+  const buttonClass =
+    "flex h-[46px] items-center justify-center gap-2 rounded-af border border-af-line2 bg-af-surface text-sm font-medium text-af-ink transition-colors hover:bg-af-surface2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-af-accent disabled:opacity-60";
+
+  return (
+    <>
+      <div className="flex items-center gap-3 text-xs text-af-ink3" aria-hidden="true">
+        <span className="h-px flex-1 bg-af-line" />ou<span className="h-px flex-1 bg-af-line" />
+      </div>
+      <div className={cn("grid gap-2", providers.google && providers.whatsapp ? "grid-cols-2" : "grid-cols-1")}>
+        {providers.google && (
+          <button type="button" className={buttonClass} onClick={() => void signInWithGoogle()} disabled={redirecting}>
+            <GoogleMark />Google
+          </button>
+        )}
+        {providers.whatsapp && (
+          <button type="button" className={buttonClass} onClick={() => { beforeAuth?.(); navigate("/login/whatsapp"); }}>
+            <Icon name="chat" size={19} />WhatsApp
+          </button>
+        )}
+      </div>
+    </>
+  );
+}
+
+/**
+ * "G" do Google nas cores oficiais (uso permitido pelas diretrizes de marca do Sign in with Google).
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+function GoogleMark() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" />
+      <path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
+      <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z" />
+      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z" />
+    </svg>
+  );
+}
+
+/**
+ * Chips de segmento do negócio (Estética, Beleza, Cabelo, Pet) como grupo de rádio acessível.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+export function SegmentChips({ value, onChange, error }: { value?: BusinessSegment; onChange: (value: BusinessSegment) => void; error?: string }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <span id="segment-label" className="text-[13px] font-medium">Segmento</span>
+      <div role="radiogroup" aria-labelledby="segment-label" className="flex flex-wrap gap-2">
+        {BUSINESS_SEGMENTS.map((segment) => {
+          const active = segment.value === value;
+          return (
+            <button
+              key={segment.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => onChange(segment.value)}
+              className={cn(
+                "flex h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-af-accent",
+                active ? "border-af-accent bg-af-accent-soft font-medium text-af-accent" : "border-af-line2 bg-af-surface text-af-ink2 hover:text-af-ink",
+              )}
+            >
+              <Icon name={segment.icon} size={17} />
+              {segment.label}
+            </button>
+          );
+        })}
+      </div>
+      {error && <span className="text-xs text-af-bad">{error}</span>}
+    </div>
+  );
+}
+
+/**
+ * Link para Termos/Privacidade que abre em nova aba, para não perder o formulário preenchido.
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+export function LegalLink({ to, children }: { to: "/termos" | "/privacidade"; children: React.ReactNode }) {
+  return (
+    <Link to={to} target="_blank" rel="noopener" className="text-af-accent underline-offset-2 hover:underline" onClick={(event) => event.stopPropagation()}>
       {children}
     </Link>
   );
