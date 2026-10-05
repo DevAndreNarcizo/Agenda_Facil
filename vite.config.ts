@@ -1,27 +1,6 @@
 import path from 'path';
 import { defineConfig } from 'vitest/config';
-import type { Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
-import { MATERIAL_ICONS } from './src/lib/material-icons';
-
-/**
- * Restringe o Material Symbols aos glifos usados (`icon_names=`, em ordem alfabética, como a API exige).
- * A fonte variável completa tem ~1,1 MB; o subconjunto tem dezenas de KB.
- *
- * @author André Narcizo - andre.narcizo@sysout.com.br
- */
-function materialSymbolsSubset(): Plugin {
-  return {
-    name: 'material-symbols-subset',
-    transformIndexHtml(html) {
-      const names = [...MATERIAL_ICONS].sort().join(',');
-      return html.replace(
-        /(https:\/\/fonts\.googleapis\.com\/css2\?family=Material\+Symbols\+Outlined[^"]*?)(&display=)/,
-        `$1&icon_names=${names}$2`,
-      );
-    },
-  };
-}
 
 /**
  * Agrupa dependências estáveis em chunks próprios: mudam pouco entre deploys,
@@ -39,7 +18,7 @@ function vendorChunk(id: string): string | undefined {
 }
 
 export default defineConfig({
-  plugins: [react(), materialSymbolsSubset()],
+  plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

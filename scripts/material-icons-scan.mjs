@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 /**
@@ -34,4 +34,14 @@ export function scanMaterialIcons(rootDir) {
 
   walk(join(rootDir, 'src'));
   return [...found].sort();
+}
+
+/**
+ * Tamanho em bytes da fonte local de ícones (0 se ainda não foi gerada por `npm run icons:sync`).
+ *
+ * @author André Narcizo - andre.narcizo@sysout.com.br
+ */
+export function materialFontSize(rootDir) {
+  const font = join(rootDir, 'src/assets/fonts/material-symbols-outlined.woff2');
+  return existsSync(font) ? statSync(font).size : 0;
 }

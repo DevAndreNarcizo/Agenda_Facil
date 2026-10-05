@@ -2,6 +2,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from './lib/react-query'
+// Fontes empacotadas no build (woff2 locais): funcionam sem acesso ao Google Fonts.
+import '@fontsource-variable/inter'
+import '@fontsource-variable/plus-jakarta-sans'
 import './index.css'
 import App from './App.tsx'
 

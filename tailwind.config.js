@@ -108,10 +108,11 @@ export default {
         'af-lg': '12px',
       },
       fontFamily: {
-        sans: ["Inter", "sans-serif"],
-        headline: ["Plus Jakarta Sans", "sans-serif"],
-        body: ["Inter", "sans-serif"],
-        label: ["Inter", "sans-serif"],
+        // Fontes empacotadas via @fontsource-variable (importadas em src/main.tsx), sem Google Fonts.
+        sans: ["Inter Variable", "Inter", "sans-serif"],
+        headline: ["Plus Jakarta Sans Variable", "Plus Jakarta Sans", "sans-serif"],
+        body: ["Inter Variable", "Inter", "sans-serif"],
+        label: ["Inter Variable", "Inter", "sans-serif"],
       },
       keyframes: {
         "accordion-down": {

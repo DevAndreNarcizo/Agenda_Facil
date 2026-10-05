@@ -1,7 +1,7 @@
 // Arquivo gerado por scripts/sync-material-icons.mjs — não edite à mão (npm run icons:sync).
 /**
- * Ícones Material Symbols usados pelo app. O vite.config.ts injeta esta lista em
- * `icon_names=` no link do Google Fonts, baixando só esses glifos em vez da fonte inteira (~1,1 MB).
+ * Ícones Material Symbols usados pelo app. A fonte em src/assets/fonts/material-symbols-outlined.woff2
+ * contém exatamente estes glifos; rode `npm run icons:sync` ao usar um ícone novo.
  *
  * @author André Narcizo - andre.narcizo@sysout.com.br
  */
