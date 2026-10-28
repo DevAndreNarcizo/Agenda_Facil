@@ -1,0 +1,3 @@
+$ .migration-backups/bin/actionlint .github/workflows/quality.yml .github/workflows/migration.yml
+
+EXIT_CODE=0

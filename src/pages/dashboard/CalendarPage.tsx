@@ -23,7 +23,7 @@ import { WeekGrid } from "./calendar/WeekGrid";
 /**
  * Título do período exibido: "21 – 27 de setembro", "Sexta, 25 de setembro" ou "Setembro de 2026".
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function periodTitle(view: AppointmentView, dateKey: string): string {
   if (view === "day") return formatDateKey(dateKey, { weekday: "long", day: "numeric", month: "long" });
@@ -38,7 +38,7 @@ function periodTitle(view: AppointmentView, dateKey: string): string {
 /**
  * Desloca a data de referência conforme a visão (dia, semana ou mês).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function shiftDate(view: AppointmentView, dateKey: string, direction: 1 | -1): string {
   if (view === "day") return addDaysToKey(dateKey, direction);
@@ -51,7 +51,7 @@ function shiftDate(view: AppointmentView, dateKey: string, direction: 1 | -1): s
 /**
  * Próximo horário cheio ou meia hora a partir de agora (para "Novo agendamento" sem slot).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function nextHalfHour(): number {
   const { minutes } = getZonedParts(new Date());
@@ -62,7 +62,7 @@ function nextHalfHour(): number {
  * Agenda do painel: grade própria (dia/semana/mês), detalhe lateral sem modal,
  * clique em horário vazio para agendar e bloqueios — tudo via Edge Function autorizada.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export default function CalendarPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -110,7 +110,7 @@ export default function CalendarPage() {
   /**
    * Atualiza parâmetros de URL mantendo a agenda compartilhável.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const updateParams = (changes: Record<string, string | null>) => {
     setSearchParams((current) => {
@@ -130,7 +130,7 @@ export default function CalendarPage() {
   /**
    * Abre o modal de novo agendamento com dia e hora preenchidos.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const openCreate = (dateKey: string, startMin: number) => {
     const activeServices = services.filter((service) => service.is_active);
@@ -157,7 +157,7 @@ export default function CalendarPage() {
   /**
    * Executa uma ação da agenda com feedback padronizado de sucesso/erro.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const run = async (action: () => Promise<unknown>, success: string, fallback: string): Promise<boolean> => {
     try {
@@ -173,7 +173,7 @@ export default function CalendarPage() {
   /**
    * Cria ou reagenda; a duração e a disponibilidade final são validadas no servidor.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const submitAppointment = async (draft: AppointmentDraft) => {
     const startTime = zonedDateTimeToUtc(draft.dateKey, draft.startMin).toISOString();

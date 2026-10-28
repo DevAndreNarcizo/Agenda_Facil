@@ -1,0 +1,38 @@
+Baseline legado — 2026-10-25
+Repositório: DevAndreNarcizo/Agenda_Facil
+Commit auditado: 1f99af46c8ee41b52d5d04ea0aab2277e6d1c572
+Branch local: migration/saas-angular-laravel
+Alterações preexistentes: nenhuma no clone.
+
+EXECUTADO / APROVADO
+npm ci: exit 0, 436 pacotes adicionados.
+npm test: exit 0, 10 arquivos / 31 testes aprovados.
+npm run build: exit 0, TypeScript e Vite aprovados.
+npm run lint: exit 0.
+deno test --no-config --no-lock --no-npm supabase/functions/_shared/integrations.test.ts: exit 0, 4 testes aprovados sem permissões de rede/env.
+
+EXECUTADO / FALHOU
+npm audit --json: exit 1, 12 vulnerabilidades (5 moderate, 7 high).
+npm audit --omit=dev --audit-level=high: exit 1, 1 high em zod <4.6.6, GHSA-mrhx-c7xc-m3w5.
+Nenhuma correção automática de dependências aplicada.
+
+NÃO EXECUTADO
+Playwright legado: e2e/agenda.spec.ts depende E2E_OWNER_EMAIL/E2E_OWNER_PASSWORD/E2E_SERVICE_ID e backend Supabase isolado. Não houve uso de credenciais nem chamadas a serviço remoto.
+Concorrência legada: scripts/run-agenda-concurrency-e2e.mjs cria e cancela agendamento no endpoint Supabase configurado; falta backend local isolado.
+Testes SQL: 9 scripts transacionais, todos preservados. Não executados por falta de bootstrap canônico reproduzível de Supabase local no repositório.
+Backups/restauração de banco real: não executados, sem autorização nem acesso a dados reais.
+GitHub Actions remoto: não executado; nenhum push.
+QA visual legado: não executado neste baseline.
+
+REQUISITOS PARA SQL LOCAL
+PostgreSQL isolado com schemas public/auth/private, roles anon/authenticated/service_role, auth.users, auth.uid() e grants compatíveis Supabase.
+Schema-base canônico organizations/profiles/customers/services/appointments antes das migrations incrementais.
+A primeira migration 20260321_add_subscription_fields.sql ainda usa companies. A segunda exige organizations/profiles preexistentes; os schema.sql/schema_update.sql legados usam companies/company_id e não constituem bootstrap canônico compatível.
+Aplicar migrations em ordem somente após resolver bootstrap; executar psql -v ON_ERROR_STOP=1 para cada supabase/tests/*.sql numa instância sintética descartável.
+Ausente supabase/config.toml; CLI supabase não encontrado no PATH. psql e deno disponíveis.
+
+RISCOS DE CI OBSERVADOS POR INSPEÇÃO
+.github/workflows/quality.yml usa secrets.* diretamente no if do job e2e. Validação por actionlint não executada (binário ausente); requer correção/validação do contexto de expressões.
+Root ESLint usa files **/*.{ts,tsx} e ignora somente dist. Novas apps Angular exigirão separação explícita para não receber regras React.
+CI audit de produção está falhando no baseline (zod).
+CI não executa testes Deno nem SQL.

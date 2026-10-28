@@ -3,6 +3,10 @@
 **Status:** aceito  
 **Data:** 2026-08-15
 
+## Continuidade Laravel — 25/10/2026
+
+A decisão permanece para o novo monólito: `Notifications/OutboxService` sincroniza lembretes na transação de agenda, com dedupe tenant/agendamento/template/canal, leases, consumo único de cota e estado `unknown` após envio incerto. Cancelamento público/portal usa o mesmo lock e sincronização. Billing tem ledger próprio e confirmação do recurso no provedor. Comandos Scheduler ficam condicionados à habilitação/homologação; o canal padrão recusa envio externo. Testes com provider fake e concorrência real não equivalem à homologação WhatsApp/Asaas. Ver SPEC-017, SUBSCRIPTIONS e ACCEPTANCE_REPORT para o estado comprovado, sem substituir o histórico abaixo.
+
 ## Contexto
 
 Chamadas diretas do cron ao WhatsApp não eram rastreáveis, podiam repetir uma mensagem e não tinham recuperação uniforme. O webhook Stripe verificava uma duplicidade somente depois de alterar a organização, deixando uma janela concorrente.

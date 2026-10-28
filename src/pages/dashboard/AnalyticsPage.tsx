@@ -22,7 +22,7 @@ interface AnalyticsData {
 /**
  * Carrega as métricas agregadas do servidor (RPCs SECURITY DEFINER com escopo da organização).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function useAnalytics(organizationId: string | null) {
   return useQuery({
@@ -52,7 +52,7 @@ function useAnalytics(organizationId: string | null) {
 /**
  * Gráfico de colunas leve (CSS) com rótulos; destaca a coluna indicada.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function BarChart({ bars, height, highlight, valueLabel }: {
   bars: { key: string; label: string; value: number }[];
@@ -86,7 +86,7 @@ function BarChart({ bars, height, highlight, valueLabel }: {
 /**
  * Analytics: KPIs, evolução do faturamento (mensal/anual), mix de serviços, horários de pico e canais.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export default function AnalyticsPage() {
   const { profile } = useAuth();

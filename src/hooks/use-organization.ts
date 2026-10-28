@@ -13,7 +13,7 @@ export type PlanCode = "starter" | "pro" | "clinic";
 /**
  * Escrita recusada pelo RLS (0 linhas afetadas). Mensagem pronta para a interface.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export class PermissionDeniedError extends Error {
   constructor(message = "Você não tem permissão para alterar estes dados. Fale com a proprietária(o) da conta.") {
@@ -25,7 +25,7 @@ export class PermissionDeniedError extends Error {
 /**
  * Mensagem para toast: explica a falta de permissão; demais erros usam o texto de fallback.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function describeError(cause: unknown, fallback: string): string {
   if (cause instanceof PermissionDeniedError) return cause.message;
@@ -36,7 +36,7 @@ export function describeError(cause: unknown, fallback: string): string {
 /**
  * Garante que um UPDATE/DELETE com RLS afetou ao menos uma linha.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function assertRowsAffected(rows: unknown[] | null): void {
   if (!rows || rows.length === 0) throw new PermissionDeniedError();
@@ -57,7 +57,7 @@ export interface PlanDefinition {
 /**
  * Catálogo de planos exibido no painel; códigos batem com a Edge Function create-checkout.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export const PLANS: PlanDefinition[] = [
   {
@@ -96,7 +96,7 @@ export const PLANS: PlanDefinition[] = [
 /**
  * Resolve o plano a partir do plan_name persistido, com Starter como fallback seguro.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function getPlan(planName: string | null | undefined): PlanDefinition {
   const normalized = (planName ?? "").toLowerCase();
@@ -118,7 +118,7 @@ const TRIAL_LENGTH_DAYS = 14;
 /**
  * Deriva o resumo de assinatura (plano, teste, dias restantes) a partir da organização.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function getSubscriptionSummary(organization: OrganizationRow | null | undefined, now: Date = new Date()): SubscriptionSummary {
   const plan = getPlan(organization?.plan_name);
@@ -134,7 +134,7 @@ export function getSubscriptionSummary(organization: OrganizationRow | null | un
  * Dados da organização do usuário (nome, slug, plano, cores) e configurações complementares.
  * Cache compartilhado entre sidebar, Assinatura e Configurações.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function useOrganization() {
   const { profile } = useAuth();
@@ -209,7 +209,7 @@ export function useOrganization() {
 /**
  * Contagem leve (HEAD) dos agendamentos ativos de hoje, para o contador da navegação.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function useTodayAppointmentCount() {
   const { profile } = useAuth();

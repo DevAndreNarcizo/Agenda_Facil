@@ -1,0 +1,3 @@
+$ bash -n scripts/migration/setup-local.sh
+
+EXIT_CODE=0

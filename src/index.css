@@ -2,7 +2,7 @@
  * Ícones Material Symbols servidos pelo próprio app: subconjunto variável (peso 100–700, FILL 0–1)
  * gerado por `npm run icons:sync`. Sem dependência do Google Fonts em tempo de execução.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 @font-face {
   font-family: 'Material Symbols Outlined';
@@ -98,7 +98,7 @@
      * Tokens do painel refinado (direção A · Sóbrio do design system AgendaFácil).
      * Escopo: área autenticada (/dashboard). Telas públicas seguem nos tokens stitch.
      *
-     * @author André Narcizo - andre.narcizo@sysout.com.br
+     * @author André Narcizo
      */
     --af-bg: #f7f9fc;
     --af-surface: #ffffff;
@@ -238,7 +238,7 @@
 /**
  * Base do painel refinado: Inter com números tabulares e ícones com peso leve.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 @layer components {
   .af-root {

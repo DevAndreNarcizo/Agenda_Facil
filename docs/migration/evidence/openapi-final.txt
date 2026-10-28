@@ -1,0 +1,4 @@
+$ python3 scripts/migration/check-openapi.py
+OpenAPI: referências, operationIds, parâmetros e cobertura de 57 operações aprovados.
+
+EXIT_CODE=0

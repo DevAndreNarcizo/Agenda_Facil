@@ -1,0 +1,484 @@
+Playwright com API local real e dados sintéticos - 2026-10-25T20:37:11.888390+00:00
+$ npm run test:e2e
+
+> web@0.0.0 test:e2e
+> playwright test
+
+[WebServer] (node:90218) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 
+[WebServer] Warning: This is a simple server for use in testing or debugging Angular applications
+[WebServer] locally. It hasn't been reviewed for security issues.
+[WebServer] 
+[WebServer] Binding this server to an open connection can result in compromising your application or
+[WebServer] computer. Using a different host than the one passed to the "--host" flag might result in
+[WebServer] websocket connection issues.
+[WebServer]     
+[WebServer] (node:90218) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:90317) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › e2e/mvp.spec.ts:3:5 › landing e acesso se adaptam sem overflow em smartphone, tablet e desktop (6.1s)
+(node:90495) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [chromium] › e2e/mvp.spec.ts:25:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local (5.7s)
+
+
+  1) [chromium] › e2e/mvp.spec.ts:3:5 › landing e acesso se adaptam sem overflow em smartphone, tablet e desktop 
+
+    Error: expect(locator).toBeFocused() failed
+
+    Locator:  locator('#conteudo')
+    Expected: focused
+    Received: inactive
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeFocused" locator('#conteudo') with timeout 5000ms
+      - waiting for locator('#conteudo')
+        - waiting for "http://127.0.0.1:4200/" navigation to finish...
+        - navigated to "http://127.0.0.1:4200/#conteudo"
+        13 × locator resolved to <main id="conteudo" tabindex="-1" class="landing">…</main>
+           - unexpected value "inactive"
+
+
+      16 |     await page.getByRole('link', { name: 'Pular para o conteúdo' }).focus();
+      17 |     await page.keyboard.press('Enter');
+    > 18 |     await expect(page.locator('#conteudo')).toBeFocused();
+         |                                             ^
+      19 |     expect(
+      20 |       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      21 |     ).toBe(true);
+        at /var/www/Agenda_Facil/apps/web/e2e/mvp.spec.ts:18:45
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mvp-landing-e-acesso-se-ad-6bb3b-smartphone-tablet-e-desktop-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mvp-landing-e-acesso-se-ad-6bb3b-smartphone-tablet-e-desktop-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mvp-landing-e-acesso-se-ad-6bb3b-smartphone-tablet-e-desktop-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mvp-landing-e-acesso-se-ad-6bb3b-smartphone-tablet-e-desktop-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › e2e/mvp.spec.ts:25:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local 
+
+    Error: expect(page).toHaveURL(expected) failed
+
+    Expected pattern: /onboarding/
+    Received string:  "http://127.0.0.1:4200/register"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveURL" with timeout 5000ms
+        14 × locator resolved to <html lang="pt-BR">…</html>
+           - unexpected value "http://127.0.0.1:4200/register"
+
+
+      38 |   await page.getByLabel('Confirme sua senha', { exact: true }).fill(password);
+      39 |   await page.getByRole('button', { name: 'Criar conta', exact: true }).click();
+    > 40 |   await expect(page).toHaveURL(/onboarding/);
+         |                      ^
+      41 |   await page.getByLabel('Nome do negócio', { exact: true }).fill('Studio Sintético E2E');
+      42 |   await page.getByLabel('Link de reserva', { exact: true }).fill(slug);
+      43 |   await page.getByRole('button', { name: 'Criar minha agenda' }).click();
+        at /var/www/Agenda_Facil/apps/web/e2e/mvp.spec.ts:40:22
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [chromium] › e2e/mvp.spec.ts:3:5 › landing e acesso se adaptam sem overflow em smartphone, tablet e desktop 
+    [chromium] › e2e/mvp.spec.ts:25:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local 
+
+EXIT_CODE=1
+
+Nova execução após correção de foco e estabilização de schema - 2026-10-25T20:39:03.239619+00:00
+$ npm run test:e2e
+
+> web@0.0.0 test:e2e
+> playwright test
+
+[WebServer] (node:92299) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 
+[WebServer] Warning: This is a simple server for use in testing or debugging Angular applications
+[WebServer] locally. It hasn't been reviewed for security issues.
+[WebServer] 
+[WebServer] Binding this server to an open connection can result in compromising your application or
+[WebServer] computer. Using a different host than the one passed to the "--host" flag might result in
+[WebServer] websocket connection issues.
+[WebServer]     
+[WebServer] (node:92299) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:92359) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e/mvp.spec.ts:3:5 › landing e acesso se adaptam sem overflow em smartphone, tablet e desktop (1.6s)
+  ✘  2 [chromium] › e2e/mvp.spec.ts:25:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local (5.5s)
+
+
+  1) [chromium] › e2e/mvp.spec.ts:25:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local 
+
+    Error: Ao menos um dia deve oferecer slots reais do servidor
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      89 |     }
+      90 |   }
+    > 91 |   expect(found, 'Ao menos um dia deve oferecer slots reais do servidor').toBe(true);
+         |                                                                          ^
+      92 |   await visitor.getByRole('radio').first().check();
+      93 |   await visitor.getByLabel('Nome', { exact: true }).fill('Cliente Sintético Público');
+      94 |   await visitor.getByLabel('Telefone com DDD').fill('11999990000');
+        at /var/www/Agenda_Facil/apps/web/e2e/mvp.spec.ts:91:74
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › e2e/mvp.spec.ts:25:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local 
+  1 passed (10.7s)
+
+EXIT_CODE=1
+
+
+RETOMADA 2026-10-26T01:19:19.715536+00:00
+COMMAND=npm run test:e2e
+
+> web@0.0.0 test:e2e
+> playwright test
+
+[WebServer] (node:227885) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 
+[WebServer] Warning: This is a simple server for use in testing or debugging Angular applications
+[WebServer] locally. It hasn't been reviewed for security issues.
+[WebServer] 
+[WebServer] Binding this server to an open connection can result in compromising your application or
+[WebServer] computer. Using a different host than the one passed to the "--host" flag might result in
+[WebServer] websocket connection issues.
+[WebServer]     
+[WebServer] (node:227885) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:228081) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e/mvp.spec.ts:3:5 › landing e acesso se adaptam sem overflow em smartphone, tablet e desktop (3.6s)
+  ✘  2 [chromium] › e2e/mvp.spec.ts:25:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local (8.6s)
+
+
+  1) [chromium] › e2e/mvp.spec.ts:25:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Confirmado', { exact: true })
+    Expected: visible
+    Error: strict mode violation: getByText('Confirmado', { exact: true }) resolved to 2 elements:
+        1) <option value="confirmed">Confirmado</option> aka getByLabel('Status')
+        2) <span class="tag success">Confirmado</span> aka getByRole('table').getByText('Confirmado')
+
+    Call log:
+      - Expect "toBeVisible" getByText('Confirmado', { exact: true }) with timeout 5000ms
+      - waiting for getByText('Confirmado', { exact: true })
+        5 × locator resolved to <option value="confirmed">Confirmado</option>
+          - unexpected value "hidden"
+
+
+      111 |   await page.getByRole('button', { name: 'Confirmar', exact: true }).click();
+      112 |   await expect(page.getByText('Agendamento atualizado.')).toBeVisible();
+    > 113 |   await expect(page.getByText('Confirmado', { exact: true })).toBeVisible();
+          |                                                               ^
+      114 |   const civil = (instant: string) =>
+      115 |     new Intl.DateTimeFormat('sv-SE', {
+      116 |       timeZone: 'America/Sao_Paulo',
+        at /var/www/Agenda_Facil/apps/web/e2e/mvp.spec.ts:113:63
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › e2e/mvp.spec.ts:25:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local 
+  1 passed (33.3s)
+
+EXIT_CODE=1
+
+
+RETOMADA 2026-10-26T01:19:56.142759+00:00
+COMMAND=npm run test:e2e
+
+> web@0.0.0 test:e2e
+> playwright test
+
+[WebServer] (node:228751) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 
+[WebServer] Warning: This is a simple server for use in testing or debugging Angular applications
+[WebServer] locally. It hasn't been reviewed for security issues.
+[WebServer] 
+[WebServer] Binding this server to an open connection can result in compromising your application or
+[WebServer] computer. Using a different host than the one passed to the "--host" flag might result in
+[WebServer] websocket connection issues.
+[WebServer]     
+[WebServer] (node:228751) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:228858) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e/mvp.spec.ts:3:5 › landing e acesso se adaptam sem overflow em smartphone, tablet e desktop (3.2s)
+  ✘  2 [chromium] › e2e/mvp.spec.ts:25:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local (7.4s)
+
+
+  1) [chromium] › e2e/mvp.spec.ts:25:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local 
+
+    RangeError: Invalid time value
+
+      124 |       hourCycle: 'h23',
+      125 |     })
+    > 126 |       .format(new Date(instant))
+          |        ^
+      127 |       .replace(' ', 'T');
+      128 |   await page.getByRole('button', { name: 'Reagendar', exact: true }).click();
+      129 |   const rescheduleDialog = page.getByRole('dialog', { name: 'Reagendar atendimento' });
+        at civil (/var/www/Agenda_Facil/apps/web/e2e/mvp.spec.ts:126:8)
+        at /var/www/Agenda_Facil/apps/web/e2e/mvp.spec.ts:130:62
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › e2e/mvp.spec.ts:25:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local 
+  1 passed (14.4s)
+
+EXIT_CODE=1
+
+
+RETOMADA 2026-10-26T01:21:04.256513+00:00
+COMMAND=npm run test:e2e
+
+> web@0.0.0 test:e2e
+> playwright test
+
+[WebServer] (node:229874) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 
+[WebServer] Warning: This is a simple server for use in testing or debugging Angular applications
+[WebServer] locally. It hasn't been reviewed for security issues.
+[WebServer] 
+[WebServer] Binding this server to an open connection can result in compromising your application or
+[WebServer] computer. Using a different host than the one passed to the "--host" flag might result in
+[WebServer] websocket connection issues.
+[WebServer]     
+[WebServer] (node:229874) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:229961) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e/mvp.spec.ts:3:5 › landing e acesso se adaptam sem overflow em smartphone, tablet e desktop (1.6s)
+  ✘  2 [chromium] › e2e/mvp.spec.ts:25:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local (8.0s)
+
+
+  1) [chromium] › e2e/mvp.spec.ts:25:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('status')
+    Expected substring: "Agendamento reagendado."
+    Error: strict mode violation: getByRole('status') resolved to 2 elements:
+        1) <p role="status" class="notice success">Agendamento reagendado.</p> aka getByText('Agendamento reagendado.')
+        2) <p role="status">Carregando agenda…</p> aka getByText('Carregando agenda…')
+
+    Call log:
+      - Expect "toContainText" getByRole('status') with timeout 5000ms
+      - waiting for getByRole('status')
+        4 × locator resolved to <p role="status" class="notice success">Agendamento atualizado.</p>
+          - unexpected value "Agendamento atualizado."
+
+
+      130 |   await rescheduleDialog.getByLabel('Nova data e hora').fill(civil(rescheduleInstant));
+      131 |   await rescheduleDialog.getByRole('button', { name: 'Confirmar reagendamento' }).click();
+    > 132 |   await expect(page.getByRole('status')).toContainText('Agendamento reagendado.');
+          |                                          ^
+      133 |   await page.getByRole('button', { name: 'Bloquear horário', exact: true }).click();
+      134 |   await page.getByLabel('Profissional', { exact: true }).nth(1).selectOption({ index: 1 });
+      135 |   await page.getByLabel('Início do bloqueio').fill(civil(initialInstant));
+        at /var/www/Agenda_Facil/apps/web/e2e/mvp.spec.ts:132:42
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › e2e/mvp.spec.ts:25:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local 
+  1 passed (13.4s)
+
+EXIT_CODE=1
+
+
+RETOMADA 2026-10-26T01:22:07.029564+00:00
+COMMAND=npm run test:e2e
+
+> web@0.0.0 test:e2e
+> playwright test
+
+[WebServer] (node:230731) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 
+[WebServer] Warning: This is a simple server for use in testing or debugging Angular applications
+[WebServer] locally. It hasn't been reviewed for security issues.
+[WebServer] 
+[WebServer] Binding this server to an open connection can result in compromising your application or
+[WebServer] computer. Using a different host than the one passed to the "--host" flag might result in
+[WebServer] websocket connection issues.
+[WebServer]     
+[WebServer] (node:230731) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:230791) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e/mvp.spec.ts:3:5 › landing e acesso se adaptam sem overflow em smartphone, tablet e desktop (1.6s)
+  ✓  2 [chromium] › e2e/mvp.spec.ts:25:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local (14.4s)
+
+  2 passed (19.5s)
+
+EXIT_CODE=0
+
+
+A11Y REVALIDATION 2026-10-26T01:33:26.150595+00:00
+COMMAND=npm run test:e2e
+
+> web@0.0.0 test:e2e
+> playwright test
+
+[WebServer] (node:266965) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 
+[WebServer] Warning: This is a simple server for use in testing or debugging Angular applications
+[WebServer] locally. It hasn't been reviewed for security issues.
+[WebServer] 
+[WebServer] Binding this server to an open connection can result in compromising your application or
+[WebServer] computer. Using a different host than the one passed to the "--host" flag might result in
+[WebServer] websocket connection issues.
+[WebServer]     
+[WebServer] (node:266965) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:267028) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e/mvp.spec.ts:38:5 › landing e acesso se adaptam sem overflow em smartphone, tablet e desktop (1.7s)
+  ✓  2 [chromium] › e2e/mvp.spec.ts:64:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local (18.1s)
+
+  2 passed (23.5s)
+
+EXIT_CODE=0
+
+
+COMPOSE PORTAL HTTP SYNCHRONIZATION 2026-10-26T01:42:30.790550+00:00
+COMMAND=npm run test:e2e
+
+> web@0.0.0 test:e2e
+> playwright test
+
+
+Running 2 tests using 1 worker
+
+(node:275121) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e/mvp.spec.ts:39:5 › landing e acesso se adaptam sem overflow em smartphone, tablet e desktop (1.6s)
+  ✓  2 [chromium] › e2e/mvp.spec.ts:65:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local (17.9s)
+
+  2 passed (20.2s)
+
+EXIT_CODE=0

@@ -1,0 +1,16 @@
+Relatório retornado pelo test-runner independente em 25/10/2026.
+Este arquivo resume o relatório do agente; não é uma nova execução dos comandos.
+
+npm ci: exit0,437 pacotes instalados.
+npm test: exit0,10 arquivos,31 testes.
+npm run lint: exit0.
+npm run build: exit0,TypeScript/Vite6.4.5,1283módulos.
+npm audit --omit=dev --audit-level=high: exit0,0vulnerabilidades.
+npm audit: exit1,3moderadas postcss-selector-parser/postcss-nested/Tailwind. Nenhum forcefix.
+Deno shared integrations: exit0,4testes.
+composer validate --strict: exit0.
+composer check-platform-reqs: exit0,PHP8.5.11.
+composer audit: exit0,0advisories.
+Compose config,bashsyntax2scripts eactionlint2workflows: exit0.
+Autoria corporativa em fonte versionada: git grep exit1,semhits no padrão auditado.
+PHPUnit eE2E nãoexecutados nesta frente; cobertos nas evidências próprias.

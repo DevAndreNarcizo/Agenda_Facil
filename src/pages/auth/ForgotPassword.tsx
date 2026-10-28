@@ -15,7 +15,7 @@ type ForgotForm = z.infer<typeof forgotSchema>;
 /**
  * Solicita a recuperação de senha pelo fluxo nativo do Supabase Auth.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export default function ForgotPassword() {
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export default function ForgotPassword() {
    * Envia o link de recuperação. A resposta é a mesma exista ou não a conta,
    * para não revelar quais e-mails estão cadastrados.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const onSubmit = async ({ email }: ForgotForm): Promise<void> => {
     setError(null);

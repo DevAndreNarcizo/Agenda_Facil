@@ -1,0 +1,15 @@
+{
+  "required": [
+    "docs/migration/AUDIT.md",
+    "docs/migration/MIGRATION_PLAN.md",
+    "docs/implementation/STATUS.md",
+    "docs/security/TENANT_MATRIX.md",
+    "docs/billing/SUBSCRIPTIONS.md",
+    "docs/operations/DEPLOYMENT.md",
+    "docs/operations/ROLLBACK.md",
+    "docs/qa/ACCEPTANCE_REPORT.md"
+  ],
+  "missing": [],
+  "broken_links": [],
+  "unexpected_artifacts": []
+}

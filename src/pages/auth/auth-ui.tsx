@@ -18,7 +18,7 @@ import {
  * marca + texto de apoio no topo e conteúdo em coluna de até 400px. No celular o conteúdo fica
  * direto sobre o fundo (como no protótipo mobile); a partir de `sm` ganha um cartão com borda.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function AuthLayout({ lead, children }: { lead: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -50,7 +50,7 @@ export function AuthLayout({ lead, children }: { lead: React.ReactNode; children
  * Abas Entrar / Criar conta. São links (rotas próprias), então funcionam com voltar do navegador
  * e podem ser compartilhadas; visualmente seguem o controle segmentado do protótipo.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function AuthModeTabs({ active }: { active: "login" | "register" }) {
   const tabs = [
@@ -95,7 +95,7 @@ type AuthFieldProps = React.InputHTMLAttributes<HTMLInputElement> & {
  * vermelha + mensagem quando inválido. Em `type="password"` mostra o botão de exibir senha.
  * Usa forwardRef para funcionar direto com `register()` do react-hook-form.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
   ({ id, label, icon, hint, error, labelAside, type = "text", className, ...props }, ref) => {
@@ -158,7 +158,7 @@ const STRENGTH_COLOR: Record<PasswordStrength, string> = {
 /**
  * Medidor de força da senha em 4 barras (fraca → forte), anunciado a leitores de tela.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function PasswordStrengthMeter({ strength }: { strength: PasswordStrength }) {
   return (
@@ -177,7 +177,7 @@ export function PasswordStrengthMeter({ strength }: { strength: PasswordStrength
  * Checkbox nativo (acessível e compatível com react-hook-form) com a aparência do protótipo:
  * quadrado de 20px, azul quando marcado.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export const AuthCheckbox = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement> & { label: React.ReactNode; error?: string }>(
   ({ id, label, error, className, ...props }, ref) => (
@@ -208,7 +208,7 @@ AuthCheckbox.displayName = "AuthCheckbox";
 /**
  * Caixa de erro do formulário (fundo vermelho suave), anunciada como alerta.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function AuthAlert({ children }: { children: React.ReactNode }) {
   return (
@@ -222,7 +222,7 @@ export function AuthAlert({ children }: { children: React.ReactNode }) {
 /**
  * Botão principal de 48px; mostra spinner e rótulo de progresso enquanto envia.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function AuthSubmit({ loading, loadingLabel, children, className, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { loading?: boolean; loadingLabel: string }) {
   return (
@@ -245,7 +245,7 @@ export function AuthSubmit({ loading, loadingLabel, children, className, ...prop
 /**
  * Linha de troca de modo no rodapé ("Ainda não tem conta? Criar conta").
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function AuthSwitch({ text, cta, to }: { text: string; cta: string; to: string }) {
   return (
@@ -259,7 +259,7 @@ export function AuthSwitch({ text, cta, to }: { text: string; cta: string; to: s
 /**
  * Estado de confirmação (e-mail enviado, senha alterada, link inválido): ícone, título, texto e ação.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function AuthNotice({ icon, tone = "accent", title, children, action }: {
   icon: string;
@@ -283,7 +283,7 @@ export function AuthNotice({ icon, tone = "accent", title, children, action }: {
 /**
  * Link de texto secundário em azul (ex.: "Esqueci a senha", "Voltar para o login").
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function AuthLink({ to, children, className }: { to: string; children: React.ReactNode; className?: string }) {
   return (
@@ -297,7 +297,7 @@ export function AuthLink({ to, children, className }: { to: string; children: Re
  * Bloco "ou" + botões Google/WhatsApp. Cada botão só aparece com o provedor ativo no Supabase
  * (ver useAuthProviders); sem nenhum ativo, o bloco inteiro some.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function SocialAuth({ onError, beforeAuth }: { onError: (message: string) => void; beforeAuth?: () => void }) {
   const providers = useAuthProviders();
@@ -310,7 +310,7 @@ export function SocialAuth({ onError, beforeAuth }: { onError: (message: string)
    * Inicia o OAuth do Google; o Supabase volta para /dashboard, e o ProtectedRoute leva ao
    * onboarding quem ainda não tem empresa.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const signInWithGoogle = async (): Promise<void> => {
     beforeAuth?.();
@@ -352,7 +352,7 @@ export function SocialAuth({ onError, beforeAuth }: { onError: (message: string)
 /**
  * "G" do Google nas cores oficiais (uso permitido pelas diretrizes de marca do Sign in with Google).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function GoogleMark() {
   return (
@@ -368,7 +368,7 @@ function GoogleMark() {
 /**
  * Chips de segmento do negócio (Estética, Beleza, Cabelo, Pet) como grupo de rádio acessível.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function SegmentChips({ value, onChange, error }: { value?: BusinessSegment; onChange: (value: BusinessSegment) => void; error?: string }) {
   return (
@@ -403,7 +403,7 @@ export function SegmentChips({ value, onChange, error }: { value?: BusinessSegme
 /**
  * Link para Termos/Privacidade que abre em nova aba, para não perder o formulário preenchido.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function LegalLink({ to, children }: { to: "/termos" | "/privacidade"; children: React.ReactNode }) {
   return (

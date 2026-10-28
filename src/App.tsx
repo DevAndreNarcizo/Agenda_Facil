@@ -8,7 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
  * Páginas carregadas sob demanda: cada rota vira um chunk próprio, então o visitante da
  * reserva pública não baixa o painel e vice-versa.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 const DashboardLayout = lazy(() => import("./layouts/DashboardLayout").then((module) => ({ default: module.DashboardLayout })));
 const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
@@ -36,7 +36,7 @@ const LegalPage = lazy(() => import("./pages/legal/LegalPage"));
 /**
  * Indicador neutro exibido enquanto o chunk da rota é baixado.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function RouteFallback() {
   return (

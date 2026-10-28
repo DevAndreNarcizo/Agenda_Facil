@@ -211,7 +211,7 @@ export function useAppointments(filters?: AppointmentFilters, options: UseAppoin
       /**
        * Monta a consulta do período para um intervalo de linhas [from, to].
        *
-       * @author André Narcizo - andre.narcizo@sysout.com.br
+       * @author André Narcizo
        */
       const buildQuery = (from: number, to: number) => {
         let query = supabase

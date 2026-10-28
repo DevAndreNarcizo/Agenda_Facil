@@ -1,0 +1,46 @@
+$ docker compose run --rm --no-deps api composer check-platform-reqs
+composer-runtime-api 2.2.2      success                                       
+ext-ctype            *          success provided by symfony/polyfill-ctype    
+ext-dom              20031129   success                                       
+ext-fileinfo         8.5.12     success                                       
+ext-filter           8.5.12     success                                       
+ext-hash             8.5.12     success                                       
+ext-iconv            8.5.12     success                                       
+ext-json             8.5.12     success                                       
+ext-libxml           8.5.12     success                                       
+ext-mbstring         *          success provided by symfony/polyfill-mbstring 
+ext-openssl          8.5.12     success                                       
+ext-pcre             8.5.12     success                                       
+ext-phar             8.5.12     success                                       
+ext-session          8.5.12     success                                       
+ext-simplexml        8.5.12     success                                       
+ext-tokenizer        8.5.12     success                                       
+ext-xml              8.5.12     success                                       
+ext-xmlwriter        8.5.12     success                                       
+php                  8.5.12     success                                       
+ Container agenda-facil-migration-api-run-7a4c42532db3 Creating 
+ Container agenda-facil-migration-api-run-7a4c42532db3 Created 
+Checking platform requirements for packages in the vendor dir
+
+EXIT_CODE=0
+
+$ docker compose run --rm --no-deps api php artisan migrate:status
+
+  Migration name .............................................. Batch / Status  
+  0001_01_01_000000_create_users_table ............................... [1] Ran  
+  0001_01_01_000001_create_cache_table ............................... [1] Ran  
+  0001_01_01_000002_create_jobs_table ................................ [1] Ran  
+  2026_10_25_000001_create_tenant_core ............................... [1] Ran  
+  2026_10_25_000002_link_professional_membership ..................... [2] Ran  
+  2026_10_25_100000_create_billing_tables ............................ [1] Ran  
+  2026_10_25_100001_billing_tenant_integrity ......................... [2] Ran  
+  2026_10_25_200000_create_customer_portal ........................... [2] Ran  
+  2026_10_25_200000_create_private_files ............................. [3] Ran  
+  2026_10_25_200001_create_appointment_blocks ........................ [3] Ran  
+  2026_10_25_300000_create_notifications_outbox ...................... [3] Ran  
+  2026_10_25_400000_allow_unlimited_plan_entitlements ................ [4] Ran  
+
+ Container agenda-facil-migration-api-run-f2ba142aca22 Creating 
+ Container agenda-facil-migration-api-run-f2ba142aca22 Created 
+
+EXIT_CODE=0

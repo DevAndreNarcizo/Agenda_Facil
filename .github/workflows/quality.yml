@@ -4,6 +4,13 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      run_legacy_remote_e2e:
+        description: 'Executar E2E no Supabase de teste explicitamente configurado'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -26,7 +33,7 @@ jobs:
 
   e2e:
     needs: validate
-    if: ${{ secrets.E2E_OWNER_EMAIL != '' && secrets.E2E_OWNER_PASSWORD != '' && secrets.E2E_SERVICE_ID != '' && secrets.E2E_SUPABASE_URL != '' && secrets.E2E_SUPABASE_ANON_KEY != '' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_legacy_remote_e2e }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -39,6 +46,15 @@ jobs:
       E2E_SERVICE_ID: ${{ secrets.E2E_SERVICE_ID }}
     steps:
       - uses: actions/checkout@v4
+      - name: Validar configuração exclusiva de teste
+        shell: bash
+        run: |
+          for name in E2E_OWNER_EMAIL E2E_OWNER_PASSWORD E2E_SERVICE_ID E2E_SUPABASE_URL E2E_SUPABASE_ANON_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Configuração de teste ausente: $name"
+              exit 1
+            fi
+          done
       - uses: actions/setup-node@v4
         with:
           node-version: 22

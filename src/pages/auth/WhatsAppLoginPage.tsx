@@ -22,7 +22,7 @@ const codeSchema = z.object({
  * Login sem senha por código enviado no WhatsApp (Supabase Auth, phone OTP no canal WhatsApp via Twilio).
  * Conta nova criada por aqui não tem empresa: o ProtectedRoute leva ao onboarding.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export default function WhatsAppLoginPage() {
   const providers = useAuthProviders();
@@ -43,7 +43,7 @@ export default function WhatsAppLoginPage() {
   /**
    * Pede ao Supabase o envio do código pelo WhatsApp e inicia a contagem para reenvio.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const sendCode = async (rawPhone: string): Promise<boolean> => {
     setError(null);
@@ -62,7 +62,7 @@ export default function WhatsAppLoginPage() {
   /**
    * Confirma o código de 6 dígitos e abre o painel.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const verifyCode = async ({ code }: z.infer<typeof codeSchema>): Promise<void> => {
     if (!phone) return;

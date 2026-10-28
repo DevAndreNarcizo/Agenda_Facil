@@ -8,7 +8,7 @@ const listeners = new Set<() => void>();
 /**
  * Lê o tema efetivo direto da classe do <html>, que é a fonte de verdade aplicada no main.tsx.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function readMode(): ThemeMode {
   if (typeof document === "undefined") return "light";
@@ -18,7 +18,7 @@ function readMode(): ThemeMode {
 /**
  * Inscreve um ouvinte para mudanças de tema feitas por qualquer componente.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function subscribe(listener: () => void): () => void {
   listeners.add(listener);
@@ -28,7 +28,7 @@ function subscribe(listener: () => void): () => void {
 /**
  * Aplica e persiste o tema, notificando todos os consumidores (header, Configurações, ThemeToggle).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function applyThemeMode(mode: ThemeMode): void {
   document.documentElement.classList.toggle("dark", mode === "dark");
@@ -44,7 +44,7 @@ export function applyThemeMode(mode: ThemeMode): void {
 /**
  * Hook único de tema claro/escuro, sincronizado entre todos os componentes montados.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function useThemeMode() {
   const mode = useSyncExternalStore(subscribe, readMode, () => "light" as ThemeMode);

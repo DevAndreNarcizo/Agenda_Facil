@@ -11,7 +11,7 @@ const DOCUMENTS = { termos: TERMS, privacidade: PRIVACY } as const;
  * Página pública de documento legal (Termos de uso ou Política de privacidade) no design system:
  * cabeçalho com marca, alternância entre os dois documentos, índice e texto em coluna de leitura.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export default function LegalPage({ document: kind }: { document: keyof typeof DOCUMENTS }) {
   const doc: LegalDocument = DOCUMENTS[kind];

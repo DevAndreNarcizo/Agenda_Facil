@@ -51,7 +51,7 @@ interface ProfileForm {
 /**
  * Lê um campo textual do JSON de endereço salvo no onboarding.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function addressField(address: unknown, key: string): string {
   if (address && typeof address === "object" && !Array.isArray(address)) {
@@ -64,7 +64,7 @@ function addressField(address: unknown, key: string): string {
 /**
  * Aba Perfil geral: dados do negócio (organizations + organization_settings) e horário de funcionamento.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function ProfileTab() {
   const { organization, settings, loading, updateOrganization, saving } = useOrganization();
@@ -94,7 +94,7 @@ function ProfileTab() {
   /**
    * Salva identidade, link e endereço em uma única ação.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const saveProfile = async () => {
     if (!current || !slugValid || current.name.trim().length < 2) return;
@@ -214,7 +214,7 @@ function ProfileTab() {
 /**
  * Aba Aparência: logo, cor da marca (aplicada na reserva e no portal) e tema do painel.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function AppearanceTab() {
   const { organization, updateOrganization, saving } = useOrganization();
@@ -301,7 +301,7 @@ function AppearanceTab() {
 /**
  * Aba Plano e faturas: resumo do plano com atalho para a Assinatura.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function BillingTab() {
   const { profile } = useAuth();
@@ -330,7 +330,7 @@ function BillingTab() {
 /**
  * Configurações em abas (estado na URL ?tab= para links diretos).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export default function SettingsPage() {
   const { profile } = useAuth();

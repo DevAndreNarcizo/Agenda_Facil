@@ -7,7 +7,7 @@ import { hexToHslTriplet, isHexColor } from '@/lib/brand-color';
  * Converte o hex salvo para o trio HSL esperado; antes, o hex cru gerava `hsl(#...)` inválido.
  * O painel refinado usa os tokens `--af-*` e não é afetado. Reaproveita o cache de useOrganization.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function useOrganizationTheme() {
   const { organization } = useOrganization();

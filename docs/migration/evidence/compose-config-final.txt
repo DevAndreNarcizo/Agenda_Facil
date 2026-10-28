@@ -1,0 +1,3 @@
+$ docker compose config --quiet
+
+EXIT_CODE=0

@@ -23,7 +23,7 @@ export const DEFAULT_BUSINESS_HOURS: BusinessDay[] = Array.from({ length: 7 }, (
 /**
  * Janela de horas visível na grade da agenda: do menor início ao maior término dos dias ativos.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function getAgendaWindow(days: BusinessDay[]): { start: number; end: number } {
   const active = days.filter((day) => day.isActive);
@@ -36,7 +36,7 @@ export function getAgendaWindow(days: BusinessDay[]): { start: number; end: numb
 /**
  * Horário de funcionamento da organização (organization_business_hours) com gravação em lote.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function useBusinessHours() {
   const { profile } = useAuth();

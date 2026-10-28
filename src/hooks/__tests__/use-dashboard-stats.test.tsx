@@ -6,7 +6,7 @@ import { isSameDayInSaoPaulo, useDashboardStats } from "../use-dashboard-stats";
 /**
  * Cria um agendamento válido para os cenários de métricas.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function createAppointment(overrides: Partial<Appointment> = {}): Appointment {
   return {

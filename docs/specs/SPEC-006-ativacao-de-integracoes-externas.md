@@ -1,5 +1,8 @@
 # SPEC-006 — Ativação segura de integrações externas
 
+> Atualização25/10/2026: os estados remotos históricos abaixo não equivalem à homologação da migração. A implementação Angular/Laravel está na [SPEC-017](SPEC-017-migracao-saas.md), com diferenças verificadas no [AUDIT](../migration/AUDIT.md) e progresso em [STATUS](../implementation/STATUS.md). Preserve os invariantes desta SPEC e consulte os gates atuais antes de desativar o legado.
+
+
 **Status:** proposta
 **Prioridade:** P0
 **Dependências:** SPEC-002 e SPEC-005

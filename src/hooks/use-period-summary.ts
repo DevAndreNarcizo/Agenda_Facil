@@ -17,7 +17,7 @@ const EMPTY: PeriodSummary = { total: 0, pending: 0, completed: 0, bookedMinutes
  * Resumo agregado no servidor (RPC get_period_summary) para o dia/semana/mês da data informada.
  * Substitui contagens feitas no navegador sobre listas paginadas, que paravam em 100 registros.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function usePeriodSummary(dateKey: string, view: AppointmentView) {
   const { profile } = useAuth();

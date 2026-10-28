@@ -13,7 +13,7 @@ export interface ListColumn<T> {
  * Tabela em grid do painel: cabeçalho rebaixado, linhas com hover e rolagem horizontal
  * abaixo de `minWidth` (telefones e datas nunca quebram no meio).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function ListTable<T>({ columns, template, rows, rowKey, minWidth = 720, loading, empty, footer, onRowClick }: {
   columns: ListColumn<T>[];
@@ -73,7 +73,7 @@ export function ListTable<T>({ columns, template, rows, rowKey, minWidth = 720, 
 /**
  * Paginação compacta com reticências (1 2 3 … 18).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function Pagination({ page, pageCount, onChange }: { page: number; pageCount: number; onChange: (page: number) => void }) {
   const pages = Array.from({ length: pageCount }, (_, index) => index + 1).filter(
@@ -120,7 +120,7 @@ export function Pagination({ page, pageCount, onChange }: { page: number; pageCo
 /**
  * Célula primária da lista: avatar/ícone, nome e linha secundária truncada.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function ListPrimaryCell({ leading, title, subtitle }: { leading: React.ReactNode; title: React.ReactNode; subtitle?: React.ReactNode }) {
   return (

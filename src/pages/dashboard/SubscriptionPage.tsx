@@ -20,7 +20,7 @@ const STATUS_LABELS: Record<string, string> = {
 /**
  * Assinatura: resumo do plano e uso, comparação de planos e checkout via Stripe (create-checkout).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export default function SubscriptionPage() {
   const { organization, subscription, loading } = useOrganization();
@@ -33,7 +33,7 @@ export default function SubscriptionPage() {
   /**
    * Inicia o checkout da Stripe para o plano escolhido e redireciona o navegador.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const handleSubscribe = async (planCode: PlanCode) => {
     if (!organization) return;

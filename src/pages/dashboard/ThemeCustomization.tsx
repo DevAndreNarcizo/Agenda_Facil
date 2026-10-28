@@ -109,16 +109,11 @@ export default function ThemeCustomization() {
         </div>
         <div className="max-w-md space-y-2">
           <h2 className="font-headline font-black text-2xl text-stitch-on-surface">Opa! Acesso Restrito</h2>
-          <p className="text-stitch-on-surface-variant font-medium">As regras de segurança (RLS) do seu banco de dados foram apagadas mas ainda não foram recriadas corretamente.</p>
+          <p className="text-stitch-on-surface-variant font-medium">Não foi possível identificar sua organização. Entre novamente ou fale com o responsável pela conta para verificar seu acesso.</p>
         </div>
         <div className="bg-stitch-primary/10 text-stitch-primary p-6 rounded-2xl max-w-lg text-left border border-stitch-primary/20">
-          <p className="font-bold mb-2">Um último passo urgente no Supabase:</p>
-          <ol className="list-decimal pl-4 space-y-2 text-sm">
-            <li>Abra o VSCode e copie TODO o código do arquivo <code className="bg-stitch-primary/20 px-1 rounded font-black">supabase/fix_all_rls.sql</code>.</li>
-            <li>Vá no <strong>Supabase</strong> {'>'} SQL Editor.</li>
-            <li>Cole o código inteiro (apague o que havia antes) e aperte <strong>RUN</strong>.</li>
-            <li>Após o "Success", recarregue esta página!</li>
-          </ol>
+          <p className="font-bold mb-2">Seu acesso precisa ser verificado</p>
+          <p className="text-sm">Se você acabou de criar sua conta, conclua o cadastro da organização antes de personalizar a identidade visual.</p>
         </div>
       </div>
     );

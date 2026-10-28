@@ -30,7 +30,7 @@ const ROLE_LABELS: Record<string, string> = { owner: "Proprietária(o)", admin: 
 /**
  * Profissionais: equipe com função, data de entrada e carga do dia; convite, edição e remoção.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export default function EmployeesPage() {
   const { profile } = useAuth();
@@ -63,7 +63,7 @@ export default function EmployeesPage() {
   /**
    * Cria o acesso do novo profissional via Edge Function.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const onInvite = async (data: AddEmployeeForm) => {
     setCreating(true);

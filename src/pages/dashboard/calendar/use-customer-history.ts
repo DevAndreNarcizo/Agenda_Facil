@@ -14,7 +14,7 @@ export interface CustomerHistory {
  * Histórico da cliente do agendamento selecionado: visitas, total gasto e últimos atendimentos.
  * Identifica pela customer_id e, na falta dela, pelo telefone informado na reserva.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function useCustomerHistory(appointment: Appointment | null | undefined) {
   const { profile } = useAuth();

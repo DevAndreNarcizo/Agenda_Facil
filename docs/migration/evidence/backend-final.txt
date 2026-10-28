@@ -1,0 +1,139 @@
+Verificação backend local em 2026-10-25T20:19:43.749419+00:00
+
+Banco: PostgreSQL Compose isolado, agenda_facil_test. Dados sintéticos. Sem chamadas reais de gateway.
+
+Comando: php artisan test
+Exit code: 0
+{"tool":"phpunit","result":"passed","tests":57,"passed":57,"assertions":397,"duration_ms":12973}
+
+
+Comando: vendor/bin/pint --test
+Exit code: 1
+{"tool":"pint","result":"fail","files":[{"path":"app\/Domains\/CustomerPortal\/PortalController.php","fixers":["not_operator_with_successor_space"]},{"path":"tests\/Feature\/CustomerPortalTest.php","fixers":["no_unused_imports"]}]}
+
+Comando: composer validate --strict
+Exit code: 0
+./composer.json is valid
+
+
+Comando: composer check-platform-reqs
+Exit code: 0
+Checking platform requirements for packages in the vendor dir
+composer-runtime-api 2.2.2      success                                       
+ext-ctype            *          success provided by symfony/polyfill-ctype    
+ext-dom              20031129   success                                       
+ext-fileinfo         8.5.11     success                                       
+ext-filter           8.5.11     success                                       
+ext-hash             8.5.11     success                                       
+ext-iconv            8.5.11     success                                       
+ext-json             8.5.11     success                                       
+ext-libxml           8.5.11     success                                       
+ext-mbstring         *          success provided by symfony/polyfill-mbstring 
+ext-openssl          8.5.11     success                                       
+ext-pcre             8.5.11     success                                       
+ext-phar             8.5.11     success                                       
+ext-session          8.5.11     success                                       
+ext-simplexml        8.5.11     success                                       
+ext-tokenizer        8.5.11     success                                       
+ext-xml              8.5.11     success                                       
+ext-xmlwriter        8.5.11     success                                       
+php                  8.5.11     success                                       
+
+
+Comando: composer audit
+Exit code: 0
+No security vulnerability advisories found.
+
+
+Revalidação após hardening concorrente de expiração: 2026-10-25T20:21:03.041367+00:00
+Comando: php artisan test --filter BillingMaintenanceCommandTest
+Exit code: 0
+{"tool":"phpunit","result":"passed","tests":5,"passed":5,"assertions":35,"duration_ms":10368}
+
+Comando: vendor/bin/pint --test
+Exit code: 0
+{"tool":"pint","result":"passed"}
+
+## 2026-10-26T01:18:35.179060+00:00
+COMMAND: composer validate --strict
+./composer.json is valid
+
+EXIT_CODE=0
+DURATION_SECONDS=0.57
+
+## 2026-10-26T01:18:35.729006+00:00
+COMMAND: composer check-platform-reqs
+Checking platform requirements for packages in the vendor dir
+composer-runtime-api 2.2.2      success                                       
+ext-ctype            *          success provided by symfony/polyfill-ctype    
+ext-dom              20031129   success                                       
+ext-fileinfo         8.5.11     success                                       
+ext-filter           8.5.11     success                                       
+ext-hash             8.5.11     success                                       
+ext-iconv            8.5.11     success                                       
+ext-json             8.5.11     success                                       
+ext-libxml           8.5.11     success                                       
+ext-mbstring         *          success provided by symfony/polyfill-mbstring 
+ext-openssl          8.5.11     success                                       
+ext-pcre             8.5.11     success                                       
+ext-phar             8.5.11     success                                       
+ext-session          8.5.11     success                                       
+ext-simplexml        8.5.11     success                                       
+ext-tokenizer        8.5.11     success                                       
+ext-xml              8.5.11     success                                       
+ext-xmlwriter        8.5.11     success                                       
+php                  8.5.11     success                                       
+
+EXIT_CODE=0
+DURATION_SECONDS=0.55
+
+## 2026-10-26T01:18:36.646293+00:00
+COMMAND: composer audit
+No security vulnerability advisories found.
+
+EXIT_CODE=0
+DURATION_SECONDS=0.92
+
+## 2026-10-26T01:19:20.595706+00:00
+COMMAND: php artisan test
+{"tool":"phpunit","result":"failed","tests":71,"passed":69,"assertions":492,"duration_ms":28813,"failed":2,"failures":[{"test":"Tests\\Feature\\BillingTest::test_catalog_uses_server_versions_and_explicit_synthetic_prices","file":"/var/www/Agenda_Facil/apps/api/tests/Feature/BillingTest.php","line":40,"message":"Failed asserting that table [plans] matches expected entries count of 2. Entries found: 3.\n.","trace":["/var/www/Agenda_Facil/apps/api/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/InteractsWithDatabase.php:118","/var/www/Agenda_Facil/apps/api/tests/Feature/BillingTest.php:40"]},{"test":"Tests\\Feature\\SecurityBoundariesTest::test_employee_can_manage_only_a_linked_professional_and_iso_milliseconds_are_accepted","file":"/var/www/Agenda_Facil/apps/api/tests/Feature/SecurityBoundariesTest.php","line":69,"message":"Expected response status code [201] but received 403.\nFailed asserting that 403 is identical to 201.","trace":["/var/www/Agenda_Facil/apps/api/vendor/laravel/framework/src/Illuminate/Testing/TestResponseAssert.php:46","/var/www/Agenda_Facil/apps/api/tests/Feature/SecurityBoundariesTest.php:69"]}]}
+
+EXIT_CODE=1
+DURATION_SECONDS=29.1
+
+## 2026-10-26T01:19:21.660440+00:00
+COMMAND: vendor/bin/pint --test
+{"tool":"pint","result":"passed"}
+EXIT_CODE=0
+DURATION_SECONDS=1.0
+
+## 2026-10-26T01:20:06.659031+00:00
+COMMAND: php artisan test --filter test_catalog_uses_server_versions_and_explicit_synthetic_prices|test_employee_can_manage_only_a_linked_professional_and_iso_milliseconds_are_accepted
+{"tool":"phpunit","result":"passed","tests":2,"passed":2,"assertions":14,"duration_ms":1504}
+
+EXIT_CODE=0
+DURATION_SECONDS=1.78
+
+## 2026-10-26T01:20:42.223749+00:00
+COMMAND: php artisan test
+{"tool":"phpunit","result":"passed","tests":71,"passed":71,"assertions":497,"duration_ms":17904}
+
+EXIT_CODE=0
+DURATION_SECONDS=18.19
+
+## 2026-10-26T01:20:51.606176+00:00
+COMMAND: vendor/bin/pint --test
+{"tool":"pint","result":"passed"}
+EXIT_CODE=0
+DURATION_SECONDS=0.64
+
+## 2026-10-26T01:45:26.772587+00:00 — proteção de logs SQL
+COMMAND: php artisan test
+{"tool":"phpunit","result":"passed","tests":72,"passed":72,"assertions":499,"duration_ms":20203}
+
+EXIT_CODE=0
+
+## 2026-10-26T01:45:27.081846+00:00 — proteção de logs SQL
+COMMAND: vendor/bin/pint --test
+{"tool":"pint","result":"passed"}
+EXIT_CODE=0

@@ -1,0 +1,212 @@
+Validação Angular local - 2026-10-25T20:36:29.086886+00:00
+Dados e serviços remotos não utilizados.
+
+$ npm test
+
+> web@0.0.0 test
+> ng test --watch=false
+
+Using Vitest configuration file: /var/www/Agenda_Facil/apps/web/vitest.config.ts
+❯ Building...
+✔ Building...
+Application bundle generation complete. [2.085 seconds] - 2026-10-25T20:36:31.649Z
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.5 /var/www/Agenda_Facil/apps/web
+
+
+ Test Files  5 passed (5)
+      Tests  14 passed (14)
+   Start at  17:36:31
+   Duration  1.73s (setup 39%, environment 33%, import 13%, transform 7%, tests 6%, worker 2%)
+
+
+EXIT_CODE=0
+
+$ npm run build
+
+> web@0.0.0 build
+> ng build
+
+❯ Building...
+✔ Building...
+Initial chunk files | Names               |  Raw size | Estimated transfer size
+chunk-KYbmA0Kl.js   | -                   | 168.29 kB |                49.09 kB
+main-YPWHTX77.js    | main                | 106.74 kB |                27.37 kB
+styles-MODYDIB5.css | styles              |  18.44 kB |                 3.94 kB
+
+                    | Initial total       | 293.48 kB |                80.40 kB
+
+Lazy chunk files    | Names               |  Raw size | Estimated transfer size
+chunk-C0QdQGCJ.js   | -                   |  51.27 kB |                10.54 kB
+chunk-BYWoKY18.js   | settings-page       |  32.17 kB |                11.11 kB
+chunk-zc7I8Hz3.js   | calendar-page       |  23.32 kB |                 5.73 kB
+chunk-Cpbnsblm.js   | public-booking-page |  11.52 kB |                 3.78 kB
+chunk-85FIFIj0.js   | resources-page      |   8.91 kB |                 2.93 kB
+chunk-CQgWYpHD.js   | portal-page         |   6.81 kB |                 2.61 kB
+chunk-CxPd1sKz.js   | billing-page        |   6.69 kB |                 2.42 kB
+chunk-D5aocenF.js   | auth-page           |   4.46 kB |                 1.81 kB
+chunk-gtRUpEVs.js   | password-page       |   4.18 kB |                 1.71 kB
+chunk-Bq9P5n3n.js   | shell               |   3.35 kB |                 1.38 kB
+chunk-BrGExTsT.js   | dashboard-page      |   3.22 kB |                 1.42 kB
+chunk-BF3fG3EM.js   | onboarding-page     |   3.07 kB |                 1.46 kB
+chunk-B6hGbVt1.js   | analytics-page      |   1.90 kB |               901 bytes
+chunk-C2Tsgl3a.js   | landing-page        |   1.34 kB |               710 bytes
+chunk-Bybdws94.js   | status-page         | 962 bytes |               962 bytes
+
+Application bundle generation complete. [2.881 seconds] - 2026-10-25T20:36:37.057Z
+
+Output location: /var/www/Agenda_Facil/apps/web/dist/web
+
+
+EXIT_CODE=0
+
+$ npm audit
+found 0 vulnerabilities
+
+EXIT_CODE=0
+
+
+
+RETOMADA FINAL 2026-10-26T01:23:04.015100+00:00
+
+COMMAND=npm test
+
+> web@0.0.0 test
+> ng test --watch=false
+
+Using Vitest configuration file: /var/www/Agenda_Facil/apps/web/vitest.config.ts
+❯ Building...
+✔ Building...
+Application bundle generation complete. [1.896 seconds] - 2026-10-26T01:23:06.495Z
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.5 /var/www/Agenda_Facil/apps/web
+
+
+ Test Files  5 passed (5)
+      Tests  14 passed (14)
+   Start at  22:23:06
+   Duration  1.72s (environment 50%, setup 23%, import 10%, transform 9%, tests 6%, worker 1%)
+
+
+EXIT_CODE=0
+
+COMMAND=npm run build
+
+> web@0.0.0 build
+> ng build
+
+❯ Building...
+✔ Building...
+Initial chunk files | Names               |  Raw size | Estimated transfer size
+chunk-KYbmA0Kl.js   | -                   | 168.29 kB |                49.09 kB
+main-C2OPUMVV.js    | main                | 106.88 kB |                27.42 kB
+styles-MODYDIB5.css | styles              |  18.44 kB |                 3.94 kB
+
+                    | Initial total       | 293.62 kB |                80.45 kB
+
+Lazy chunk files    | Names               |  Raw size | Estimated transfer size
+chunk-C0QdQGCJ.js   | -                   |  51.27 kB |                10.54 kB
+chunk-O4827N85.js   | settings-page       |  32.17 kB |                11.16 kB
+chunk-DBVb7HNp.js   | calendar-page       |  23.32 kB |                 5.73 kB
+chunk-xxNXpcSY.js   | public-booking-page |  11.52 kB |                 3.78 kB
+chunk-Dp4UhGZj.js   | resources-page      |   8.91 kB |                 2.93 kB
+chunk-CO6uz6Bq.js   | portal-page         |   6.81 kB |                 2.60 kB
+chunk-BeNjH6Ww.js   | billing-page        |   6.69 kB |                 2.42 kB
+chunk-CQIPs7_Q.js   | auth-page           |   4.46 kB |                 1.81 kB
+chunk-pocrpGwf.js   | password-page       |   4.18 kB |                 1.70 kB
+chunk-GGjtkTLl.js   | shell               |   3.35 kB |                 1.38 kB
+chunk-B_t0jCUl.js   | dashboard-page      |   3.22 kB |                 1.42 kB
+chunk-8CQH-4Bp.js   | onboarding-page     |   3.07 kB |                 1.46 kB
+chunk-BJN8AM6U.js   | analytics-page      |   1.90 kB |               901 bytes
+chunk-CgnP_cLP.js   | landing-page        |   1.34 kB |               715 bytes
+chunk-Tfz4E0mC.js   | status-page         | 962 bytes |               962 bytes
+
+Application bundle generation complete. [3.416 seconds] - 2026-10-26T01:23:12.408Z
+
+Output location: /var/www/Agenda_Facil/apps/web/dist/web
+
+
+EXIT_CODE=0
+
+COMMAND=npm audit
+found 0 vulnerabilities
+
+EXIT_CODE=0
+
+
+A11Y REVALIDATION 2026-10-26T01:32:31.915610+00:00
+Measured control border contrast: light #7b8797 vs #f7f9fc=3.46, #ffffff=3.65, #eef2f7=3.25; dark #7186a2 vs #07121f=5.05, #0d1b2e=4.64, #132640=4.09. Actual computed colors are additionally checked by E2E.
+
+COMMAND=npm test
+
+> web@0.0.0 test
+> ng test --watch=false
+
+Using Vitest configuration file: /var/www/Agenda_Facil/apps/web/vitest.config.ts
+❯ Building...
+✔ Building...
+Application bundle generation complete. [1.654 seconds] - 2026-10-26T01:32:34.030Z
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.5 /var/www/Agenda_Facil/apps/web
+
+
+ Test Files  5 passed (5)
+      Tests  14 passed (14)
+   Start at  22:32:34
+   Duration  1.26s (environment 42%, tests 21%, setup 17%, transform 10%, import 9%, worker 1%)
+
+
+EXIT_CODE=0
+
+COMMAND=npm run build
+
+> web@0.0.0 build
+> ng build
+
+❯ Building...
+✔ Building...
+Initial chunk files | Names               |  Raw size | Estimated transfer size
+chunk-KYbmA0Kl.js   | -                   | 168.29 kB |                49.09 kB
+main-X7QGYMPJ.js    | main                | 106.88 kB |                27.39 kB
+styles-6WQVZB2I.css | styles              |  18.68 kB |                 3.99 kB
+
+                    | Initial total       | 293.86 kB |                80.48 kB
+
+Lazy chunk files    | Names               |  Raw size | Estimated transfer size
+chunk-C0QdQGCJ.js   | -                   |  51.27 kB |                10.54 kB
+chunk-CRQ_uoQ3.js   | settings-page       |  32.83 kB |                11.33 kB
+chunk-BerQhzPW.js   | calendar-page       |  25.05 kB |                 6.25 kB
+chunk-DAtvr3JM.js   | public-booking-page |  11.52 kB |                 3.79 kB
+chunk-Cz423OSF.js   | resources-page      |   8.91 kB |                 2.93 kB
+chunk-_yLX57pP.js   | portal-page         |   6.81 kB |                 2.60 kB
+chunk-DL_o0Wxm.js   | billing-page        |   6.69 kB |                 2.42 kB
+chunk-Ci0xkHcJ.js   | auth-page           |   4.46 kB |                 1.81 kB
+chunk-A7PNUyhX.js   | password-page       |   4.18 kB |                 1.70 kB
+chunk-B_DAbafJ.js   | shell               |   3.41 kB |                 1.41 kB
+chunk-BQS5s4eA.js   | dashboard-page      |   3.22 kB |                 1.42 kB
+chunk-DP8alMeR.js   | onboarding-page     |   3.07 kB |                 1.46 kB
+chunk-CGFB0LFc.js   | analytics-page      |   1.90 kB |               898 bytes
+chunk-CFluFXON.js   | landing-page        |   1.34 kB |               714 bytes
+chunk-DSZ7v-5H.js   | status-page         | 962 bytes |               962 bytes
+
+Application bundle generation complete. [2.633 seconds] - 2026-10-26T01:32:38.615Z
+
+Output location: /var/www/Agenda_Facil/apps/web/dist/web
+
+
+EXIT_CODE=0
+
+HISTORICO DE DIAGNOSTICO A11Y: a primeira execucao npm test apos introduzir foco DOM retornou exit 1, 13 passed/1 failed, NG0201 No provider found for ElementRef. SettingsPage.spec foi convertido de instanciacao manual para TestBed.createComponent, preservando os asserts de dominio e acrescentando verificacao de foco/aria-invalid/aria-describedby. A revalidacao final acima passou 14/14.
+LIMITES: demais formularios ainda precisam associacao completa de erros, auditoria de leitor de tela/teclado e combinacoes de marca/tema. Os checks nao certificam WCAG.

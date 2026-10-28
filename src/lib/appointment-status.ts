@@ -18,7 +18,7 @@ export interface StatusMeta {
  * Linguagem visual única dos status de agendamento no painel.
  * Confirmado = verde, Pendente = âmbar, Concluído = azul, Cancelado = vermelho, Bloqueio = neutro.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export const STATUS_META: Record<AgendaItemKind, StatusMeta> = {
   confirmed: { label: "Confirmado", text: "text-af-ok", bg: "bg-af-ok-soft", dot: "bg-af-ok", border: "border-af-ok" },

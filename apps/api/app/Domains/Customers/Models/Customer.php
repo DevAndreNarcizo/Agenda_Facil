@@ -1,0 +1,20 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domains\Customers\Models;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
+
+class Customer extends Model
+{
+    use HasUuids;
+
+    protected $guarded = ['id', 'organization_id'];
+
+    protected function casts(): array
+    {
+        return [];
+    }
+}

@@ -1,5 +1,9 @@
 # Roadmap de SPECs — Agenda Fácil
 
+## Migração autorizada em 25/10/2026
+
+A [SPEC-017](SPEC-017-migracao-saas.md) organiza a implementação incremental Angular/Laravel. O [AUDIT](../migration/AUDIT.md) compara os estados históricos abaixo com o código de outubro. O status atual e os gates comprovados ficam em [STATUS](../implementation/STATUS.md); relatos remotos antigos não são homologação da migração. SPECs010–016 não fazem parte do piloto; lista de espera e sinal dependem da conclusão do núcleo.
+
 ## Fundação existente
 
 | SPEC | Tema | Estado |

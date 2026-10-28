@@ -1,0 +1,39 @@
+$ bash scripts/migration/verify-local-restore.sh
+Restore sintético aprovado. Contagens iguais:
+appointment_blocks:0
+appointments:8
+audit_logs:44
+billing_checkout_attempts:0
+billing_customers:0
+business_hours:56
+cache:38
+cache_locks:0
+customer_portal_login_tokens:2
+customer_portal_sessions:1
+customers:8
+failed_jobs:0
+invoices:0
+job_batches:0
+jobs:0
+membership_invitations:0
+memberships:8
+message_deliveries:4
+migrations:12
+organizations:8
+password_reset_tokens:0
+payments:0
+plan_entitlements:25
+plan_versions:5
+plans:3
+private_files:0
+professionals:8
+services:8
+sessions:8
+subscription_audit_logs:8
+subscriptions:8
+usage_counters:7
+users:9
+webhook_events:0
+a0cc5ce3c0ada8bdaca021ec283b2eabf6cb1d5443f4f7c1584725ef2a5bc6d7  .migration-backups/synthetic-restore.dump
+
+EXIT_CODE=0

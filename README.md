@@ -1,5 +1,11 @@
 # 📅 Agenda Fácil
 
+## Migração SaaS em andamento
+
+O novo frontend Angular22 fica em `apps/web` e a API Laravel13 em `apps/api`, com PostgreSQL18 e Compose local isolado. Inicie com `bash scripts/migration/setup-local.sh`; os comandos Supabase/React abaixo descrevem o legado preservado. A migração ainda não está homologada para venda ou produção.
+
+Consulte [auditoria](docs/migration/AUDIT.md), [status comprovado](docs/implementation/STATUS.md), [contrato OpenAPI](docs/api/openapi.json) e [operação local/staging](docs/operations/DEPLOYMENT.md). Não aplicar SQL legado nem remover React antes da paridade e do procedimento de desativação aprovados.
+
 Sistema completo de gestão e agendamento para pequenas e médias empresas (salões, clínicas, barbearias, consultórios).
 
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy)
@@ -213,7 +219,7 @@ agenda-facil/
 
 ## 📝 Licença
 
-MIT License - veja [LICENSE](./LICENSE) para detalhes.
+O README legado declara licença MIT, mas o arquivo `LICENSE` não existe no baseline auditado. Confirmar e adicionar o texto correspondente antes de distribuir o produto; as dependências mantêm suas próprias licenças.
 
 ---
 

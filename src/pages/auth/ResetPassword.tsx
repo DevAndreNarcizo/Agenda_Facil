@@ -22,7 +22,7 @@ type SessionState = "checking" | "valid" | "invalid";
 /**
  * Define uma nova senha durante a sessão de recuperação criada pelo link do Supabase Auth.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export default function ResetPassword() {
   const [sessionState, setSessionState] = useState<SessionState>("checking");
@@ -51,7 +51,7 @@ export default function ResetPassword() {
   /**
    * Grava a nova senha e encerra a sessão temporária, exigindo login com a senha nova.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const onSubmit = async ({ password }: ResetForm): Promise<void> => {
     setError(null);

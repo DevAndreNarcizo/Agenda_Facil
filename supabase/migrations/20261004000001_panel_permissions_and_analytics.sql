@@ -8,7 +8,7 @@
 --    em SECURITY DEFINER). São recriadas como SECURITY INVOKER, sem parâmetro de tenant,
 --    sempre escopadas por private.current_organization_id() e pelo RLS.
 --
--- @author André Narcizo - andre.narcizo@sysout.com.br
+-- @author André Narcizo
 
 -- ---------------------------------------------------------------------------
 -- Helpers de papel

@@ -4,7 +4,7 @@ const compactCurrencyFormatter = new Intl.NumberFormat("pt-BR", { style: "curren
 /**
  * Formata valor em reais com espaço inseparável entre "R$" e o número (evita quebra de linha).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function formatCurrency(value: number, options: { compact?: boolean } = {}): string {
   const formatter = options.compact ? compactCurrencyFormatter : currencyFormatter;
@@ -14,7 +14,7 @@ export function formatCurrency(value: number, options: { compact?: boolean } = {
 /**
  * Gera iniciais (até 2 letras) a partir de um nome completo.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function getInitials(name: string | null | undefined): string {
   const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
@@ -27,7 +27,7 @@ export function getInitials(name: string | null | undefined): string {
 /**
  * Tempo relativo curto em pt-BR ("agora", "5 min", "2 h", "3 d").
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function formatRelativeShort(date: Date | string, now: Date = new Date()): string {
   const diffMinutes = Math.max(0, Math.round((now.getTime() - new Date(date).getTime()) / 60_000));
@@ -41,7 +41,7 @@ export function formatRelativeShort(date: Date | string, now: Date = new Date())
 /**
  * Converte telefone brasileiro em link do WhatsApp (wa.me), adicionando DDI 55 quando ausente.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function toWhatsAppUrl(phone: string | null | undefined): string | null {
   const digits = (phone ?? "").replace(/\D/g, "");
@@ -52,7 +52,7 @@ export function toWhatsAppUrl(phone: string | null | undefined): string | null {
 /**
  * Pluraliza um substantivo simples em pt-BR com base na contagem.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function plural(count: number, singular: string, pluralForm = `${singular}s`): string {
   return `${count} ${count === 1 ? singular : pluralForm}`;

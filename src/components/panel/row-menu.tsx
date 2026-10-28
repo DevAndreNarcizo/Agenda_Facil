@@ -13,7 +13,7 @@ export interface RowMenuItem {
 /**
  * Menu de ações por clique (três pontos, menu do usuário). Ação destrutiva sempre por último.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function RowMenu({ items, trigger, label = "Mais ações", align = "end", side = "bottom" }: {
   items: RowMenuItem[];

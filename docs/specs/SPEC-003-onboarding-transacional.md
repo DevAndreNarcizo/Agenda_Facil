@@ -1,5 +1,8 @@
 # SPEC-003 — Onboarding transacional e idempotente
 
+> Atualização25/10/2026: os estados remotos históricos abaixo não equivalem à homologação da migração. A implementação Angular/Laravel está na [SPEC-017](SPEC-017-migracao-saas.md), com diferenças verificadas no [AUDIT](../migration/AUDIT.md) e progresso em [STATUS](../implementation/STATUS.md). Preserve os invariantes desta SPEC e consulte os gates atuais antes de desativar o legado.
+
+
 **Status:** implementada e validada no ambiente remoto de teste
 **Prioridade:** P1
 

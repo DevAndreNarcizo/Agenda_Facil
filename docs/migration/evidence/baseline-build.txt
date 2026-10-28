@@ -1,0 +1,81 @@
+
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+vite v6.4.3 building for production...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+transforming...
+Browserslist: browsers data (caniuse-lite) is 11 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 1259 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                                        0.92 kB │ gzip:  0.44 kB
+dist/assets/plus-jakarta-sans-vietnamese-wght-normal-qRpaaN48.woff2    8.35 kB
+dist/assets/inter-vietnamese-wght-normal-CBcvBZtf.woff2               10.25 kB
+dist/assets/inter-greek-ext-wght-normal-DlzME5K_.woff2                11.23 kB
+dist/assets/inter-cyrillic-wght-normal-DqGufNeO.woff2                 18.75 kB
+dist/assets/inter-greek-wght-normal-CkhJZR-_.woff2                    19.00 kB
+dist/assets/plus-jakarta-sans-latin-ext-wght-normal-DmpS2jIq.woff2    21.73 kB
+dist/assets/inter-cyrillic-ext-wght-normal-BOeWTOD4.woff2             25.96 kB
+dist/assets/logo-mark-ByyWJJlN.png                                    26.81 kB
+dist/assets/plus-jakarta-sans-latin-wght-normal-eXO_dkmS.woff2        27.35 kB
+dist/assets/material-symbols-outlined-B-vo3RZu.woff2                  27.87 kB
+dist/assets/inter-latin-wght-normal-Dx4kXJAl.woff2                    48.26 kB
+dist/assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2                85.07 kB
+dist/assets/index-BlWM83Yu.css                                        71.70 kB │ gzip: 14.77 kB
+dist/assets/logo-mark-BoragyS2.js                                      0.06 kB │ gzip:  0.08 kB
+dist/assets/public-booking-source-BRSlPFRK.js                          0.23 kB │ gzip:  0.20 kB
+dist/assets/brand-color-BlbTUM5q.js                                    0.51 kB │ gzip:  0.36 kB
+dist/assets/use-period-summary-B2RPYXjl.js                             0.79 kB │ gzip:  0.48 kB
+dist/assets/format-yf66Dlg8.js                                         0.86 kB │ gzip:  0.51 kB
+dist/assets/badge-D92krUwr.js                                          0.88 kB │ gzip:  0.45 kB
+dist/assets/label-lY60GedV.js                                          0.94 kB │ gzip:  0.50 kB
+dist/assets/use-booking-source-metrics-C112qGLo.js                     1.05 kB │ gzip:  0.66 kB
+dist/assets/row-menu-BeBLiJog.js                                       1.36 kB │ gzip:  0.74 kB
+dist/assets/use-business-hours-Cnh_UKqk.js                             1.62 kB │ gzip:  0.87 kB
+dist/assets/use-services-CHPOy5rI.js                                   1.68 kB │ gzip:  0.77 kB
+dist/assets/portal-api-D54fNEpH.js                                     1.70 kB │ gzip:  0.76 kB
+dist/assets/ForgotPassword-yxv6-JBR.js                                 1.87 kB │ gzip:  1.02 kB
+dist/assets/use-employees-BdkwkyGe.js                                  1.97 kB │ gzip:  0.76 kB
+dist/assets/LoginPage-t1f7Nh70.js                                      2.07 kB │ gzip:  1.09 kB
+dist/assets/confirm-dialog-Kd_sHIYX.js                                 2.07 kB │ gzip:  0.96 kB
+dist/assets/button-CllqKrdc.js                                         2.32 kB │ gzip:  1.03 kB
+dist/assets/PortalLayout-DY2yMWBT.js                                   2.42 kB │ gzip:  1.09 kB
+dist/assets/ResetPassword-BbZO4GLC.js                                  2.71 kB │ gzip:  1.38 kB
+dist/assets/list-table-CTr0gB3F.js                                     2.95 kB │ gzip:  1.14 kB
+dist/assets/WhatsAppLoginPage-CP9mrHfD.js                              3.40 kB │ gzip:  1.59 kB
+dist/assets/agenda-time-sZEPsRhf.js                                    3.79 kB │ gzip:  1.52 kB
+dist/assets/use-organization-CAdlsGuD.js                               3.85 kB │ gzip:  1.59 kB
+dist/assets/SubscriptionPage-Onr80bo-.js                               4.37 kB │ gzip:  1.99 kB
+dist/assets/RegisterPage-BJi6YeJG.js                                   4.80 kB │ gzip:  2.25 kB
+dist/assets/use-appointments-BJBkIzxe.js                               5.86 kB │ gzip:  1.89 kB
+dist/assets/ServicesPage-C6cOPvUf.js                                   6.40 kB │ gzip:  2.57 kB
+dist/assets/EmployeesPage-DOoHqmcA.js                                  7.28 kB │ gzip:  2.93 kB
+dist/assets/PortalLogin-Wxz22Cz8.js                                    7.42 kB │ gzip:  2.41 kB
+dist/assets/PortalBooking-f0yGKxo_.js                                  7.63 kB │ gzip:  2.25 kB
+dist/assets/PublicBookingPage-ByZVRtvB.js                              7.81 kB │ gzip:  3.04 kB
+dist/assets/AnalyticsPage-CgTj4BoJ.js                                  8.60 kB │ gzip:  2.98 kB
+dist/assets/CustomersPage-C2guOKbu.js                                  8.82 kB │ gzip:  3.52 kB
+dist/assets/primitives-BI6ewNBS.js                                     9.28 kB │ gzip:  2.77 kB
+dist/assets/DashboardHome-CMoFMv5j.js                                  9.33 kB │ gzip:  3.57 kB
+dist/assets/DashboardLayout-C7yKmP7_.js                                9.35 kB │ gzip:  3.41 kB
+dist/assets/LegalPage-Bu_N9GtA.js                                     11.59 kB │ gzip:  4.67 kB
+dist/assets/ThemeCustomization-DzJjyxIp.js                            11.72 kB │ gzip:  3.15 kB
+dist/assets/PortalHome-D7F2OsJW.js                                    12.64 kB │ gzip:  3.94 kB
+dist/assets/auth-ui-aItddDmT.js                                       12.88 kB │ gzip:  4.79 kB
+dist/assets/SettingsPage-VroussXC.js                                  17.79 kB │ gzip:  6.31 kB
+dist/assets/format-DF3zju1I.js                                        20.78 kB │ gzip:  5.86 kB
+dist/assets/utils-CDN07tui.js                                         25.51 kB │ gzip:  8.18 kB
+dist/assets/OnboardingPage-Dsm4vK70.js                                26.22 kB │ gzip:  4.87 kB
+dist/assets/CalendarPage-BkreVPum.js                                  31.63 kB │ gzip: 10.06 kB
+dist/assets/vendor-query-DspsPVxo.js                                  40.41 kB │ gzip: 12.02 kB
+dist/assets/index-DMIkn6F2.js                                         46.05 kB │ gzip: 14.10 kB
+dist/assets/schemas-CXwPAo56.js                                       73.85 kB │ gzip: 22.33 kB
+dist/assets/vendor-radix-DvorWSlT.js                                 109.09 kB │ gzip: 30.51 kB
+dist/assets/vendor-supabase-DPpuXZKD.js                              176.74 kB │ gzip: 45.73 kB
+dist/assets/vendor-react-C3lmiQNl.js                                 233.93 kB │ gzip: 74.86 kB
+✓ built in 3.44s
+
+EXIT_CODE=0

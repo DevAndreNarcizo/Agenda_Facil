@@ -5,7 +5,7 @@ import { useThemeMode } from "@/hooks/use-theme-mode";
 /**
  * Toggle de tema claro/escuro usado nas telas fora do painel; compartilha estado via useThemeMode.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function ThemeToggle() {
   const { toggle } = useThemeMode();

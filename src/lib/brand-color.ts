@@ -3,7 +3,7 @@ const HEX_PATTERN = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
 /**
  * Valida uma cor hexadecimal (#rgb ou #rrggbb) vinda do banco antes de aplicá-la em CSS.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function isHexColor(value: string | null | undefined): value is string {
   return typeof value === "string" && HEX_PATTERN.test(value.trim());
@@ -13,7 +13,7 @@ export function isHexColor(value: string | null | undefined): value is string {
  * Converte #rrggbb no trio "H S% L%" usado pelas variáveis shadcn (`hsl(var(--primary))`).
  * Gravar o hex direto nessas variáveis gerava `hsl(#087bf5)`, uma cor inválida.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function hexToHslTriplet(hex: string): string {
   let value = hex.trim().replace("#", "");

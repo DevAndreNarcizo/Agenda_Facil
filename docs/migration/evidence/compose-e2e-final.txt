@@ -1,0 +1,65 @@
+E2E no Docker Compose completo - 2026-10-26T01:36:55.841877+00:00
+$ npm run test:e2e
+
+> web@0.0.0 test:e2e
+> playwright test
+
+
+Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › e2e/mvp.spec.ts:39:5 › landing e acesso se adaptam sem overflow em smartphone, tablet e desktop (1.7s)
+  ✘  2 [chromium] › e2e/mvp.spec.ts:65:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local (24.3s)
+
+
+  1) [chromium] › e2e/mvp.spec.ts:65:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('status').filter({ hasText: 'Se houver atendimentos' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('status').filter({ hasText: 'Se houver atendimentos' }) with timeout 5000ms
+      - waiting for getByRole('status').filter({ hasText: 'Se houver atendimentos' })
+
+
+      294 |   await expect(
+      295 |     visitor.getByRole('status').filter({ hasText: 'Se houver atendimentos' }),
+    > 296 |   ).toBeVisible();
+          |     ^
+      297 |   const inboxUrl = process.env['MAILPIT_API_URL'] || 'http://127.0.0.1:8025';
+      298 |   let mailId = '';
+      299 |   await expect
+        at /var/www/Agenda_Facil/apps/web/e2e/mvp.spec.ts:296:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mvp-ciclo-real-cadastro-re-a008a-indisponível-e-portal-local-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › e2e/mvp.spec.ts:65:5 › ciclo real: cadastro, reserva, agenda, cobrança indisponível e portal local 
+  1 passed (29.0s)
+(node:269483) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+EXIT_CODE=1
+
+REVALIDAÇÃO FINAL: ver apps/web/qa-evidence/frontend-e2e.txt, marcador COMPOSE PORTAL HTTP SYNCHRONIZATION.
+Comando: npm run test:e2e; exit 0; 2 testes aprovados em 20,2 s.
+A resposta HTTP 202 do portal e o corpo genérico são verificados antes do estado da interface. Nenhum timeout de assertion foi ampliado.

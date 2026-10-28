@@ -43,7 +43,7 @@ type RegisterForm = z.infer<typeof registerSchema>;
  * Cadastro do dono do negócio. O trigger `handle_new_user` cria a organização a partir de
  * `org_name`/`org_slug` dos metadados e o perfil como owner, então o painel abre já configurável.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +71,7 @@ export default function RegisterPage() {
    * Cria a conta. Com confirmação de e-mail ativa o Supabase não devolve sessão:
    * nesse caso mostramos o aviso em vez de mandar para uma rota protegida.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const onSubmit = async (data: RegisterForm): Promise<void> => {
     setError(null);

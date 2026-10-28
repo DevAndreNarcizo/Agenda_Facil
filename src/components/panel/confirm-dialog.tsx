@@ -5,7 +5,7 @@ import { PanelButton } from "@/components/panel/primitives";
  * Confirmação de ação destrutiva no padrão de voz do produto
  * ("Cancelar agendamento? O cliente será avisado.") — substitui window.confirm.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function ConfirmDialog({ open, title, description, confirmLabel, busy, onConfirm, onOpenChange }: {
   open: boolean;

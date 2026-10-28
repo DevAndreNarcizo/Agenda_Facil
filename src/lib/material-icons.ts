@@ -3,7 +3,7 @@
  * Ícones Material Symbols usados pelo app. A fonte em src/assets/fonts/material-symbols-outlined.woff2
  * contém exatamente estes glifos; rode `npm run icons:sync` ao usar um ícone novo.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export const MATERIAL_ICONS: readonly string[] = [
   '123',

@@ -1,5 +1,8 @@
 # SPEC-007 — Reserva pública e canais de aquisição
 
+> Atualização25/10/2026: os estados remotos históricos abaixo não equivalem à homologação da migração. A implementação Angular/Laravel está na [SPEC-017](SPEC-017-migracao-saas.md), com diferenças verificadas no [AUDIT](../migration/AUDIT.md) e progresso em [STATUS](../implementation/STATUS.md). Preserve os invariantes desta SPEC e consulte os gates atuais antes de desativar o legado.
+
+
 **Status:** em implementação
 **Prioridade:** P1
 **Dependências:** SPEC-002, SPEC-003 e SPEC-004

@@ -1,0 +1,151 @@
+name: Migração SaaS local
+
+on:
+  pull_request:
+  push:
+    branches: [main, 'migration/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18.6-bookworm
+        env:
+          POSTGRES_DB: agenda_facil_test
+          POSTGRES_USER: agenda_local
+          POSTGRES_PASSWORD: synthetic-local-only
+        ports: ['55439:5432']
+        options: >-
+          --health-cmd 'pg_isready -U agenda_local -d agenda_facil_test'
+          --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 55439
+      DB_DATABASE: agenda_facil_test
+      DB_USERNAME: agenda_local
+      DB_PASSWORD: synthetic-local-only
+      BILLING_ENABLED: 'false'
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_pgsql, pgsql, mbstring, intl, bcmath, zip, gd
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - run: composer validate --strict
+      - run: composer audit
+      - run: php artisan test
+      - run: vendor/bin/pint --test
+      - run: python3 scripts/migration/check-openapi.py
+        working-directory: .
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm test -- --watch=false
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high
+
+  infra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose config --quiet
+      - run: bash -n scripts/migration/verify-local-restore.sh
+      - run: bash -n scripts/migration/setup-local.sh
+
+  e2e:
+    needs: [api, web, infra]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18.6-bookworm
+        env:
+          POSTGRES_DB: agenda_facil
+          POSTGRES_USER: agenda_local
+          POSTGRES_PASSWORD: synthetic-local-only
+        ports: ['55439:5432']
+        options: >-
+          --health-cmd 'pg_isready -U agenda_local -d agenda_facil'
+          --health-interval 3s --health-timeout 3s --health-retries 20
+      mailpit:
+        image: axllent/mailpit:v1.32.0
+        ports: ['1025:1025', '8025:8025']
+    env:
+      APP_ENV: local
+      APP_DEBUG: 'false'
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      APP_URL: http://localhost:4200
+      FRONTEND_URL: http://localhost:4200
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 55439
+      DB_DATABASE: agenda_facil
+      DB_USERNAME: agenda_local
+      DB_PASSWORD: synthetic-local-only
+      SESSION_DRIVER: database
+      SESSION_SECURE_COOKIE: 'false'
+      SANCTUM_STATEFUL_DOMAINS: localhost:4200,127.0.0.1:4200
+      BILLING_ENABLED: 'false'
+      BILLING_HOMOLOGATED: 'false'
+      MAIL_MAILER: smtp
+      MAIL_HOST: 127.0.0.1
+      MAIL_PORT: 1025
+      MAIL_FROM_ADDRESS: no-reply@example.test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_pgsql, pgsql, mbstring, intl, bcmath, zip, gd
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: composer install --no-interaction --prefer-dist
+        working-directory: apps/api
+      - run: php artisan migrate --force
+        working-directory: apps/api
+      - name: Iniciar API sintética
+        working-directory: apps/api
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8000 --no-reload > "$RUNNER_TEMP/agenda-api.log" 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8000/up > /dev/null; then exit 0; fi
+            if [ "$attempt" -eq 30 ]; then exit 1; fi
+            sleep 1
+          done
+          exit 1
+      - run: npm ci
+        working-directory: apps/web
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - run: npm run test:e2e
+        working-directory: apps/web

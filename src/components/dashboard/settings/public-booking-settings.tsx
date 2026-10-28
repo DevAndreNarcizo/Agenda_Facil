@@ -47,7 +47,7 @@ function toggleId(ids: string[], id: string): string[] {
 /**
  * Lista de itens com switch (serviços/profissionais exibidos na reserva pública).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function ToggleList({ title, items, selected, onToggle, empty }: {
   title: string;

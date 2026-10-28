@@ -8,7 +8,7 @@ import { join } from 'node:path';
  * (scripts/data/material-symbols-names.txt). É um superconjunto seguro: cobre ícones
  * dinâmicos (mapas, ternários, props) sem depender de padrões frágeis de markup.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function scanMaterialIcons(rootDir) {
   const valid = new Set(
@@ -39,7 +39,7 @@ export function scanMaterialIcons(rootDir) {
 /**
  * Tamanho em bytes da fonte local de ícones (0 se ainda não foi gerada por `npm run icons:sync`).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function materialFontSize(rootDir) {
   const font = join(rootDir, 'src/assets/fonts/material-symbols-outlined.woff2');

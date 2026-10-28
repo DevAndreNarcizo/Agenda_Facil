@@ -16,7 +16,7 @@ type StatusFilter = "all" | "active" | "inactive";
 /**
  * Serviços: catálogo com busca, filtro de status, ativação e CRUD.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export default function ServicesPage() {
   const { services, loading, saveService, setServiceActive, deleteService, saving } = useServices();
@@ -44,7 +44,7 @@ export default function ServicesPage() {
   /**
    * Persiste o serviço e fecha o modal em caso de sucesso.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const handleSave = async (event: React.FormEvent) => {
     event.preventDefault();

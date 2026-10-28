@@ -19,7 +19,7 @@ const saoPauloDatePartsFormatter = new Intl.DateTimeFormat("en-US", {
 /**
  * Obtém os componentes de data de um instante no fuso operacional do produto.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function getSaoPauloDateParts(date: Date): SaoPauloDateParts | null {
   if (Number.isNaN(date.getTime())) {
@@ -41,7 +41,7 @@ function getSaoPauloDateParts(date: Date): SaoPauloDateParts | null {
 /**
  * Verifica se dois instantes pertencem ao mesmo dia em America/Sao_Paulo.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function isSameDayInSaoPaulo(date: Date, referenceDate: Date = new Date()): boolean {
   const dateParts = getSaoPauloDateParts(date);
@@ -57,7 +57,7 @@ export function isSameDayInSaoPaulo(date: Date, referenceDate: Date = new Date()
 /**
  * Formata um instante usando o fuso operacional America/Sao_Paulo.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function formatInSaoPaulo(
   date: Date,
@@ -81,7 +81,7 @@ export interface DashboardStats {
 /**
  * Calcula métricas operacionais sem incluir atendimentos cancelados.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function useDashboardStats(appointments: Appointment[]): DashboardStats {
   return useMemo(() => {

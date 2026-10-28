@@ -15,7 +15,7 @@ interface ServiceFormProps {
 /**
  * Modal de cadastro/edição de serviço (nome, preço, duração e descrição).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function ServiceForm({ isOpen, onOpenChange, isEditing, formData, onFormChange, onSubmit, saving }: ServiceFormProps) {
   const valid = formData.name.trim().length > 1 && formData.duration_minutes >= 5 && formData.price >= 0;

@@ -1,0 +1,11 @@
+Check supabase/functions/_shared/integrations.test.ts
+running 4 tests from ./supabase/functions/_shared/integrations.test.ts
+aceita apenas segredo interno idêntico ... ok (378µs)
+valida contrato restrito de template interno ... ok (215µs)
+rejeita template, correlationId e parâmetros inválidos ... ok (21ms)
+exige uma organização afetada antes de confirmar webhook ... ok (91µs)
+
+ok | 4 passed | 0 failed (24ms)
+
+
+EXIT_CODE=0

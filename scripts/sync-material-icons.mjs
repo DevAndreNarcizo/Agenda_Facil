@@ -11,7 +11,7 @@ import { scanMaterialIcons } from './material-icons-scan.mjs';
  * Hospedar a fonte evita depender do Google em tempo de execução (rede bloqueada, CSP, LGPD).
  * Uso: npm run icons:sync (o teste material-icons.test.ts indica quando é necessário).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const icons = scanMaterialIcons(root);
@@ -24,7 +24,7 @@ writeFileSync(
  * Ícones Material Symbols usados pelo app. A fonte em src/assets/fonts/material-symbols-outlined.woff2
  * contém exatamente estes glifos; rode \`npm run icons:sync\` ao usar um ícone novo.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export const MATERIAL_ICONS: readonly string[] = [
 ${body}

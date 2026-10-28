@@ -1,0 +1,7 @@
+
+> frontend@0.0.0 lint
+> eslint .
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+
+EXIT_CODE=0

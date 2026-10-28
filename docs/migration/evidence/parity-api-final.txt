@@ -1,0 +1,68 @@
+
+## 2026-10-26T09:33:20.232600+00:00
+COMMAND: php artisan test --filter OnboardingParity|MembershipsParity
+{"tool":"phpunit","result":"failed","tests":17,"passed":15,"assertions":197,"duration_ms":3550,"failed":2,"failures":[{"test":"Tests\\Feature\\MembershipsParityTest::test_failed_activation_preserves_current_session_and_last_owner_protections","file":"/var/www/Agenda_Facil/apps/api/tests/Feature/MembershipsParityTest.php","line":156,"message":"Expected response status code [422] but received 429.\nFailed asserting that 429 is identical to 422.","trace":["/var/www/Agenda_Facil/apps/api/vendor/laravel/framework/src/Illuminate/Testing/TestResponseAssert.php:46","/var/www/Agenda_Facil/apps/api/tests/Feature/MembershipsParityTest.php:156"]},{"test":"Tests\\Feature\\OnboardingParityTest::test_privileged_fields_and_unknown_nested_fields_are_rejected_before_any_provisioning","file":"/var/www/Agenda_Facil/apps/api/tests/Feature/OnboardingParityTest.php","line":64,"message":"Expected response status code [422] but received 429.\nFailed asserting that 429 is identical to 422.","trace":["/var/www/Agenda_Facil/apps/api/vendor/laravel/framework/src/Illuminate/Testing/TestResponseAssert.php:46","/var/www/Agenda_Facil/apps/api/tests/Feature/OnboardingParityTest.php:64"]}]}
+
+EXIT_CODE=1
+DURATION_SECONDS=3.83
+
+## 2026-10-26T09:38:07.446138+00:00
+COMMAND: php artisan test --filter OnboardingParity|MembershipsParity|Branding|ApiLocale|SecurityBoundaries
+{"tool":"phpunit","result":"passed","tests":33,"passed":33,"assertions":359,"duration_ms":4340}
+
+EXIT_CODE=0
+DURATION_SECONDS=4.63
+
+## 2026-10-26T09:40:13.582802+00:00
+COMMAND: php artisan test
+{"tool":"phpunit","result":"passed","tests":99,"passed":99,"assertions":823,"duration_ms":19041}
+
+EXIT_CODE=0
+DURATION_SECONDS=19.31
+
+## 2026-10-26T09:40:57.154191+00:00
+COMMAND: vendor/bin/pint --test
+{"tool":"pint","result":"passed"}
+EXIT_CODE=0
+DURATION_SECONDS=0.75
+
+## 2026-10-26T09:40:57.318442+00:00
+COMMAND: composer validate --strict
+./composer.json is valid
+
+EXIT_CODE=0
+DURATION_SECONDS=0.16
+
+## 2026-10-26T09:40:57.453468+00:00
+COMMAND: composer check-platform-reqs
+Checking platform requirements for packages in the vendor dir
+composer-runtime-api 2.2.2      success                                       
+ext-ctype            *          success provided by symfony/polyfill-ctype    
+ext-dom              20031129   success                                       
+ext-fileinfo         8.5.11     success                                       
+ext-filter           8.5.11     success                                       
+ext-gd               8.5.11     success                                       
+ext-hash             8.5.11     success                                       
+ext-iconv            8.5.11     success                                       
+ext-json             8.5.11     success                                       
+ext-libxml           8.5.11     success                                       
+ext-mbstring         *          success provided by symfony/polyfill-mbstring 
+ext-openssl          8.5.11     success                                       
+ext-pcre             8.5.11     success                                       
+ext-phar             8.5.11     success                                       
+ext-session          8.5.11     success                                       
+ext-simplexml        8.5.11     success                                       
+ext-tokenizer        8.5.11     success                                       
+ext-xml              8.5.11     success                                       
+ext-xmlwriter        8.5.11     success                                       
+php                  8.5.11     success                                       
+
+EXIT_CODE=0
+DURATION_SECONDS=0.13
+
+## 2026-10-26T09:40:58.314435+00:00
+COMMAND: composer audit
+No security vulnerability advisories found.
+
+EXIT_CODE=0
+DURATION_SECONDS=0.86

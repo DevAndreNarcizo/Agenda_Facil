@@ -19,7 +19,7 @@ interface EmployeeFormProps {
 /**
  * Modal "Convidar profissional": cria a conta de acesso do membro da equipe (validação zod).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function EmployeeForm({ isOpen, onOpenChange, form, onSubmit, creating }: EmployeeFormProps) {
   const { register, handleSubmit, formState: { errors } } = form;

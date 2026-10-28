@@ -3,7 +3,7 @@
  * Separado do layout para que revisões jurídicas alterem só texto, sem tocar em componentes.
  * Ao mudar o conteúdo, atualize LEGAL_UPDATED_AT.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 
 export const LEGAL_UPDATED_AT = "5 de outubro de 2026";

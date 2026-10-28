@@ -1,0 +1,82 @@
+name: agenda-facil-migration
+
+services:
+  postgres:
+    image: postgres:18.6-bookworm
+    environment:
+      POSTGRES_DB: agenda_facil
+      POSTGRES_USER: agenda_local
+      POSTGRES_PASSWORD: synthetic-local-only
+    ports:
+      - '127.0.0.1:55439:5432'
+    volumes:
+      - migration_pgdata:/var/lib/postgresql
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/01-test-database.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U agenda_local -d agenda_facil']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: ../../infra/api.Dockerfile
+    working_dir: /app
+    user: '${LOCAL_UID:-1000}:${LOCAL_GID:-1000}'
+    volumes:
+      - ./apps/api:/app
+    environment:
+      APP_ENV: local
+      APP_DEBUG: 'true'
+      APP_URL: http://localhost:4200
+      DB_CONNECTION: pgsql
+      DB_URL: ''
+      DB_HOST: postgres
+      DB_PORT: '5432'
+      DB_DATABASE: agenda_facil
+      DB_USERNAME: agenda_local
+      DB_PASSWORD: synthetic-local-only
+      SESSION_DRIVER: database
+      SESSION_SECURE_COOKIE: 'false'
+      SANCTUM_STATEFUL_DOMAINS: localhost:4200,127.0.0.1:4200
+      BILLING_ENABLED: 'false'
+      BILLING_HOMOLOGATED: 'false'
+      FILES_PRIVATE_DISK: local
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: '1025'
+      MAIL_FROM_ADDRESS: no-reply@example.test
+      MAIL_FROM_NAME: Agenda Fácil local
+    ports:
+      - '127.0.0.1:8000:8000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: php artisan serve --host=0.0.0.0 --port=8000 --no-reload
+
+  web:
+    image: node:24-bookworm-slim
+    working_dir: /app
+    user: '${LOCAL_UID:-1000}:${LOCAL_GID:-1000}'
+    volumes:
+      - ./apps/web:/app
+    environment:
+      API_PROXY_TARGET: http://api:8000
+      NPM_CONFIG_CACHE: /tmp/agenda-npm-cache
+    ports:
+      - '127.0.0.1:4200:4200'
+    depends_on:
+      - api
+    command: npm start -- --host 0.0.0.0 --port 4200
+
+  mailpit:
+    image: axllent/mailpit:v1.32.0
+    ports:
+      - '127.0.0.1:8025:8025'
+    environment:
+      MP_MAX_MESSAGES: '100'
+
+
+volumes:
+  migration_pgdata:

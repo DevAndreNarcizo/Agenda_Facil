@@ -26,7 +26,7 @@ const LAST_START = 24 * 60 - STEP;
 /**
  * Chip de seleção única (serviço, profissional): selecionado em tinta cheia, demais com contorno.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function Chip({ selected, onClick, children, ...data }: { selected: boolean; onClick: () => void; children: ReactNode; "data-service-id"?: string }) {
   return (
@@ -51,7 +51,7 @@ function Chip({ selected, onClick, children, ...data }: { selected: boolean; onC
  * término calculado pela duração do serviço e aviso de conflito antes de enviar.
  * A validação definitiva continua na Edge Function (fonte da verdade).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function AppointmentDialog({ draft, services, employees, items, saving, onClose, onSubmit }: {
   draft: AppointmentDraft;

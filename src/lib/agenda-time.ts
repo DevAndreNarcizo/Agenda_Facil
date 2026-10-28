@@ -28,7 +28,7 @@ const WEEKDAY_INDEX: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, 
  * Decompõe um instante nas partes civis do fuso operacional (America/Sao_Paulo).
  * Base para posicionar eventos na grade da agenda independente do fuso do navegador.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function getZonedParts(date: Date): ZonedParts {
   const values = Object.fromEntries(
@@ -46,7 +46,7 @@ export function getZonedParts(date: Date): ZonedParts {
  * Converte data civil + minutos locais de São Paulo no instante UTC correspondente.
  * Reaproveita o cálculo de meia-noite já validado em appointment-filters.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function zonedDateTimeToUtc(dateKey: string, minutes: number): Date {
   const midnight = getAppointmentUtcRange(dateKey, "day").start;
@@ -56,7 +56,7 @@ export function zonedDateTimeToUtc(dateKey: string, minutes: number): Date {
 /**
  * Soma dias a uma data civil sem passar pelo fuso do navegador.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function addDaysToKey(dateKey: string, days: number): string {
   const [year, month, day] = dateKey.split("-").map(Number);
@@ -67,7 +67,7 @@ export function addDaysToKey(dateKey: string, days: number): string {
 /**
  * Retorna o dia da semana (0 = domingo) de uma data civil.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function weekdayOfKey(dateKey: string): number {
   const [year, month, day] = dateKey.split("-").map(Number);
@@ -77,7 +77,7 @@ export function weekdayOfKey(dateKey: string): number {
 /**
  * Segunda-feira da semana que contém a data informada (convenção pt-BR do painel).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function mondayOfWeek(dateKey: string): string {
   const weekday = weekdayOfKey(dateKey);
@@ -87,7 +87,7 @@ export function mondayOfWeek(dateKey: string): string {
 /**
  * Data civil de hoje no fuso operacional.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function todayKey(): string {
   return getZonedParts(new Date()).dateKey;
@@ -96,7 +96,7 @@ export function todayKey(): string {
 /**
  * Formata minutos locais como HH:MM.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function formatMinutes(minutes: number): string {
   const safe = Math.max(0, Math.round(minutes));
@@ -106,7 +106,7 @@ export function formatMinutes(minutes: number): string {
 /**
  * Converte "HH:MM[:SS]" (coluna time do Postgres) em minutos.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function timeToMinutes(value: string): number {
   const [hours, minutes] = value.split(":").map(Number);
@@ -116,7 +116,7 @@ export function timeToMinutes(value: string): number {
 /**
  * Formata uma data civil com Intl em pt-BR, ancorada ao meio-dia UTC para não sofrer deslocamento.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function formatDateKey(dateKey: string, options: Intl.DateTimeFormatOptions): string {
   return new Intl.DateTimeFormat("pt-BR", { ...options, timeZone: "UTC" })
@@ -127,7 +127,7 @@ export function formatDateKey(dateKey: string, options: Intl.DateTimeFormatOptio
 /**
  * Formata um instante no fuso operacional em pt-BR (sem pontos de abreviação).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function formatInstant(date: Date | string, options: Intl.DateTimeFormatOptions): string {
   return new Intl.DateTimeFormat("pt-BR", { ...options, timeZone: AGENDA_TIME_ZONE })

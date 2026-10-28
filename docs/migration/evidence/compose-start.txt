@@ -1,0 +1,266 @@
+ Image axllent/mailpit:v1.32.0 Pulling 
+ bb74c0cfe3af Pulling fs layer 0B
+ 7b229517ed22 Pulling fs layer 0B
+ 6d36f2406fac Pulling fs layer 0B
+ 44136fa355b3 Already exists 0B
+ bb74c0cfe3af Download complete 0B
+ 6d36f2406fac Downloading 10.38MB
+ 12041d2ecb72 Download complete 0B
+ 7b229517ed22 Download complete 0B
+ 7b229517ed22 Extracting 1B
+ 7b229517ed22 Extracting 1B
+ 6d36f2406fac Download complete 0B
+ 7b229517ed22 Extracting 1B
+ 7b229517ed22 Pull complete 0B
+ 6d36f2406fac Extracting 1B
+ 6d36f2406fac Extracting 1B
+ 6d36f2406fac Pull complete 0B
+ bb74c0cfe3af Pull complete 0B
+ Image axllent/mailpit:v1.32.0 Pulled 
+ Image agenda-facil-migration-api Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 531B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from api.Dockerfile
+#2 transferring dockerfile:
+#2 transferring dockerfile: 440B done
+#2 DONE 0.2s
+
+#3 [internal] load metadata for docker.io/library/php:8.5-cli-bookworm
+#3 DONE 2.6s
+
+#4 [internal] load metadata for docker.io/library/composer:2
+#4 DONE 3.7s
+
+#5 [internal] load .dockerignore
+#5 transferring context:
+#5 transferring context: 2B done
+#5 DONE 0.4s
+
+#6 FROM docker.io/library/composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc
+#6 resolve docker.io/library/composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc
+#6 resolve docker.io/library/composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc 0.2s done
+#6 DONE 0.3s
+
+#7 [stage-0 1/4] FROM docker.io/library/php:8.5-cli-bookworm@sha256:d4f6e10eb393de7e3a7a88e8b88e139072dd3ae297f6a5dada8257e6fe32c585
+#7 resolve docker.io/library/php:8.5-cli-bookworm@sha256:d4f6e10eb393de7e3a7a88e8b88e139072dd3ae297f6a5dada8257e6fe32c585
+#7 resolve docker.io/library/php:8.5-cli-bookworm@sha256:d4f6e10eb393de7e3a7a88e8b88e139072dd3ae297f6a5dada8257e6fe32c585 0.2s done
+#7 DONE 3.3s
+
+#6 FROM docker.io/library/composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc
+#6 ...
+
+#7 [stage-0 1/4] FROM docker.io/library/php:8.5-cli-bookworm@sha256:d4f6e10eb393de7e3a7a88e8b88e139072dd3ae297f6a5dada8257e6fe32c585
+#7 extracting sha256:11422d7ca1a44390a32bd8d8d9dc5946b4d053b3bbd9507d682e35584ba84a26 1.7s done
+#7 sha256:7c89e792fdfb436a90cf031adfc2cb6892428af5c6419b093e6dc58df87a5853 246B / 246B 0.3s done
+#7 sha256:177f0db12d09130fb2f23b6e0b613abae7e2faea2d9a25cd125dbf551082b0b2 2.46kB / 2.46kB 0.6s done
+#7 sha256:aa7873257d3a641ecd6a49fad45a4aa2a4a337ca9fe646c33cc8f0f1fee14f00 43.12MB / 43.12MB 1.8s done
+#7 sha256:1abab2c58b8f65bfe2070d4dc5a2b922532c3f1390354693c32112cfe314ac50 489B / 489B 0.4s done
+#7 sha256:e123c8e56190bdd36d12685b43467683c0e63f222dd9753f42f314c9a9cf3048 6.29MB / 14.67MB 1.5s
+#7 sha256:45943b3fcdd95ec3ad58b6c9206f0e10d07bc3cb52f65a81a2e05c780459e5ff 225B / 225B 0.6s done
+#7 sha256:be1ffbd514582eb483a56beecdfa5f7ff5197e4a2c2f418128ab715963829964 0B / 104.16MB 0.8s
+#7 sha256:a8039f3a0e53f1c229487d0517373be1e5430586fd7a6540d422636e968ff2a2 0B / 226B 0.2s
+#7 sha256:be1ffbd514582eb483a56beecdfa5f7ff5197e4a2c2f418128ab715963829964 11.53MB / 104.16MB 1.1s
+#7 sha256:e123c8e56190bdd36d12685b43467683c0e63f222dd9753f42f314c9a9cf3048 7.34MB / 14.67MB 1.8s
+#7 sha256:be1ffbd514582eb483a56beecdfa5f7ff5197e4a2c2f418128ab715963829964 18.87MB / 104.16MB 1.2s
+#7 sha256:a8039f3a0e53f1c229487d0517373be1e5430586fd7a6540d422636e968ff2a2 226B / 226B 0.4s done
+#7 sha256:e123c8e56190bdd36d12685b43467683c0e63f222dd9753f42f314c9a9cf3048 8.39MB / 14.67MB 2.1s
+#7 sha256:e123c8e56190bdd36d12685b43467683c0e63f222dd9753f42f314c9a9cf3048 9.44MB / 14.67MB 2.3s
+#7 extracting sha256:a8039f3a0e53f1c229487d0517373be1e5430586fd7a6540d422636e968ff2a2
+#7 sha256:be1ffbd514582eb483a56beecdfa5f7ff5197e4a2c2f418128ab715963829964 29.36MB / 104.16MB 1.7s
+#7 extracting sha256:a8039f3a0e53f1c229487d0517373be1e5430586fd7a6540d422636e968ff2a2 0.2s done
+#7 sha256:e123c8e56190bdd36d12685b43467683c0e63f222dd9753f42f314c9a9cf3048 11.53MB / 14.67MB 2.6s
+#7 sha256:e123c8e56190bdd36d12685b43467683c0e63f222dd9753f42f314c9a9cf3048 12.58MB / 14.67MB 2.7s
+#7 sha256:be1ffbd514582eb483a56beecdfa5f7ff5197e4a2c2f418128ab715963829964 35.65MB / 104.16MB 2.0s
+#7 sha256:e123c8e56190bdd36d12685b43467683c0e63f222dd9753f42f314c9a9cf3048 13.63MB / 14.67MB 2.9s
+#7 sha256:be1ffbd514582eb483a56beecdfa5f7ff5197e4a2c2f418128ab715963829964 41.94MB / 104.16MB 2.1s
+#7 sha256:be1ffbd514582eb483a56beecdfa5f7ff5197e4a2c2f418128ab715963829964 47.19MB / 104.16MB 2.3s
+#7 sha256:e123c8e56190bdd36d12685b43467683c0e63f222dd9753f42f314c9a9cf3048 14.67MB / 14.67MB 3.3s
+#7 sha256:e123c8e56190bdd36d12685b43467683c0e63f222dd9753f42f314c9a9cf3048 14.67MB / 14.67MB 3.4s done
+#7 sha256:be1ffbd514582eb483a56beecdfa5f7ff5197e4a2c2f418128ab715963829964 55.57MB / 104.16MB 2.7s
+#7 sha256:be1ffbd514582eb483a56beecdfa5f7ff5197e4a2c2f418128ab715963829964 62.91MB / 104.16MB 2.9s
+#7 sha256:be1ffbd514582eb483a56beecdfa5f7ff5197e4a2c2f418128ab715963829964 69.21MB / 104.16MB 3.0s
+#7 sha256:be1ffbd514582eb483a56beecdfa5f7ff5197e4a2c2f418128ab715963829964 79.69MB / 104.16MB 3.3s
+#7 sha256:be1ffbd514582eb483a56beecdfa5f7ff5197e4a2c2f418128ab715963829964 88.08MB / 104.16MB 3.6s
+#7 sha256:be1ffbd514582eb483a56beecdfa5f7ff5197e4a2c2f418128ab715963829964 97.52MB / 104.16MB 3.9s
+#7 sha256:be1ffbd514582eb483a56beecdfa5f7ff5197e4a2c2f418128ab715963829964 102.76MB / 104.16MB 4.1s
+#7 sha256:be1ffbd514582eb483a56beecdfa5f7ff5197e4a2c2f418128ab715963829964 104.16MB / 104.16MB 4.4s done
+#7 DONE 9.0s
+
+#6 FROM docker.io/library/composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc
+#6 extracting sha256:7b229517ed222597277036d94892173207d01a731ab3a88eeb1de2e963a2c788 0.7s done
+#6 sha256:1de1d7173b3ddc39c5aebcde13f0cd34a87383b430a5d2f2a2c9a24cb78637a7 93B / 93B 0.6s done
+#6 sha256:7f74eb6cec96f39fdd165433022c18559627da25556e736df0540a6e8c407329 419B / 419B 0.6s done
+#6 sha256:cdd67603561ab14d35eefb1000a1d5a733833aed722df534cb39d65b7cfa4473 1.08MB / 1.08MB 1.6s done
+#6 sha256:af99faf7c2c48317708295cfff82a02528e9f697300b456353efeb97b4d932b7 256B / 256B 0.5s done
+#6 sha256:931a74607c60af9476a216136c60bccca9daf3429bc95de79e7dff5a4d0e9e13 11.53MB / 32.00MB 1.7s
+#6 sha256:6cda05494a4f87da8838d70692427889af18083405f03cb926211ece66107cdc 2.45kB / 2.45kB 0.6s done
+#6 sha256:6044f6b455c81c7b7e479f51a06a2742bcca49eed7f0917c51c4ab0d2b9df650 22.36kB / 22.36kB 0.5s done
+#6 sha256:bc76ccfcd45bf400236f2db0f8239b29907ccaa8bb0fa42f4d4b5e115cb8cbf9 0B / 22.91MB 0.2s
+#6 sha256:931a74607c60af9476a216136c60bccca9daf3429bc95de79e7dff5a4d0e9e13 15.73MB / 32.00MB 1.8s
+#6 sha256:885fc261a1a10bba4027457db8b8108658f2ce839cc0442070db12eb475c6632 0B / 487B 0.2s
+#6 sha256:87a137d44a72ff85dcecc5762b37ebe8661a17e4798f7cf59d124c8098d9e928 0B / 215B 0.2s
+#6 sha256:931a74607c60af9476a216136c60bccca9daf3429bc95de79e7dff5a4d0e9e13 24.12MB / 32.00MB 2.0s
+#6 sha256:931a74607c60af9476a216136c60bccca9daf3429bc95de79e7dff5a4d0e9e13 26.21MB / 32.00MB 2.1s
+#6 sha256:885fc261a1a10bba4027457db8b8108658f2ce839cc0442070db12eb475c6632 487B / 487B 0.4s done
+#6 sha256:87a137d44a72ff85dcecc5762b37ebe8661a17e4798f7cf59d124c8098d9e928 215B / 215B 0.5s
+#6 sha256:931a74607c60af9476a216136c60bccca9daf3429bc95de79e7dff5a4d0e9e13 32.00MB / 32.00MB 2.3s
+#6 sha256:87a137d44a72ff85dcecc5762b37ebe8661a17e4798f7cf59d124c8098d9e928 215B / 215B 0.5s done
+#6 sha256:445b9af79994b4888ee58cb173cc36114acdef2a015f895661e43602c1e9ed38 0B / 14.58MB 0.2s
+#6 sha256:445b9af79994b4888ee58cb173cc36114acdef2a015f895661e43602c1e9ed38 2.36MB / 14.58MB 0.3s
+#6 sha256:931a74607c60af9476a216136c60bccca9daf3429bc95de79e7dff5a4d0e9e13 32.00MB / 32.00MB 2.5s done
+#6 sha256:445b9af79994b4888ee58cb173cc36114acdef2a015f895661e43602c1e9ed38 9.44MB / 14.58MB 0.5s
+#6 sha256:445b9af79994b4888ee58cb173cc36114acdef2a015f895661e43602c1e9ed38 14.58MB / 14.58MB 0.6s
+#6 sha256:445b9af79994b4888ee58cb173cc36114acdef2a015f895661e43602c1e9ed38 14.58MB / 14.58MB 0.7s done
+#6 sha256:2c8980f3dbe0d688f813899b22c18938c913dd1fa4ea8b5432c84db8af5299c5 0B / 932B 0.2s
+#6 sha256:376608520fec13724c5434a1ded7eb9031a39b655141a2e04968e0fbe586fdbc 0B / 3.49MB 0.2s
+#6 sha256:376608520fec13724c5434a1ded7eb9031a39b655141a2e04968e0fbe586fdbc 3.49MB / 3.49MB 0.3s
+#6 sha256:bc76ccfcd45bf400236f2db0f8239b29907ccaa8bb0fa42f4d4b5e115cb8cbf9 2.10MB / 22.91MB 1.7s
+#6 sha256:2c8980f3dbe0d688f813899b22c18938c913dd1fa4ea8b5432c84db8af5299c5 932B / 932B 0.3s done
+#6 sha256:376608520fec13724c5434a1ded7eb9031a39b655141a2e04968e0fbe586fdbc 3.49MB / 3.49MB 0.7s done
+#6 sha256:bc76ccfcd45bf400236f2db0f8239b29907ccaa8bb0fa42f4d4b5e115cb8cbf9 4.19MB / 22.91MB 2.1s
+#6 extracting sha256:376608520fec13724c5434a1ded7eb9031a39b655141a2e04968e0fbe586fdbc
+#6 sha256:bc76ccfcd45bf400236f2db0f8239b29907ccaa8bb0fa42f4d4b5e115cb8cbf9 7.34MB / 22.91MB 2.4s
+#6 extracting sha256:376608520fec13724c5434a1ded7eb9031a39b655141a2e04968e0fbe586fdbc 0.4s done
+#6 sha256:bc76ccfcd45bf400236f2db0f8239b29907ccaa8bb0fa42f4d4b5e115cb8cbf9 9.44MB / 22.91MB 2.6s
+#6 extracting sha256:2c8980f3dbe0d688f813899b22c18938c913dd1fa4ea8b5432c84db8af5299c5
+#6 sha256:bc76ccfcd45bf400236f2db0f8239b29907ccaa8bb0fa42f4d4b5e115cb8cbf9 11.53MB / 22.91MB 2.7s
+#6 sha256:bc76ccfcd45bf400236f2db0f8239b29907ccaa8bb0fa42f4d4b5e115cb8cbf9 14.68MB / 22.91MB 2.9s
+#6 sha256:bc76ccfcd45bf400236f2db0f8239b29907ccaa8bb0fa42f4d4b5e115cb8cbf9 18.87MB / 22.91MB 3.0s
+#6 sha256:bc76ccfcd45bf400236f2db0f8239b29907ccaa8bb0fa42f4d4b5e115cb8cbf9 21.50MB / 22.91MB 3.2s
+#6 extracting sha256:2c8980f3dbe0d688f813899b22c18938c913dd1fa4ea8b5432c84db8af5299c5 0.5s done
+#6 extracting sha256:87a137d44a72ff85dcecc5762b37ebe8661a17e4798f7cf59d124c8098d9e928
+#6 sha256:bc76ccfcd45bf400236f2db0f8239b29907ccaa8bb0fa42f4d4b5e115cb8cbf9 22.91MB / 22.91MB 3.3s
+#6 extracting sha256:87a137d44a72ff85dcecc5762b37ebe8661a17e4798f7cf59d124c8098d9e928 0.4s done
+#6 sha256:bc76ccfcd45bf400236f2db0f8239b29907ccaa8bb0fa42f4d4b5e115cb8cbf9 22.91MB / 22.91MB 3.5s done
+#6 extracting sha256:445b9af79994b4888ee58cb173cc36114acdef2a015f895661e43602c1e9ed38
+#6 extracting sha256:445b9af79994b4888ee58cb173cc36114acdef2a015f895661e43602c1e9ed38 0.7s done
+#6 DONE 13.2s
+
+#7 [stage-0 1/4] FROM docker.io/library/php:8.5-cli-bookworm@sha256:d4f6e10eb393de7e3a7a88e8b88e139072dd3ae297f6a5dada8257e6fe32c585
+#7 extracting sha256:be1ffbd514582eb483a56beecdfa5f7ff5197e4a2c2f418128ab715963829964
+#7 extracting sha256:be1ffbd514582eb483a56beecdfa5f7ff5197e4a2c2f418128ab715963829964 3.9s done
+#7 DONE 12.9s
+
+#6 FROM docker.io/library/composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc
+#6 extracting sha256:885fc261a1a10bba4027457db8b8108658f2ce839cc0442070db12eb475c6632
+#6 extracting sha256:885fc261a1a10bba4027457db8b8108658f2ce839cc0442070db12eb475c6632 0.3s done
+#6 extracting sha256:bc76ccfcd45bf400236f2db0f8239b29907ccaa8bb0fa42f4d4b5e115cb8cbf9
+#6 ...
+
+#7 [stage-0 1/4] FROM docker.io/library/php:8.5-cli-bookworm@sha256:d4f6e10eb393de7e3a7a88e8b88e139072dd3ae297f6a5dada8257e6fe32c585
+#7 extracting sha256:45943b3fcdd95ec3ad58b6c9206f0e10d07bc3cb52f65a81a2e05c780459e5ff 0.3s done
+#7 DONE 13.2s
+
+#7 [stage-0 1/4] FROM docker.io/library/php:8.5-cli-bookworm@sha256:d4f6e10eb393de7e3a7a88e8b88e139072dd3ae297f6a5dada8257e6fe32c585
+#7 extracting sha256:e123c8e56190bdd36d12685b43467683c0e63f222dd9753f42f314c9a9cf3048
+#7 extracting sha256:e123c8e56190bdd36d12685b43467683c0e63f222dd9753f42f314c9a9cf3048 0.3s done
+#7 DONE 13.5s
+
+#6 FROM docker.io/library/composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc
+#6 ...
+
+#7 [stage-0 1/4] FROM docker.io/library/php:8.5-cli-bookworm@sha256:d4f6e10eb393de7e3a7a88e8b88e139072dd3ae297f6a5dada8257e6fe32c585
+#7 extracting sha256:1abab2c58b8f65bfe2070d4dc5a2b922532c3f1390354693c32112cfe314ac50 0.3s done
+#7 extracting sha256:aa7873257d3a641ecd6a49fad45a4aa2a4a337ca9fe646c33cc8f0f1fee14f00
+#7 ...
+
+#6 FROM docker.io/library/composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc
+#6 extracting sha256:bc76ccfcd45bf400236f2db0f8239b29907ccaa8bb0fa42f4d4b5e115cb8cbf9 55.4s done
+#6 DONE 68.8s
+
+#6 FROM docker.io/library/composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc
+#6 extracting sha256:6cda05494a4f87da8838d70692427889af18083405f03cb926211ece66107cdc
+#6 extracting sha256:6cda05494a4f87da8838d70692427889af18083405f03cb926211ece66107cdc 1.2s done
+#6 extracting sha256:6044f6b455c81c7b7e479f51a06a2742bcca49eed7f0917c51c4ab0d2b9df650
+#6 ...
+
+#7 [stage-0 1/4] FROM docker.io/library/php:8.5-cli-bookworm@sha256:d4f6e10eb393de7e3a7a88e8b88e139072dd3ae297f6a5dada8257e6fe32c585
+#7 extracting sha256:aa7873257d3a641ecd6a49fad45a4aa2a4a337ca9fe646c33cc8f0f1fee14f00 55.0s done
+#7 extracting sha256:177f0db12d09130fb2f23b6e0b613abae7e2faea2d9a25cd125dbf551082b0b2 1.2s done
+#7 DONE 70.0s
+
+#7 [stage-0 1/4] FROM docker.io/library/php:8.5-cli-bookworm@sha256:d4f6e10eb393de7e3a7a88e8b88e139072dd3ae297f6a5dada8257e6fe32c585
+#7 extracting sha256:7c89e792fdfb436a90cf031adfc2cb6892428af5c6419b093e6dc58df87a5853
+#7 ...
+
+#6 FROM docker.io/library/composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc
+#6 extracting sha256:6044f6b455c81c7b7e479f51a06a2742bcca49eed7f0917c51c4ab0d2b9df650 0.8s done
+#6 DONE 70.8s
+
+#7 [stage-0 1/4] FROM docker.io/library/php:8.5-cli-bookworm@sha256:d4f6e10eb393de7e3a7a88e8b88e139072dd3ae297f6a5dada8257e6fe32c585
+#7 extracting sha256:7c89e792fdfb436a90cf031adfc2cb6892428af5c6419b093e6dc58df87a5853 0.5s done
+#7 DONE 70.5s
+
+#6 FROM docker.io/library/composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc
+#6 extracting sha256:931a74607c60af9476a216136c60bccca9daf3429bc95de79e7dff5a4d0e9e13
+#6 ...
+
+#8 [stage-0 2/4] RUN apt-get update     && apt-get install -y --no-install-recommends libpq-dev libzip-dev libicu-dev unzip git     && docker-php-ext-install pdo_pgsql pgsql bcmath intl zip pcntl     && rm -rf /var/lib/apt/lists/*
+#8 ...
+
+#6 FROM docker.io/library/composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc
+#6 extracting sha256:931a74607c60af9476a216136c60bccca9daf3429bc95de79e7dff5a4d0e9e13 52.9s done
+#6 extracting sha256:af99faf7c2c48317708295cfff82a02528e9f697300b456353efeb97b4d932b7
+#6 extracting sha256:af99faf7c2c48317708295cfff82a02528e9f697300b456353efeb97b4d932b7 1.3s done
+#6 extracting sha256:cdd67603561ab14d35eefb1000a1d5a733833aed722df534cb39d65b7cfa4473
+#6 extracting sha256:cdd67603561ab14d35eefb1000a1d5a733833aed722df534cb39d65b7cfa4473 0.3s done
+#6 extracting sha256:7f74eb6cec96f39fdd165433022c18559627da25556e736df0540a6e8c407329 0.2s done
+#6 DONE 125.5s
+
+#8 [stage-0 2/4] RUN apt-get update     && apt-get install -y --no-install-recommends libpq-dev libzip-dev libicu-dev unzip git     && docker-php-ext-install pdo_pgsql pgsql bcmath intl zip pcntl     && rm -rf /var/lib/apt/lists/*
+#8 53.84 Get:1 http://deb.debian.org/debian bookworm InRelease [151 kB]
+#8 54.33 Get:2 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+#8 54.46 Get:3 http://deb.debian.org/debian-security bookworm-security InRelease [34.8 kB]
+#8 54.51 Get:4 http://deb.debian.org/debian bookworm/main amd64 Packages [8790 kB]
+#8 ...
+
+#6 FROM docker.io/library/composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc
+#6 extracting sha256:1de1d7173b3ddc39c5aebcde13f0cd34a87383b430a5d2f2a2c9a24cb78637a7 0.1s done
+#6 DONE 125.7s
+
+#8 [stage-0 2/4] RUN apt-get update     && apt-get install -y --no-install-recommends libpq-dev libzip-dev libicu-dev unzip git     && docker-php-ext-install pdo_pgsql pgsql bcmath intl zip pcntl     && rm -rf /var/lib/apt/lists/*
+#8 112.0 Get:5 http://deb.debian.org/debian bookworm-updates/main amd64 Packages [6924 B]
+#8 112.0 Get:6 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages [357 kB]
+#8 138.3 Fetched 9395 kB in 1min 25s (111 kB/s)
+#8 138.3 Reading package lists...
+#8 138.8 Reading package lists...
+#8 139.4 Building dependency tree...
+#8 139.5 Reading state information...
+#8 139.7 The following additional packages will be installed:
+#8 139.7   git-man icu-devtools libcurl3-gnutls liberror-perl libexpat1 libpq5
+#8 139.7   libssl-dev libzip4 zlib1g-dev
+#8 139.7 Suggested packages:
+#8 139.7   gettext-base git-daemon-run | git-daemon-sysvinit git-doc git-email git-gui
+#8 139.7   gitk gitweb git-cvs git-mediawiki git-svn icu-doc postgresql-doc-15
+#8 139.7   libssl-doc zip
+#8 139.7 Recommended packages:
+#8 139.7   less ssh-client
+#8 139.8 The following NEW packages will be installed:
+#8 139.8   git git-man icu-devtools libcurl3-gnutls liberror-perl libexpat1 libicu-dev
+#8 139.8   libpq-dev libpq5 libssl-dev libzip-dev libzip4 unzip zlib1g-dev
+#8 140.2 0 upgraded, 14 newly installed, 0 to remove and 2 not upgraded.
+#8 140.2 Need to get 24.5 MB of archives.
+#8 140.2 After this operation, 115 MB of additional disk space will be used.
+#8 140.2 Get:1 http://deb.debian.org/debian bookworm/main amd64 libcurl3-gnutls amd64 7.88.1-10+deb12u15 [386 kB]
+#8 140.3 Get:2 http://deb.debian.org/debian-security bookworm-security/main amd64 libexpat1 amd64 2.5.0-1+deb12u5 [108 kB]
+#8 140.3 Get:3 http://deb.debian.org/debian bookworm/main amd64 liberror-perl all 0.17029-2 [29.0 kB]
+#8 140.3 Get:4 http://deb.debian.org/debian bookworm/main amd64 git-man all 1:2.39.5-0+deb12u3 [2053 kB]
+#8 143.3 Get:5 http://deb.debian.org/debian bookworm/main amd64 git amd64 1:2.39.5-0+deb12u3 [7264 kB]
+#8 144.8 Get:6 http://deb.debian.org/debian bookworm/main amd64 icu-devtools amd64 72.1-3+deb12u1 [206 kB]
+#8 144.8 Get:7 http://deb.debian.org/debian bookworm/main amd64 libicu-dev amd64 72.1-3+deb12u1 [10.3 MB]
+#8 144.9 Get:8 http://deb.debian.org/debian-security bookworm-security/main amd64 libpq5 amd64 15.19-0+deb12u1 [203 kB]
+#8 145.1 Get:9 http://deb.debian.org/debian-security bookworm-security/main amd64 libssl-dev amd64 3.0.22-1~deb12u1 [2450 kB]
+#8 194.0 Get:10 http://deb.debian.org/debian-security bookworm-security/main amd64 libpq-dev amd64 15.19-0+deb12u1 [156 kB]
+#8 194.0 Get:11 http://deb.debian.org/debian bookworm/main amd64 libzip4 amd64 1.7.3-1+b1 [55.5 kB]
+#8 194.0 Get:12 http://deb.debian.org/debian bookworm/main amd64 zlib1g-dev amd64 1:1.2.13.dfsg-1 [916 kB]
+#8 194.0 Get:13 http://deb.debian.org/debian bookworm/main amd64 libzip-dev amd64 1.7.3-1+b1 [163 kB]
+#8 194.0 Get:14 http://deb.debian.org/debian-security bookworm-security/main amd64 unzip amd64 6.0-28+deb12u1 [167 kB]
+#8 197.8 debconf: delaying package configuration, since apt-utils is not installed
+#8 198.0 Fetched 24.5 MB in 54s (452 kB/s)
+#8 280.0 Selecting previously unselected package libcurl3-gnutls:amd64.
+#8 280.0 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 13261 files and directories currently installed.)
+#8 280.5 Preparing to unpack .../00-libcurl3-gnutls_7.88.1-10+deb12u15_amd64.deb ...
+#8 280.8 Unpacking libcurl3-gnutls:amd64 (7.88.1-10+deb12u15) ...
+

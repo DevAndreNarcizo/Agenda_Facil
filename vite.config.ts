@@ -6,7 +6,7 @@ import react from '@vitejs/plugin-react';
  * Agrupa dependências estáveis em chunks próprios: mudam pouco entre deploys,
  * então continuam no cache do navegador quando só o código do app muda.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function vendorChunk(id: string): string | undefined {
   if (!id.includes('node_modules')) return undefined;
