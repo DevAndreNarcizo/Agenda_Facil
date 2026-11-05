@@ -55,13 +55,15 @@ class Organization extends Model
     /**
      * Assinatura "viva" atual da organização (no máximo uma, garantida por índice parcial).
      *
+     * Usa hasOne + ordenação explícita em vez de latestOfMany(): este último adiciona a PK
+     * como desempate agregado (MAX(id)) e a PK é UUID — PostgreSQL não tem MAX(uuid).
+     *
      * @return HasOne<Subscription, $this>
      */
     public function liveSubscription(): HasOne
     {
-        // Ordena por created_at (não pela PK UUID): PostgreSQL não tem MAX(uuid).
         return $this->hasOne(Subscription::class)
             ->whereNot('status', 'canceled')
-            ->latestOfMany('created_at');
+            ->orderByDesc('created_at');
     }
 }
