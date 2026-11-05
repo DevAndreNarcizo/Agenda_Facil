@@ -69,3 +69,8 @@ button.danger { background: #b91c1c; }
 .bar { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 0.25rem; }
 .bar-fill { height: 100%; background: var(--af-accent); }
 .plan-card.current { border-color: var(--af-accent); }
+
+/* Reserva pública / portal */
+.public-booking { max-width: 480px; margin: 2rem auto; padding: 1.5rem; }
+.public-booking form { display: flex; flex-direction: column; gap: 0.75rem; }
+.public-booking h1 { font-size: 1.3rem; }

@@ -98,3 +98,21 @@ export interface Customer {
   email: string | null;
   notes: string | null;
 }
+
+export interface PublicService {
+  id: string;
+  name: string;
+  duration_minutes: number;
+  price_cents: number;
+}
+
+export interface PublicProfessional {
+  id: string;
+  name: string;
+}
+
+export interface PublicBookingContext {
+  organization: { name: string; slug: string };
+  services: PublicService[];
+  professionals: PublicProfessional[];
+}

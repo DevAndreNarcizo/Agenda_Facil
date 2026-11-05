@@ -9,17 +9,23 @@ import { AuthService } from '../services/auth.service';
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
-  const token = auth.token;
-  const orgId = auth.activeOrgId();
 
-  let headers = req.headers;
-  if (token) {
-    headers = headers.set('Authorization', `Bearer ${token}`);
+  let headers = req.headers.set('Accept', 'application/json');
+
+  // Endpoints públicos (/public/...) são anônimos ou autenticados por sessão opaca de portal
+  // (X-Portal-Session). NUNCA anexar o token Sanctum nem o contexto de organização a eles.
+  const isPublic = req.url.includes('/public/');
+
+  if (!isPublic) {
+    const token = auth.token;
+    const orgId = auth.activeOrgId();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    if (orgId) {
+      headers = headers.set('X-Organization-Id', orgId);
+    }
   }
-  if (orgId) {
-    headers = headers.set('X-Organization-Id', orgId);
-  }
-  headers = headers.set('Accept', 'application/json');
 
   return next(req.clone({ headers }));
 };

@@ -14,9 +14,12 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const auth = inject(AuthService);
 
+  const isPublic = req.url.includes('/public/');
+
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401) {
+      // 401 em endpoint público = sessão de portal inválida; não derruba a sessão do painel.
+      if (error.status === 401 && !isPublic) {
         void auth.logout().finally(() => router.navigate(['/login']));
       }
       return throwError(() => error);

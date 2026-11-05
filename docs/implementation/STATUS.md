@@ -101,3 +101,13 @@ Registradas como ADRs em `docs/adr/` (novas ADRs a partir de ADR-010).
 - Qualidade: Angular **7 testes** (app, interceptor, AgendaService, CustomersService) + build de produção (chunks por página). Backend inalterado (50 testes verdes).
 
 > Paridade das áreas operacionais do MVP (agenda, clientes, serviços, profissionais, assinatura) agora existe no Angular consumindo o backend.
+
+## Entregue na continuação (Angular: reserva pública + portal)
+
+- **Página pública `/reservar/:slug`** (fora da área autenticada): escolher serviço/profissional/horário → OTP por WhatsApp → sessão opaca → reserva confirmada; estados loading/choose/otp/done/unavailable.
+- `PublicBookingService`: contexto por slug, request/verify de OTP, criação de reserva com header `X-Portal-Session`; token do portal guardado por slug.
+- **Isolamento de credenciais**: o `authInterceptor` NÃO anexa o token Sanctum nem `X-Organization-Id` a endpoints `/public/...`; o `errorInterceptor` não derruba a sessão do painel em 401 público. Comprovado por teste.
+- Tradução de erros: 409 (horário ocupado → volta à escolha), 401 (sessão expirada → refaz OTP), 422 (código inválido).
+- Qualidade: Angular **10 testes** (+3 de public-booking) + build (chunk `public-booking-page`). Backend inalterado.
+
+> Fluxo "cliente externo reserva" agora ponta a ponta também na stack Angular (backend já testado).

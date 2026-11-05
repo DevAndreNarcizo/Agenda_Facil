@@ -1,0 +1,81 @@
+<section class="public-booking">
+  @switch (step()) {
+    @case ('loading') {
+      <p>Carregando…</p>
+    }
+
+    @case ('unavailable') {
+      <h1>Reservas indisponíveis</h1>
+      <p class="muted">Esta página de reservas não está disponível no momento.</p>
+    }
+
+    @case ('choose') {
+      <h1>Agendar em {{ publicBooking.context()?.organization?.name }}</h1>
+
+      <form [formGroup]="chooseForm" (ngSubmit)="proceed()" novalidate>
+        <label>
+          Serviço
+          <select formControlName="service_id">
+            <option value="">Selecione…</option>
+            @for (s of publicBooking.context()?.services ?? []; track s.id) {
+              <option [value]="s.id">{{ s.name }} ({{ s.duration_minutes }} min)</option>
+            }
+          </select>
+        </label>
+        <label>
+          Profissional
+          <select formControlName="professional_id">
+            <option value="">Selecione…</option>
+            @for (p of publicBooking.context()?.professionals ?? []; track p.id) {
+              <option [value]="p.id">{{ p.name }}</option>
+            }
+          </select>
+        </label>
+        <label>Data e hora<input type="datetime-local" formControlName="start_time" /></label>
+
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+
+        <button type="submit" [disabled]="busy()">
+          {{ busy() ? 'Processando…' : 'Continuar' }}
+        </button>
+      </form>
+    }
+
+    @case ('otp') {
+      <h1>Confirme seu telefone</h1>
+      <p class="muted">Enviaremos um código por WhatsApp para confirmar a reserva.</p>
+
+      <form [formGroup]="otpForm" (ngSubmit)="verifyAndBook()" novalidate>
+        <label>Telefone (com DDD)<input type="tel" formControlName="phone" placeholder="11999990000" /></label>
+        <button type="button" (click)="requestOtp()" [disabled]="busy()">Enviar código</button>
+
+        @if (hint()) {
+          <p class="message">{{ hint() }}</p>
+        }
+
+        <label>Código (6 dígitos)<input type="text" inputmode="numeric" maxlength="6" formControlName="code" /></label>
+
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+
+        <button type="submit" [disabled]="busy()">
+          {{ busy() ? 'Confirmando…' : 'Confirmar reserva' }}
+        </button>
+      </form>
+    }
+
+    @case ('done') {
+      <h1>Reserva confirmada! 🎉</h1>
+      @if (confirmation(); as c) {
+        <p>
+          Seu horário: <strong>{{ c.start_time | date: 'dd/MM/yyyy HH:mm' }}</strong>
+          até {{ c.end_time | date: 'HH:mm' }}.
+        </p>
+      }
+      <p class="muted">Você receberá lembretes por WhatsApp.</p>
+    }
+  }
+</section>

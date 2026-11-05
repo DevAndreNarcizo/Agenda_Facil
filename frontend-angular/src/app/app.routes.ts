@@ -53,6 +53,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/plans/plans.page').then((m) => m.PlansPage),
   },
   {
+    // Reserva pública por link (mesma rota do app React atual: /reservar/:slug).
+    path: 'reservar/:slug',
+    loadComponent: () =>
+      import('./pages/public-booking/public-booking.page').then((m) => m.PublicBookingPage),
+  },
+  {
     path: 'subscription',
     canActivate: [authGuard, managerGuard],
     loadComponent: () =>
