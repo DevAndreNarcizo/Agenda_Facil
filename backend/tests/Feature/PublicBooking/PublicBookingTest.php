@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Database\Seeders\PlanCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Billing\Models\Plan;
 use Modules\Billing\Services\SubscriptionService;
@@ -47,12 +48,12 @@ function setupPublicOrg(string $slug, string $phone = '11999990000'): array
     return compact('org', 'service', 'professional', 'customer');
 }
 
-beforeEach(fn () => $this->seed(Database\Seeders\PlanCatalogSeeder::class));
+beforeEach(fn () => $this->seed(PlanCatalogSeeder::class));
 
 it('expõe contexto público por slug quando habilitado', function (): void {
     $ctx = setupPublicOrg('studio-a');
 
-    $this->getJson("/api/v1/public/studio-a/context")
+    $this->getJson('/api/v1/public/studio-a/context')
         ->assertOk()
         ->assertJsonPath('data.organization.slug', 'studio-a')
         ->assertJsonCount(1, 'data.services')
@@ -121,9 +122,9 @@ it('impede usar sessão de portal de uma org em outra (isolamento)', function ()
     $token = $this->postJson('/api/v1/public/studio-f/portal/otp/verify', ['phone' => '11955554444', 'code' => $code])->json('token');
 
     // Token de studio-f usado em studio-g -> sessão inválida (organização diferente).
-    $prof = Modules\Professionals\Models\Professional::where('organization_id',
+    $prof = Professional::where('organization_id',
         Organization::where('slug', 'studio-g')->value('id'))->first();
-    $svc = Modules\Services\Models\Service::where('organization_id',
+    $svc = Service::where('organization_id',
         Organization::where('slug', 'studio-g')->value('id'))->first();
 
     $this->postJson('/api/v1/public/studio-g/portal/booking', [

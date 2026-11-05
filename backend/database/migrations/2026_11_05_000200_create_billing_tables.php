@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -105,8 +106,8 @@ return new class extends Migration
         // Índice parcial (PostgreSQL): no máximo UMA assinatura "viva" por organização.
         // Corrige o risco de assinaturas duplicadas do AUDIT §5. (SQLite ignora: índice parcial
         // não suportado da mesma forma; a unicidade é reforçada pela aplicação em ambos os casos.)
-        if (\Illuminate\Support\Facades\Schema::getConnection()->getDriverName() === 'pgsql') {
-            \Illuminate\Support\Facades\DB::statement(<<<'SQL'
+        if (Schema::getConnection()->getDriverName() === 'pgsql') {
+            DB::statement(<<<'SQL'
                 CREATE UNIQUE INDEX subscriptions_one_live_per_org
                 ON subscriptions (organization_id)
                 WHERE status IN ('incomplete','trialing','active','past_due','grace','suspended')
