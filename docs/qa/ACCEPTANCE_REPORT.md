@@ -19,7 +19,7 @@
 
 ### Backend Laravel (novo — Fases B/E/D + PublicBooking/Portal)
 - `./vendor/bin/pint --test` → ✅ estilo limpo
-- `php artisan test` (Pest) → ✅ **48 testes / 117 asserções**
+- `php artisan test` (Pest) → ✅ **56 testes / 148 asserções**
   - (além dos anteriores) Reserva pública/Portal: contexto por slug, anti-enumeração de OTP, OTP inválido rejeitado, sessão opaca exigida, isolamento de sessão entre organizações
 - CI: `backend.yml` (PostgreSQL 18) e `frontend-angular.yml` adicionados
   - Auth/provisionamento (owner, transacional, isolamento 2 orgs, slug único)
@@ -28,6 +28,7 @@
   - Agenda: anti-overlap (sobreposição, adjacência, profissionais distintos, cancelado ignorado), remarcação com conflito, intervalo inválido
   - Cotas: profissionais e agendamentos/mês barrados ao estourar; ilimitado respeitado
   - API HTTP: catálogo de planos, cadastro, checkout owner-only, webhook assinado ativa; CRUD operacional; guard de assinatura (402); anti-IDOR entre 2 orgs
+  - Lembretes (outbox): enfileiramento idempotente, envio com marcação, pular se não-confirmado, backoff em falha, sem reenvio duplicado
 - `php artisan migrate --seed` → ✅ migrações + `PlanCatalogSeeder` aplicam (validado em SQLite)
 
 ## Definition of Done (§11 da missão) — rastreamento

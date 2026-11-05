@@ -111,3 +111,12 @@ Registradas como ADRs em `docs/adr/` (novas ADRs a partir de ADR-010).
 - Qualidade: Angular **10 testes** (+3 de public-booking) + build (chunk `public-booking-page`). Backend inalterado.
 
 > Fluxo "cliente externo reserva" agora ponta a ponta também na stack Angular (backend já testado).
+
+## Entregue na continuação (backend: Notifications / lembretes)
+
+- Módulo **Notifications** (`backend/app/Modules/Notifications`): outbox `message_deliveries` (migration), `ReminderService`, canal desacoplado `NotificationChannel` (fake/whatsapp), command `reminders:dispatch` e agendamento no Scheduler (a cada 5 min).
+- Preserva o modelo do sistema atual (SPEC-005): idempotência por `(appointment_id, template_name)`, claim com **lease por `lock_token`** (recupera leases expirados), **backoff exponencial** (30s·2^(n-1), teto 1h), e conclusão **só se o agendamento ainda está `confirmed`** (marca `reminder_sent_at`, não reenvia).
+- WhatsApp real fica como canal plugável (bloqueio externo: credenciais) — a lógica roda e é testada com canal fake.
+- Qualidade: backend **56 testes / 148 asserções** verdes; Pint limpo. Command e schedule verificados via `artisan`.
+
+> Último recurso comercial do MVP (lembretes automáticos) implementado e testado, sem depender de bloqueios externos para a lógica.
