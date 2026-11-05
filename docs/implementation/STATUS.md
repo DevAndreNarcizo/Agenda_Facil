@@ -130,3 +130,14 @@ Registradas como ADRs em `docs/adr/` (novas ADRs a partir de ADR-010).
 - Qualidade: backend **58 testes / 158 asserções** verdes; Pint limpo.
 
 > Itens operacionais da DoD que não dependem de credenciais externas estão fechados e verificáveis; o que resta é execução em staging real e os bloqueios externos (dump do Supabase, sandbox de gateway, credenciais WhatsApp).
+
+## Entregue na continuação (E2E Playwright do fluxo de piloto)
+
+- **E2E Playwright** em `frontend-angular/e2e/pilot-flow.spec.ts` (3 testes): (1) cadastro → onboarding → cadastro de profissional → criar agendamento; (2) link público inexistente mostra indisponível; (3) reserva pública em `studio-demo` via OTP (código de dev) → sessão opaca → confirmação.
+- `playwright.config.ts` com `webServer` que sobe backend Laravel (SQLite efêmero, `php -S`, migrado + DemoSeeder) e `ng serve`.
+- `DemoSeeder`: habilita reserva pública e usa telefones determinísticos (para o OTP do E2E).
+- CORS explícito (`config/cors.php`) para a SPA; `.env.example` ajustado.
+- **CI**: job `e2e` no workflow Angular (setup PHP + Composer + `playwright install` + `playwright test`).
+- Testes reconhecidos por `playwright test --list` (3 testes). Backend 58 testes e Angular 10 testes unitários permanecem verdes.
+
+> **Limitação do sandbox (honesta):** cada chamada de shell roda em um sandbox efêmero com `--die-with-parent` e `/tmp` próprio, então servidores em background não sobrevivem entre comandos — não é possível executar o E2E multi-servidor vivo aqui. Os assets do E2E estão validados estaticamente (`--list`) e são executados no **CI** (onde PHP, navegador e rede são provisionados).

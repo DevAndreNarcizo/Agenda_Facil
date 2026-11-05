@@ -33,3 +33,47 @@ jobs:
         run: npx ng build --configuration=production
       - name: Testes unitários
         run: npx ng test --watch=false
+
+  e2e:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_sqlite, sqlite3, mbstring, bcmath, intl
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend-angular/package-lock.json
+
+      - name: Instalar dependências do backend
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Preparar backend (.env)
+        working-directory: backend
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Instalar dependências do Angular
+        working-directory: frontend-angular
+        run: npm ci
+
+      - name: Instalar navegador do Playwright
+        working-directory: frontend-angular
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E do fluxo de piloto (Playwright sobe backend SQLite + Angular)
+        working-directory: frontend-angular
+        env:
+          CI: 'true'
+        run: npx playwright test

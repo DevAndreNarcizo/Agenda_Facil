@@ -31,6 +31,10 @@
   - Lembretes (outbox): enfileiramento idempotente, envio com marcação, pular se não-confirmado, backoff em falha, sem reenvio duplicado
 - `php artisan migrate --seed` → ✅ migrações + `PlanCatalogSeeder` aplicam (validado em SQLite)
 
+### E2E (Playwright — fluxo de piloto)
+- `frontend-angular/e2e/pilot-flow.spec.ts`: 3 testes (cadastro→onboarding→agenda; link público indisponível; reserva pública via OTP).
+- Reconhecidos por `playwright test --list`. Execução viva roda no **CI** (job `e2e` do workflow Angular) — o sandbox não sustenta servidores em background entre comandos.
+
 ## Definition of Done (§11 da missão) — rastreamento
 
 | Critério | Estado | Observação |

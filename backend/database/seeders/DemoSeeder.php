@@ -12,6 +12,7 @@ use Modules\Customers\Models\Customer;
 use Modules\Organizations\Models\Organization;
 use Modules\Organizations\Services\ProvisioningService;
 use Modules\Professionals\Models\Professional;
+use Modules\PublicBooking\Models\PublicBookingSettings;
 use Modules\Scheduling\DataObjects\BookingRequest;
 use Modules\Scheduling\Services\SchedulingService;
 use Modules\Services\Models\Service;
@@ -58,17 +59,28 @@ class DemoSeeder extends Seeder
             ['name' => 'Massagem relaxante', 'duration_minutes' => 90, 'price_cents' => 18000],
         ])->map(fn (array $s) => Service::create([...$s, 'organization_id' => $org->id, 'is_active' => true]));
 
+        // Habilita reserva pública (todos os serviços/profissionais) para demonstração.
+        PublicBookingSettings::create([
+            'organization_id' => $org->id,
+            'is_enabled' => true,
+            'allowed_service_ids' => null,
+            'allowed_professional_ids' => null,
+        ]);
+
         $professionals = collect(['Ana Paula', 'Beatriz Lima'])
             ->map(fn (string $name) => Professional::create([
                 'organization_id' => $org->id, 'name' => $name, 'is_active' => true,
             ]));
 
-        $customers = collect(['João Souza', 'Carla Mendes', 'Pedro Alves'])
-            ->map(fn (string $name) => Customer::create([
-                'organization_id' => $org->id, 'name' => $name,
-                'phone' => '1199'.random_int(1000000, 9999999),
-                'phone_normalized' => '1199'.random_int(1000000, 9999999),
-            ]));
+        // Cliente de demonstração com telefone DETERMINÍSTICO (usado no fluxo de reserva pública/OTP).
+        $customers = collect([
+            ['name' => 'João Souza', 'phone' => '11988887777'],
+            ['name' => 'Carla Mendes', 'phone' => '11977776666'],
+            ['name' => 'Pedro Alves', 'phone' => '11966665555'],
+        ])->map(fn (array $c) => Customer::create([
+            'organization_id' => $org->id, 'name' => $c['name'],
+            'phone' => $c['phone'], 'phone_normalized' => Customer::normalizePhone($c['phone']),
+        ]));
 
         // Alguns agendamentos amanhã, sem sobreposição (horários distintos).
         $scheduling = app(SchedulingService::class);
