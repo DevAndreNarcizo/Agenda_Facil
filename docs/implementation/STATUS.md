@@ -12,9 +12,9 @@
 | B — Fundação Laravel + Sanctum | 🟡 Backend fundado e testado | `backend/`; 41 testes Pest verdes |
 | B — Fundação Angular | 🟡 App standalone + auth/guards/interceptors + billing; build e testes verdes | `frontend-angular/`; ADR-012 |
 | C — Banco + multi-tenancy | 🟡 Modelo + isolamento provados; migração de dados ⛔ bloqueada (dump do Supabase) | `TENANT_MATRIX.md`; MultiTenancyTest |
-| D — Funcionalidades (backend) | 🟡 Serviços/Profissionais/Clientes/Agenda com anti-overlap e cotas, provados | Scheduling/Services/Customers/Professionals; 41 testes |
+| D — Funcionalidades (backend) | 🟡 Serviços/Profissionais/Clientes/Agenda + Reserva pública/Portal, provados | Scheduling/Services/Customers/Professionals/PublicBooking/CustomerPortal; 48 testes |
 | E — Billing | 🟡 Lógica correta + cotas + webhooks provados (provedor fake); sandbox Stripe/Asaas ⛔ bloqueado | `SUBSCRIPTIONS.md`; billing tests |
-| F — Segurança/E2E/QA | ⬜ Não iniciada | — |
+| F — Segurança/E2E/QA | 🟡 CI (backend PostgreSQL + Angular), rate-limit/anti-enumeração/isolamento provados | `.github/workflows/backend.yml`, `frontend-angular.yml` |
 | G — Staging/docs/piloto | ⬜ Não iniciada | docs operacionais criados |
 
 ## Entregue na Fase B/E (backend Laravel)
@@ -75,3 +75,10 @@ Registradas como ADRs em `docs/adr/` (novas ADRs a partir de ADR-010).
 - **Build de produção OK** (chunks por rota) e **2 testes Angular verdes** (shell + interceptor), via runner Vitest (chromium do Playwright no sandbox).
 
 > Pendente: migração completa das 12 áreas com paridade visual, design tokens completos do app React, E2E Playwright, guard de assinatura nas rotas pagas. O React só é desativado após paridade verificada.
+
+## Entregue na continuação (PublicBooking + CustomerPortal + CI)
+
+- **Reserva pública por link** (`/public/{slug}/context`, `/portal/booking`): contexto por slug com allowlist de serviços/profissionais; criação reutiliza o SchedulingService (anti-overlap + cota); 404 para slug inexistente/desabilitado (não vaza dados de outra org).
+- **Portal do cliente (OTP + sessão opaca)** — SPEC-002: anti-enumeração (resposta genérica), rate-limit por telefone e IP, código com hash+pepper (5 min, ≤5 tentativas), sessão opaca de 8h (só o hash do token é guardado). Isolamento comprovado: token de uma org não vale em outra.
+- **CI**: `backend.yml` roda Pint + migrações + Pest contra **PostgreSQL 18** (valida índice parcial e constraint EXCLUDE de anti-overlap); `frontend-angular.yml` roda build + testes.
+- **48 testes Pest / 117 asserções — todos passando**.

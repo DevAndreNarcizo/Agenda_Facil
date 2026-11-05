@@ -11,9 +11,11 @@
 - `npx tsc -b` → ✅ limpo
 - `npm test` (vitest) → ✅ **31 testes / 10 arquivos**
 
-### Backend Laravel (novo — Fases B/E/D)
+### Backend Laravel (novo — Fases B/E/D + PublicBooking/Portal)
 - `./vendor/bin/pint --test` → ✅ estilo limpo
-- `php artisan test` (Pest) → ✅ **41 testes / 98 asserções**
+- `php artisan test` (Pest) → ✅ **48 testes / 117 asserções**
+  - (além dos anteriores) Reserva pública/Portal: contexto por slug, anti-enumeração de OTP, OTP inválido rejeitado, sessão opaca exigida, isolamento de sessão entre organizações
+- CI: `backend.yml` (PostgreSQL 18) e `frontend-angular.yml` adicionados
   - Auth/provisionamento (owner, transacional, isolamento 2 orgs, slug único)
   - Billing: incompleta→ativa só com pagamento; trial não reinicia; sem duplicidade; grace→suspensão automática; cancelamento imediato/fim de período; upgrade/downgrade auditado
   - Webhook: idempotência, fora de ordem, assinatura inválida rejeitada
@@ -29,7 +31,7 @@
 | Organização consegue se cadastrar | 🟡 backend pronto e testado | UI Angular pendente (Fase D) |
 | Proprietário conclui onboarding | 🟡 provisionamento pronto | onboarding completo pendente (Fase D) |
 | Profissionais e serviços cadastrados | ✅ backend comprovado | API + cota de profissionais; UI pendente |
-| Cliente externo reserva | ⬜ pendente | PublicBooking/CustomerPortal (próxima iteração) |
+| Cliente externo reserva | ✅ backend comprovado | OTP→sessão opaca→reserva pública; anti-enumeração/isolamento testados; UI pendente |
 | Agendamento aparece na agenda | ✅ backend comprovado | `GET /appointments`; criação anti-overlap |
 | Plano reconhecido pelo servidor | ✅ comprovado | catálogo no servidor + `GET /subscription` |
 | Cobrança sandbox confirmada | 🟡 fluxo provado com provedor **fake** | sandbox Stripe/Asaas bloqueado (credenciais) |

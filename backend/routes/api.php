@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\V1\Billing\SubscriptionController;
 use App\Http\Controllers\Api\V1\Billing\WebhookController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\ProfessionalController;
+use App\Http\Controllers\Api\V1\Public\PortalController;
+use App\Http\Controllers\Api\V1\Public\PublicBookingController;
 use App\Http\Controllers\Api\V1\Scheduling\AppointmentController;
 use App\Http\Controllers\Api\V1\ServiceController;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +30,14 @@ Route::prefix('v1')->group(function (): void {
 
     // Catálogo de planos — leitura pública (fonte no servidor).
     Route::get('plans', [PlanController::class, 'index']);
+
+    // Reserva pública por link (slug) + portal do cliente (OTP + sessão opaca).
+    Route::prefix('public/{slug}')->group(function (): void {
+        Route::get('context', [PublicBookingController::class, 'context']);
+        Route::post('portal/otp/request', [PortalController::class, 'requestOtp'])->middleware('throttle:portal-otp');
+        Route::post('portal/otp/verify', [PortalController::class, 'verifyOtp'])->middleware('throttle:portal-otp');
+        Route::post('portal/booking', [PortalController::class, 'createBooking'])->middleware('throttle:public-booking');
+    });
 
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('auth/me', [AuthController::class, 'me']);

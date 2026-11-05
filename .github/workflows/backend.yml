@@ -1,0 +1,88 @@
+name: Backend (Laravel)
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # PostgreSQL 18 — fonte autoritativa; valida índice parcial e constraint EXCLUDE (anti-overlap).
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: agenda
+          POSTGRES_PASSWORD: agenda_dev
+          POSTGRES_DB: agenda_facil_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U agenda -d agenda_facil_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, pgsql, mbstring, bcmath, intl
+          coverage: none
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: composer-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: composer-
+
+      - name: Instalar dependências
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Preparar ambiente
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Verificar estilo (Pint)
+        run: ./vendor/bin/pint --test
+
+      - name: Migrar banco (PostgreSQL)
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: agenda_facil_test
+          DB_USERNAME: agenda
+          DB_PASSWORD: agenda_dev
+        run: php artisan migrate --force
+
+      - name: Testes (Pest, PostgreSQL)
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: agenda_facil_test
+          DB_USERNAME: agenda
+          DB_PASSWORD: agenda_dev
+        run: php artisan test

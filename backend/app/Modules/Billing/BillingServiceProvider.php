@@ -36,5 +36,8 @@ final class BillingServiceProvider extends ServiceProvider
     {
         RateLimiter::for('auth', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
         RateLimiter::for('webhooks', fn (Request $request) => Limit::perMinute(120)->by($request->ip()));
+        // Portal/reserva pública: limites por IP (defesa adicional ao rate-limit por telefone).
+        RateLimiter::for('portal-otp', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
+        RateLimiter::for('public-booking', fn (Request $request) => Limit::perMinute(20)->by($request->ip()));
     }
 }

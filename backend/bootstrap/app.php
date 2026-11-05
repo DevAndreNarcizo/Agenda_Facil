@@ -1,9 +1,15 @@
 <?php
 
+use App\Http\Middleware\EnsureSubscriptionIsUsable;
+use App\Http\Middleware\ResolveTenantContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Modules\Billing\Exceptions\QuotaExceededException;
+use Modules\CustomerPortal\Exceptions\PortalRateLimitException;
+use Modules\PublicBooking\Exceptions\PublicBookingUnavailableException;
+use Modules\Scheduling\Exceptions\SchedulingConflictException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -19,8 +25,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Alias de autorização por recurso/tenant usados nas rotas da API.
         $middleware->alias([
-            'tenant.context' => \App\Http\Middleware\ResolveTenantContext::class,
-            'subscription.active' => \App\Http\Middleware\EnsureSubscriptionIsUsable::class,
+            'tenant.context' => ResolveTenantContext::class,
+            'subscription.active' => EnsureSubscriptionIsUsable::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -29,7 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         // Conflito de agenda -> 409.
-        $exceptions->render(function (\Modules\Scheduling\Exceptions\SchedulingConflictException $e, Request $request) {
+        $exceptions->render(function (SchedulingConflictException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json(['message' => $e->getMessage()], 409);
             }
@@ -38,13 +44,31 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         // Cota de plano excedida -> 402 (pagamento necessário / upgrade).
-        $exceptions->render(function (\Modules\Billing\Exceptions\QuotaExceededException $e, Request $request) {
+        $exceptions->render(function (QuotaExceededException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json([
                     'message' => $e->getMessage(),
                     'entitlement' => $e->entitlementKey,
                     'limit' => $e->limit,
                 ], 402);
+            }
+
+            return null;
+        });
+
+        // Reserva pública indisponível / recurso não permitido -> 404 (não vaza dados de outra org).
+        $exceptions->render(function (PublicBookingUnavailableException $e, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage()], 404);
+            }
+
+            return null;
+        });
+
+        // Rate-limit de OTP do portal -> 429.
+        $exceptions->render(function (PortalRateLimitException $e, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage()], 429);
             }
 
             return null;

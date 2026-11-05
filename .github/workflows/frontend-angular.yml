@@ -1,0 +1,35 @@
+name: Frontend Angular
+
+on:
+  pull_request:
+    paths:
+      - 'frontend-angular/**'
+      - '.github/workflows/frontend-angular.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'frontend-angular/**'
+      - '.github/workflows/frontend-angular.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend-angular
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend-angular/package-lock.json
+      - run: npm ci
+      - name: Build de produção
+        run: npx ng build --configuration=production
+      - name: Testes unitários
+        run: npx ng test --watch=false

@@ -14,6 +14,7 @@ tags:
   - name: Auth
   - name: Billing
   - name: Scheduling
+  - name: PublicBooking
 
 paths:
   /auth/register:
@@ -320,6 +321,86 @@ paths:
       responses:
         '200': { description: Atualizado }
         '404': { description: Não encontrado no tenant atual }
+
+  /public/{slug}/context:
+    get:
+      tags: [PublicBooking]
+      summary: Contexto público de reservas (serviços/profissionais permitidos) por slug
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+        '404': { description: Slug inexistente ou reservas desabilitadas }
+
+  /public/{slug}/portal/otp/request:
+    post:
+      tags: [PublicBooking]
+      summary: Solicita OTP do portal (anti-enumeração; rate-limited)
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone: { type: string }
+      responses:
+        '202': { description: Resposta genérica (código enviado por WhatsApp em produção) }
+        '429': { description: Rate-limit excedido }
+
+  /public/{slug}/portal/otp/verify:
+    post:
+      tags: [PublicBooking]
+      summary: Verifica OTP e emite sessão opaca do portal
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, code]
+              properties:
+                phone: { type: string }
+                code: { type: string, minLength: 6, maxLength: 6 }
+      responses:
+        '200':
+          description: Sessão criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string, description: Token opaco (64 hex), devolvido uma única vez }
+                  expires_at: { type: string, format: date-time }
+        '422': { description: Código inválido ou expirado }
+
+  /public/{slug}/portal/booking:
+    post:
+      tags: [PublicBooking]
+      summary: Cria reserva pública (requer sessão de portal via X-Portal-Session)
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+        - { name: X-Portal-Session, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [service_id, professional_id, start_time]
+              properties:
+                service_id: { type: string, format: uuid }
+                professional_id: { type: string, format: uuid }
+                start_time: { type: string, format: date-time }
+      responses:
+        '201': { description: Reserva criada }
+        '401': { description: Sessão do portal inválida }
+        '409': { description: Conflito de horário }
 
 components:
   securitySchemes:
