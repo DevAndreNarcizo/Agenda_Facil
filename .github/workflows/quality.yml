@@ -24,9 +24,30 @@ jobs:
       - run: npm run build
       - run: npm audit --omit=dev --audit-level=high
 
+  # Verifica a existência dos secrets de E2E em um job separado, pois o contexto `secrets`
+  # NÃO é permitido em `if` de job (isso fazia o workflow falhar ao ser avaliado).
+  check-e2e-secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        env:
+          E2E_OWNER_EMAIL: ${{ secrets.E2E_OWNER_EMAIL }}
+          E2E_OWNER_PASSWORD: ${{ secrets.E2E_OWNER_PASSWORD }}
+          E2E_SERVICE_ID: ${{ secrets.E2E_SERVICE_ID }}
+          E2E_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          E2E_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -n "$E2E_OWNER_EMAIL" ] && [ -n "$E2E_OWNER_PASSWORD" ] && [ -n "$E2E_SERVICE_ID" ] && [ -n "$E2E_SUPABASE_URL" ] && [ -n "$E2E_SUPABASE_ANON_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
   e2e:
-    needs: validate
-    if: ${{ secrets.E2E_OWNER_EMAIL != '' && secrets.E2E_OWNER_PASSWORD != '' && secrets.E2E_SERVICE_ID != '' && secrets.E2E_SUPABASE_URL != '' && secrets.E2E_SUPABASE_ANON_KEY != '' }}
+    needs: [validate, check-e2e-secrets]
+    if: ${{ needs.check-e2e-secrets.outputs.enabled == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
