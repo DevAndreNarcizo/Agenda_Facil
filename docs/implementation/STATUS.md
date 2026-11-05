@@ -10,7 +10,7 @@
 |---|---|---|
 | A — Auditoria + baseline | ✅ Concluída | `docs/migration/AUDIT.md`; baseline de testes §abaixo |
 | B — Fundação Laravel + Sanctum | 🟡 Backend fundado e testado | `backend/`; 41 testes Pest verdes |
-| B — Fundação Angular | 🟡 App standalone + auth/guards/interceptors + billing; build e testes verdes | `frontend-angular/`; ADR-012 |
+| B/D — Angular (fundação + onboarding + agenda) | 🟡 Auth/guards/interceptors + onboarding + agenda operacional consumindo a API; build e 5 testes verdes | `frontend-angular/`; ADR-012 |
 | C — Banco + multi-tenancy | 🟡 Modelo + isolamento provados; migração de dados ⛔ bloqueada (dump do Supabase) | `TENANT_MATRIX.md`; MultiTenancyTest |
 | D — Funcionalidades (backend) | 🟡 Serviços/Profissionais/Clientes/Agenda + Reserva pública/Portal, provados | Scheduling/Services/Customers/Professionals/PublicBooking/CustomerPortal; 48 testes |
 | E — Billing | 🟡 Lógica correta + cotas + webhooks provados (provedor fake); sandbox Stripe/Asaas ⛔ bloqueado | `SUBSCRIPTIONS.md`; billing tests |
@@ -82,3 +82,11 @@ Registradas como ADRs em `docs/adr/` (novas ADRs a partir de ADR-010).
 - **Portal do cliente (OTP + sessão opaca)** — SPEC-002: anti-enumeração (resposta genérica), rate-limit por telefone e IP, código com hash+pepper (5 min, ≤5 tentativas), sessão opaca de 8h (só o hash do token é guardado). Isolamento comprovado: token de uma org não vale em outra.
 - **CI**: `backend.yml` roda Pint + migrações + Pest contra **PostgreSQL 18** (valida índice parcial e constraint EXCLUDE de anti-overlap); `frontend-angular.yml` roda build + testes.
 - **48 testes Pest / 117 asserções — todos passando**.
+
+## Entregue na continuação (Angular: onboarding + agenda)
+
+- **Backend**: endpoint de onboarding transacional (`POST /organization/onboarding`, owner-only, idempotente: identidade + 7 horários + 1º serviço + marca conclusão) e `GET /organization` (estado + horários). `OnboardingService`, `OrganizationController`, `BusinessHour`. Testes de onboarding (conclusão + bloqueio de não-owner).
+- **Angular**: página de **onboarding** (Reactive Form com agenda semanal) e **agenda operacional** (listar o dia, criar agendamento, mudar status) consumindo a API; `OrganizationService`/`AgendaService` (signals); `onboardingCompletedGuard` (redireciona ao onboarding quando pendente); erros 409 (conflito) e 402 (cota) traduzidos na UI.
+- Qualidade: backend **50 testes / 127 asserções**; Angular **5 testes** + build de produção (chunks `onboarding-page`, `agenda-page`).
+
+> Paridade da área operacional central (onboarding→agenda) agora existe no Angular consumindo o backend — passo concreto rumo ao cutover do React.

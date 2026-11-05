@@ -41,3 +41,46 @@ export interface SubscriptionSummary {
   cancel_at_period_end: boolean;
   plan: { code: string; name: string; price_cents: number } | null;
 }
+
+export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
+
+export interface Service {
+  id: string;
+  name: string;
+  category: string | null;
+  duration_minutes: number;
+  price_cents: number;
+  is_active: boolean;
+}
+
+export interface Professional {
+  id: string;
+  name: string;
+  is_active: boolean;
+}
+
+export interface Appointment {
+  id: string;
+  service_id: string | null;
+  professional_id: string | null;
+  customer_id: string | null;
+  start_time: string;
+  end_time: string;
+  status: AppointmentStatus;
+  booking_source: string;
+}
+
+export interface BusinessHour {
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  is_active: boolean;
+}
+
+export interface OrganizationState {
+  id: string;
+  name: string;
+  slug: string;
+  onboarding_completed: boolean;
+  business_hours: BusinessHour[];
+}

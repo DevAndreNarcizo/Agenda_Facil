@@ -1,0 +1,63 @@
+<section class="agenda">
+  <h1>Agenda</h1>
+
+  @if (loading()) {
+    <p>Carregando agenda…</p>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="create()" class="new-appointment" novalidate>
+      <h2>Novo agendamento</h2>
+      <label>
+        Serviço
+        <select formControlName="service_id">
+          <option value="">Selecione…</option>
+          @for (s of agenda.services(); track s.id) {
+            <option [value]="s.id">{{ s.name }} ({{ s.duration_minutes }} min)</option>
+          }
+        </select>
+      </label>
+      <label>
+        Profissional
+        <select formControlName="professional_id">
+          <option value="">Selecione…</option>
+          @for (p of agenda.professionals(); track p.id) {
+            <option [value]="p.id">{{ p.name }}</option>
+          }
+        </select>
+      </label>
+      <label>Início<input type="datetime-local" formControlName="start_time" /></label>
+
+      <button type="submit" [disabled]="creating()">
+        {{ creating() ? 'Agendando…' : 'Agendar' }}
+      </button>
+
+      @if (message()) {
+        <p class="message" role="status">{{ message() }}</p>
+      }
+    </form>
+
+    <h2>Agendamentos do dia</h2>
+    @if (agenda.appointments().length === 0) {
+      <p class="empty">Nenhum agendamento para hoje.</p>
+    } @else {
+      <ul class="appointment-list">
+        @for (a of agenda.appointments(); track a.id) {
+          <li class="appointment" [class.cancelled]="a.status === 'cancelled'">
+            <span class="time">{{ a.start_time | date: 'HH:mm' }}–{{ a.end_time | date: 'HH:mm' }}</span>
+            <span class="status">{{ a.status }}</span>
+            <span class="controls">
+              @if (a.status !== 'confirmed' && a.status !== 'cancelled') {
+                <button type="button" (click)="setStatus(a.id, 'confirmed')">Confirmar</button>
+              }
+              @if (a.status !== 'completed' && a.status !== 'cancelled') {
+                <button type="button" (click)="setStatus(a.id, 'completed')">Concluir</button>
+              }
+              @if (a.status !== 'cancelled') {
+                <button type="button" class="danger" (click)="setStatus(a.id, 'cancelled')">Cancelar</button>
+              }
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>

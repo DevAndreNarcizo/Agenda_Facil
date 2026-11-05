@@ -34,3 +34,22 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 .price span { font-size: 0.9rem; font-weight: 400; color: #64748b; }
 .card { border: 1px solid var(--af-line); border-radius: 10px; padding: 1rem; background: #fff; margin: 1rem 0; }
 .actions { display: flex; gap: 1rem; margin-top: 1rem; }
+
+/* Onboarding + Agenda */
+.onboarding, .agenda { max-width: 760px; margin: 2rem auto; padding: 1.5rem; }
+.onboarding form, .new-appointment { display: flex; flex-direction: column; gap: 0.6rem; max-width: 420px; }
+.onboarding h2, .agenda h2 { margin-top: 1.25rem; font-size: 1rem; }
+select { padding: 0.5rem; border: 1px solid var(--af-line); border-radius: 6px; background: #fff; }
+.schedule { display: flex; flex-direction: column; gap: 0.4rem; }
+.schedule-row { display: flex; align-items: center; gap: 0.5rem; }
+.schedule-row .day { flex: 1; flex-direction: row; align-items: center; gap: 0.4rem; }
+.appointment-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.appointment { display: flex; align-items: center; gap: 1rem; padding: 0.6rem 0.8rem; border: 1px solid var(--af-line); border-radius: 8px; background: #fff; }
+.appointment.cancelled { opacity: 0.55; }
+.appointment .time { font-variant-numeric: tabular-nums; font-weight: 600; }
+.appointment .status { font-size: 0.85rem; color: #64748b; }
+.appointment .controls { margin-left: auto; display: flex; gap: 0.4rem; }
+.appointment .controls button { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+button.danger { background: #b91c1c; }
+.message { color: #0f766e; }
+.empty { color: #64748b; }

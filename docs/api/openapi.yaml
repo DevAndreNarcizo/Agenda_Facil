@@ -12,6 +12,7 @@ servers:
     description: Desenvolvimento local
 tags:
   - name: Auth
+  - name: Organizations
   - name: Billing
   - name: Scheduling
   - name: PublicBooking
@@ -83,6 +84,54 @@ paths:
                   data:
                     type: array
                     items: { $ref: '#/components/schemas/Plan' }
+
+  /organization:
+    get:
+      tags: [Organizations]
+      summary: Estado da organização (onboarding + horários de funcionamento)
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      responses:
+        '200': { description: OK }
+        '403': { description: Sem acesso à organização }
+
+  /organization/onboarding:
+    post:
+      tags: [Organizations]
+      summary: Conclui o onboarding (owner) — identidade, horários e primeiro serviço
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [business_name, schedule, first_service]
+              properties:
+                business_name: { type: string }
+                specialty: { type: string, nullable: true }
+                segment: { type: string, enum: [estetica, beleza, cabelo, pet], nullable: true }
+                schedule:
+                  type: array
+                  minItems: 7
+                  maxItems: 7
+                  items:
+                    type: object
+                    properties:
+                      day_of_week: { type: integer, minimum: 0, maximum: 6 }
+                      start: { type: string, example: '09:00' }
+                      end: { type: string, example: '18:00' }
+                      active: { type: boolean }
+                first_service:
+                  type: object
+                  properties:
+                    name: { type: string }
+                    duration_minutes: { type: integer, minimum: 1 }
+                    price_cents: { type: integer, minimum: 0 }
+      responses:
+        '200': { description: Onboarding concluído }
+        '403': { description: Apenas o proprietário }
 
   /subscription:
     get:

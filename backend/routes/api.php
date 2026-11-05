@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\Billing\PlanController;
 use App\Http\Controllers\Api\V1\Billing\SubscriptionController;
 use App\Http\Controllers\Api\V1\Billing\WebhookController;
 use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\OrganizationController;
 use App\Http\Controllers\Api\V1\ProfessionalController;
 use App\Http\Controllers\Api\V1\Public\PortalController;
 use App\Http\Controllers\Api\V1\Public\PublicBookingController;
@@ -45,6 +46,10 @@ Route::prefix('v1')->group(function (): void {
 
         // Operações no contexto da organização resolvido pelo servidor.
         Route::middleware('tenant.context')->group(function (): void {
+            // Organização / onboarding (não exige assinatura ativa — faz parte do setup).
+            Route::get('organization', [OrganizationController::class, 'show']);
+            Route::post('organization/onboarding', [OrganizationController::class, 'completeOnboarding']);
+
             // Assinatura — administração (owner). Não exige assinatura ativa (regularização).
             Route::get('subscription', [SubscriptionController::class, 'show']);
             Route::post('subscription/checkout', [SubscriptionController::class, 'checkout'])->middleware('throttle:auth');

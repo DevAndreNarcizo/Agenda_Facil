@@ -1,0 +1,46 @@
+<section class="onboarding">
+  <h1>Configurar seu negócio</h1>
+  <p>Vamos deixar sua agenda pronta em alguns passos.</p>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <h2>Negócio</h2>
+    <label>Nome do negócio<input type="text" formControlName="business_name" /></label>
+    <label>
+      Segmento
+      <select formControlName="segment">
+        <option value="estetica">Estética</option>
+        <option value="beleza">Beleza</option>
+        <option value="cabelo">Cabelo</option>
+        <option value="pet">Pet</option>
+      </select>
+    </label>
+
+    <h2>Primeiro serviço</h2>
+    <label>Nome do serviço<input type="text" formControlName="service_name" /></label>
+    <label>Duração (min)<input type="number" formControlName="service_duration" min="1" /></label>
+    <label>Preço (R$)<input type="number" formControlName="service_price" min="0" step="0.01" /></label>
+
+    <h2>Horário de funcionamento</h2>
+    <div formArrayName="schedule" class="schedule">
+      @for (ctrl of schedule.controls; track $index) {
+        <div class="schedule-row" [formGroupName]="$index">
+          <label class="day">
+            <input type="checkbox" formControlName="active" />
+            {{ weekdays[$index] }}
+          </label>
+          <input type="time" formControlName="start" />
+          <span>às</span>
+          <input type="time" formControlName="end" />
+        </div>
+      }
+    </div>
+
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+
+    <button type="submit" [disabled]="submitting()">
+      {{ submitting() ? 'Concluindo…' : 'Concluir configuração' }}
+    </button>
+  </form>
+</section>

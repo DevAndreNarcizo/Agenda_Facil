@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Modules\Billing\Models\Subscription;
+use Modules\Services\Models\Service;
 
 /**
  * Organização = tenant principal. Dono (owner_id) sempre tem um membership 'owner'.
@@ -50,6 +51,12 @@ class Organization extends Model
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
+    }
+
+    /** @return HasMany<Service, $this> */
+    public function services(): HasMany
+    {
+        return $this->hasMany(Service::class);
     }
 
     /**

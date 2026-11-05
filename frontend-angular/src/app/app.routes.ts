@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, managerGuard } from './core/guards/auth.guard';
+import { onboardingCompletedGuard } from './core/guards/onboarding.guard';
 
 /**
  * Rotas standalone com lazy loading (equivalente ao React.lazy do app atual).
@@ -17,9 +18,19 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/register/register.page').then((m) => m.RegisterPage),
   },
   {
+    path: 'onboarding',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/onboarding/onboarding.page').then((m) => m.OnboardingPage),
+  },
+  {
     path: 'dashboard',
     canActivate: [authGuard],
     loadComponent: () => import('./pages/dashboard/dashboard.page').then((m) => m.DashboardPage),
+  },
+  {
+    path: 'agenda',
+    canActivate: [authGuard, onboardingCompletedGuard],
+    loadComponent: () => import('./pages/agenda/agenda.page').then((m) => m.AgendaPage),
   },
   {
     path: 'plans',
