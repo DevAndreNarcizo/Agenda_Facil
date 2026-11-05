@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use Database\Seeders\PlanCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Billing\Enums\SubscriptionStatus;
 use Modules\Billing\Models\Plan;
+use Modules\Billing\Models\SubscriptionAuditLog;
 use Modules\Billing\Services\SubscriptionService;
 use Modules\Organizations\Models\Organization;
 use Modules\Organizations\Services\ProvisioningService;
@@ -15,7 +17,7 @@ uses(RefreshDatabase::class);
  * Prova que os defeitos de billing do AUDIT §5 estão corrigidos.
  */
 beforeEach(function (): void {
-    $this->seed(Database\Seeders\PlanCatalogSeeder::class);
+    $this->seed(PlanCatalogSeeder::class);
     $this->service = app(SubscriptionService::class);
 
     $user = app(ProvisioningService::class)->registerOwner([
@@ -117,7 +119,7 @@ it('faz upgrade e downgrade registrando auditoria', function (): void {
 
     $actions = $this->organization->subscriptions()->first()
         ->organization->id;
-    expect(Modules\Billing\Models\SubscriptionAuditLog::query()
+    expect(SubscriptionAuditLog::query()
         ->where('organization_id', $this->organization->id)
         ->whereIn('action', ['upgraded', 'downgraded'])->count())->toBe(2);
 });

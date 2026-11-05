@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
+use Database\Seeders\PlanCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\Billing\DataObjects\WebhookEnvelope;
 use Modules\Billing\Enums\SubscriptionStatus;
+use Modules\Billing\Models\Payment;
 use Modules\Billing\Models\Plan;
-use Modules\Billing\Models\Subscription;
 use Modules\Billing\Services\SubscriptionService;
 use Modules\Billing\Services\WebhookProcessor;
 use Modules\Organizations\Models\Organization;
@@ -19,7 +20,7 @@ uses(RefreshDatabase::class);
  * Prova idempotência e tolerância a eventos duplicados/fora de ordem (missão §9, AUDIT §5).
  */
 beforeEach(function (): void {
-    $this->seed(Database\Seeders\PlanCatalogSeeder::class);
+    $this->seed(PlanCatalogSeeder::class);
     $this->processor = app(WebhookProcessor::class);
     $subscriptions = app(SubscriptionService::class);
 
@@ -59,7 +60,7 @@ it('ignora evento duplicado (idempotência via ledger)', function (): void {
         ->and($this->processor->process($env))->toBe('duplicate');
 
     // Não cria pagamentos duplicados.
-    expect(Modules\Billing\Models\Payment::query()->count())->toBe(1);
+    expect(Payment::query()->count())->toBe(1);
 });
 
 it('tolera evento de falha de pagamento chegando depois — não derruba estado final indevidamente', function (): void {

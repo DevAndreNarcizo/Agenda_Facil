@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Database\Seeders\PlanCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Billing\Exceptions\QuotaExceededException;
 use Modules\Billing\Models\Plan;
@@ -16,7 +17,7 @@ uses(RefreshDatabase::class);
  * Prova o enforcement REAL de limites de plano no servidor (ausente no sistema legado).
  */
 beforeEach(function (): void {
-    $this->seed(Database\Seeders\PlanCatalogSeeder::class);
+    $this->seed(PlanCatalogSeeder::class);
     $this->entitlements = app(EntitlementService::class);
     $subscriptions = app(SubscriptionService::class);
 

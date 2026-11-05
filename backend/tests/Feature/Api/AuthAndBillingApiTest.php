@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Models\User;
+use Database\Seeders\PlanCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Organizations\Models\Organization;
 
 uses(RefreshDatabase::class);
 
@@ -10,7 +13,7 @@ uses(RefreshDatabase::class);
  * Prova o fluxo pela API HTTP: cadastro -> plano no servidor -> checkout -> webhook -> ativação.
  */
 beforeEach(function (): void {
-    $this->seed(Database\Seeders\PlanCatalogSeeder::class);
+    $this->seed(PlanCatalogSeeder::class);
     config()->set('billing.provider', 'fake');
 });
 
@@ -42,7 +45,7 @@ it('inicia checkout apenas para o owner autenticado', function (): void {
         'org_name' => 'Estúdio Teste', 'org_slug' => 'estudio-teste',
     ])->assertCreated();
 
-    $token = \App\Models\User::query()->where('email', 'dona@example.com')->first()->createToken('t')->plainTextToken;
+    $token = User::query()->where('email', 'dona@example.com')->first()->createToken('t')->plainTextToken;
 
     $response = $this->withToken($token)->postJson('/api/v1/subscription/checkout', [
         'plan_code' => 'pro',
@@ -63,11 +66,11 @@ it('processa webhook assinado e ativa a assinatura', function (): void {
         'org_name' => 'Estúdio Teste', 'org_slug' => 'estudio-teste',
     ])->assertCreated();
 
-    $user = \App\Models\User::query()->where('email', 'dona@example.com')->first();
+    $user = User::query()->where('email', 'dona@example.com')->first();
     $token = $user->createToken('t')->plainTextToken;
     $this->withToken($token)->postJson('/api/v1/subscription/checkout', ['plan_code' => 'starter'])->assertOk();
 
-    $organization = \Modules\Organizations\Models\Organization::query()->where('owner_id', $user->id)->first();
+    $organization = Organization::query()->where('owner_id', $user->id)->first();
 
     // Monta um webhook fake assinado.
     $payload = json_encode([
