@@ -10,6 +10,12 @@
 - `npm run lint` → ✅ limpo
 - `npx tsc -b` → ✅ limpo
 - `npm test` (vitest) → ✅ **31 testes / 10 arquivos**
+- `npm audit --omit=dev --audit-level=high` → ✅ **0 vulnerabilidades** (zod atualizado p/ ≥4.6.6, CVE high corrigida)
+
+### CI (GitHub Actions) — verde no último commit da branch
+- **Qualidade** (React): lint + test + build + audit → ✅ (corrigido bug pré-existente de `secrets` em `if` de job)
+- **Backend (Laravel)**: Pint + migrações + Pest contra **PostgreSQL 18** → ✅ (validou índice parcial e constraint EXCLUDE)
+- **Frontend Angular**: build de produção + testes → ✅
 
 ### Backend Laravel (novo — Fases B/E/D + PublicBooking/Portal)
 - `./vendor/bin/pint --test` → ✅ estilo limpo
@@ -39,7 +45,7 @@
 | Limites não podem ser burlados | ✅ comprovado | cotas aplicadas a profissionais e agendamentos reais |
 | Org não acessa dados de outra | ✅ comprovado | teste anti-IDOR HTTP (2 orgs) + isolamento no provisionamento |
 | Angular nos principais tamanhos de tela | ⬜ pendente | Fase D/F |
-| Builds/testes/CI aprovados | 🟡 testes locais verdes | CI do backend a adicionar |
+| Builds/testes/CI aprovados | ✅ comprovado | 3 workflows verdes (Qualidade/Backend-PostgreSQL/Angular) |
 | Backups restauráveis | ⬜ pendente | Fase G |
 | Produção inalterada | ✅ garantido | nada remoto tocado |
 
@@ -54,4 +60,6 @@ Legenda: ✅ comprovado · 🟡 parcial/provado em dev · ⬜ não iniciado · �
 
 ## Conclusão honesta
 
-O **núcleo de risco** (multi-tenancy seguro + billing correto com cotas, sem os 10 defeitos do AUDIT) está implementado e **comprovado por testes** no backend Laravel. As áreas de produto (agenda, clientes, reserva pública, portal) e a SPA Angular são as próximas fases. O produto **ainda não** cumpre a Definition of Done completa — e isto está declarado explicitamente, conforme exigido.
+O **núcleo de risco** (multi-tenancy seguro + billing correto com cotas, sem os 10 defeitos do AUDIT) está implementado e **comprovado por testes** no backend Laravel, agora validado em **CI contra PostgreSQL 18**. O fluxo comercial central também está no backend: cadastro/onboarding, serviços/profissionais/clientes, agenda com anti-overlap, **reserva pública por link + portal do cliente (OTP + sessão opaca)**, e assinatura com cotas. A fundação Angular 22 está de pé (build + testes em CI).
+
+Pendente para a Definition of Done completa: migração das 12 áreas Angular com paridade visual e E2E, migração de dados do Supabase (bloqueio externo), homologação do billing em sandbox real (Stripe/Asaas), backups restauráveis (Fase G) e QA visual. O produto **ainda não** cumpre a DoD completa — declarado explicitamente, conforme exigido.
