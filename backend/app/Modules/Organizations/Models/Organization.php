@@ -59,8 +59,9 @@ class Organization extends Model
      */
     public function liveSubscription(): HasOne
     {
+        // Ordena por created_at (não pela PK UUID): PostgreSQL não tem MAX(uuid).
         return $this->hasOne(Subscription::class)
             ->whereNot('status', 'canceled')
-            ->latestOfMany();
+            ->latestOfMany('created_at');
     }
 }
