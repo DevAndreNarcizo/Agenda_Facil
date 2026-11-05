@@ -9,12 +9,23 @@
 | Fase | Estado | Evidência |
 |---|---|---|
 | A — Auditoria + baseline | ✅ Concluída | `docs/migration/AUDIT.md`; baseline de testes §abaixo |
-| B — Fundação Angular/Laravel | ⬜ Não iniciada | — |
-| C — Banco + multi-tenancy | ⛔ Bloqueada (dump do Supabase vivo) | — |
+| B — Fundação Laravel + Sanctum | 🟡 Backend fundado e testado | `backend/`; 29 testes Pest verdes |
+| B — Fundação Angular | ⬜ Não iniciada | — |
+| C — Banco + multi-tenancy | 🟡 Modelo + isolamento provados; migração de dados ⛔ bloqueada (dump do Supabase) | `TENANT_MATRIX.md`; MultiTenancyTest |
 | D — Funcionalidades | ⬜ Não iniciada | — |
-| E — Billing | ⛔ Parcialmente bloqueada (sandbox Stripe) | defeitos mapeados em AUDIT §5 |
+| E — Billing | 🟡 Lógica correta + cotas + webhooks provados (provedor fake); sandbox Stripe/Asaas ⛔ bloqueado | `SUBSCRIPTIONS.md`; billing tests |
 | F — Segurança/E2E/QA | ⬜ Não iniciada | — |
-| G — Staging/docs/piloto | ⬜ Não iniciada | — |
+| G — Staging/docs/piloto | ⬜ Não iniciada | docs operacionais criados |
+
+## Entregue na Fase B/E (backend Laravel)
+
+- Monólito modular Laravel 13 (PHP 8.4) em `backend/app/Modules/` — ADR-010.
+- Autenticação Sanctum (SPA) + provisionamento transacional de organização (owner).
+- Multi-tenancy: `organizations`/`memberships`/`organization_settings`, `ResolveTenantContext`, `TenantContext`.
+- Billing completo e correto — ADR-011: catálogo no servidor, status canônico único, `active` só com pagamento confirmado, trial não reutilizável, sem duplicidade, enforcement de cotas, ledger de webhooks idempotente, `BillingProvider` desacoplado (fake/stripe/asaas).
+- API REST `/api/v1` + OpenAPI (`docs/api/openapi.yaml`).
+- Docker Compose (PostgreSQL 18 + MinIO + backend).
+- **29 testes Pest / 72 asserções — todos passando** (`php artisan test`); Pint limpo.
 
 ## Baseline verificado (Fase A) — executado em 2026-11-05 neste ambiente
 

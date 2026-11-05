@@ -1,0 +1,226 @@
+openapi: 3.1.0
+info:
+  title: Agenda Fácil API
+  version: "1.0.0"
+  description: >
+    API REST versionada (v1) do SaaS Agenda Fácil. O servidor é a autoridade sobre
+    identificação do tenant, permissões, cotas, preço e assinatura. Autenticação da SPA
+    via Laravel Sanctum. Esta especificação cobre os endpoints implementados na Fase B/E
+    (fundação + billing); áreas de agenda/clientes/serviços serão adicionadas nas próximas fases.
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Desenvolvimento local
+tags:
+  - name: Auth
+  - name: Billing
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Cadastra o proprietário e provisiona a organização (transacional)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201':
+          description: Conta criada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Autentica e emite token de sessão (Sanctum)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Autenticado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Dados do usuário autenticado e seus vínculos
+      security: [{ sanctum: [] }]
+      responses:
+        '200': { description: OK }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Encerra a sessão atual
+      security: [{ sanctum: [] }]
+      responses:
+        '200': { description: Sessão encerrada }
+
+  /plans:
+    get:
+      tags: [Billing]
+      summary: Catálogo de planos (fonte autoritativa no servidor)
+      responses:
+        '200':
+          description: Lista de planos ativos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Plan' }
+
+  /subscription:
+    get:
+      tags: [Billing]
+      summary: Assinatura atual da organização e uso de cotas
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      responses:
+        '200': { description: OK }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Sem acesso à organização }
+
+  /subscription/checkout:
+    post:
+      tags: [Billing]
+      summary: Inicia o checkout do plano (owner); preço resolvido no servidor
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plan_code]
+              properties:
+                plan_code: { type: string, example: pro }
+      responses:
+        '200':
+          description: URL de checkout
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url: { type: string, format: uri }
+        '403': { description: Apenas o proprietário administra a assinatura }
+
+  /subscription/change-plan:
+    post:
+      tags: [Billing]
+      summary: Upgrade/downgrade de plano (owner)
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plan_code]
+              properties:
+                plan_code: { type: string }
+      responses:
+        '200': { description: Plano alterado }
+        '409': { description: Sem assinatura ativa }
+
+  /subscription/cancel:
+    post:
+      tags: [Billing]
+      summary: Cancela a assinatura (imediato ou no fim do período) (owner)
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                at_period_end: { type: boolean, default: true }
+      responses:
+        '200': { description: Cancelamento aplicado/agendado }
+
+  /billing/webhook/{provider}:
+    post:
+      tags: [Billing]
+      summary: Recebe webhooks do gateway (validados por assinatura; idempotentes)
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema: { type: string, enum: [fake, stripe, asaas] }
+      responses:
+        '200': { description: Recebido }
+        '400': { description: Webhook inválido }
+
+components:
+  securitySchemes:
+    sanctum:
+      type: http
+      scheme: bearer
+  parameters:
+    OrganizationId:
+      name: X-Organization-Id
+      in: header
+      required: false
+      schema: { type: string, format: uuid }
+      description: Organização alvo (obrigatória quando o usuário tem múltiplos vínculos)
+  responses:
+    Unauthorized:
+      description: Não autenticado
+    ValidationError:
+      description: Erro de validação
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [full_name, email, password, org_name, org_slug]
+      properties:
+        full_name: { type: string, maxLength: 120 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        phone: { type: string, nullable: true }
+        org_name: { type: string }
+        org_slug: { type: string, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
+        segment: { type: string, enum: [estetica, beleza, cabelo, pet], nullable: true }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string }
+            email: { type: string }
+        token: { type: string }
+    Plan:
+      type: object
+      properties:
+        code: { type: string }
+        name: { type: string }
+        subtitle: { type: string }
+        price_cents: { type: integer }
+        currency: { type: string }
+        billing_interval: { type: string }
+        entitlements:
+          type: object
+          additionalProperties: true
