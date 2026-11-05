@@ -49,9 +49,17 @@ CI deve rodar lint + testes + migrações antes de qualquer publicação (ver `.
 ## Staging / produção (resumo)
 
 - Container PHP-FPM + Nginx (ou `php artisan serve` apenas para dev).
-- Fila (`queue:work`) e Scheduler (`schedule:run`) somente quando necessários (lembretes, `suspendExpiredGrace`).
+- Fila (`queue:work`) e Scheduler (`schedule:run`) somente quando necessários (lembretes `reminders:dispatch`, `suspendExpiredGrace`).
 - HTTPS obrigatório; cookies de sessão `HttpOnly`/`Secure`; CSRF via Sanctum.
 - Webhooks do gateway com endpoint dedicado e rate limit (`throttle:webhooks`).
+- Dados sintéticos para demonstração: `php artisan db:seed --class=Database\Seeders\DemoSeeder`.
+
+## Backup e restauração (ADR-013)
+
+- **Backup**: `DATABASE_URL=postgres://... backend/scripts/backup.sh [destino]` → gera `.dump` (formato custom) + `.sha256`; mover para storage privado (S3) com retenção.
+- **Restauração testada**: `TARGET_DATABASE_URL=<banco_de_teste> backend/scripts/restore.sh <arquivo.dump>` — **sempre** em banco separado, nunca produção.
+- **Verificação automatizada**: round-trip lógico em `tests/Feature/Operations/BackupRestoreTest.php` (snapshot → perda total simulada → restauração → contagens/IDs idênticos) roda no CI contra PostgreSQL 18.
+- Checklist operacional completo: `docs/operations/PILOT_CHECKLIST.md`.
 
 ## Observação sobre este sandbox
 

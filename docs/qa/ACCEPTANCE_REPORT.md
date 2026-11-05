@@ -19,7 +19,7 @@
 
 ### Backend Laravel (novo — Fases B/E/D + PublicBooking/Portal)
 - `./vendor/bin/pint --test` → ✅ estilo limpo
-- `php artisan test` (Pest) → ✅ **56 testes / 148 asserções**
+- `php artisan test` (Pest) → ✅ **58 testes / 158 asserções**
   - (além dos anteriores) Reserva pública/Portal: contexto por slug, anti-enumeração de OTP, OTP inválido rejeitado, sessão opaca exigida, isolamento de sessão entre organizações
 - CI: `backend.yml` (PostgreSQL 18) e `frontend-angular.yml` adicionados
   - Auth/provisionamento (owner, transacional, isolamento 2 orgs, slug único)
@@ -47,7 +47,7 @@
 | Org não acessa dados de outra | ✅ comprovado | teste anti-IDOR HTTP (2 orgs) + isolamento no provisionamento |
 | Angular nos principais tamanhos de tela | ⬜ pendente | Fase D/F |
 | Builds/testes/CI aprovados | ✅ comprovado | 3 workflows verdes (Qualidade/Backend-PostgreSQL/Angular) |
-| Backups restauráveis | ⬜ pendente | Fase G |
+| Backups restauráveis | ✅ round-trip lógico testado no CI | físico (pg_dump/restore) via scripts; validar em staging |
 | Produção inalterada | ✅ garantido | nada remoto tocado |
 
 Legenda: ✅ comprovado · 🟡 parcial/provado em dev · ⬜ não iniciado · ⛔ bloqueado

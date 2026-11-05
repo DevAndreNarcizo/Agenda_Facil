@@ -120,3 +120,13 @@ Registradas como ADRs em `docs/adr/` (novas ADRs a partir de ADR-010).
 - Qualidade: backend **56 testes / 148 asserções** verdes; Pint limpo. Command e schedule verificados via `artisan`.
 
 > Último recurso comercial do MVP (lembretes automáticos) implementado e testado, sem depender de bloqueios externos para a lógica.
+
+## Entregue na continuação (Fase G: staging / backup / piloto)
+
+- **Backup/restauração** (ADR-013): `backend/scripts/backup.sh` (pg_dump -Fc + SHA-256) e `restore.sh` (pg_restore em banco separado). `SnapshotService` (export/import lógico preservando IDs) + teste de **round-trip** (`BackupRestoreTest`): perda total simulada → restauração → contagens/IDs idênticos (roda no CI contra PostgreSQL 18). Cobre a DoD "backups restauráveis".
+- **DemoSeeder**: dados **sintéticos** para staging/piloto (org, assinatura ativa, equipe, serviços, clientes, agendamentos).
+- **Checklist de piloto**: `docs/operations/PILOT_CHECKLIST.md` (staging, qualidade/segurança, backup, operação, mapa da DoD, bloqueios externos).
+- `DEPLOYMENT.md` atualizado com seções de backup/restauração e demo.
+- Qualidade: backend **58 testes / 158 asserções** verdes; Pint limpo.
+
+> Itens operacionais da DoD que não dependem de credenciais externas estão fechados e verificáveis; o que resta é execução em staging real e os bloqueios externos (dump do Supabase, sandbox de gateway, credenciais WhatsApp).
