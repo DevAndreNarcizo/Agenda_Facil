@@ -13,6 +13,7 @@ servers:
 tags:
   - name: Auth
   - name: Billing
+  - name: Scheduling
 
 paths:
   /auth/register:
@@ -166,6 +167,159 @@ paths:
       responses:
         '200': { description: Recebido }
         '400': { description: Webhook inválido }
+
+  /services:
+    get:
+      tags: [Scheduling]
+      summary: Lista serviços da organização
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      responses:
+        '200': { description: OK }
+        '402': { description: Assinatura inativa }
+    post:
+      tags: [Scheduling]
+      summary: Cria serviço (owner/admin)
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, duration_minutes]
+              properties:
+                name: { type: string }
+                category: { type: string, nullable: true }
+                duration_minutes: { type: integer, minimum: 1 }
+                price_cents: { type: integer, minimum: 0 }
+      responses:
+        '201': { description: Criado }
+        '403': { description: Apenas gestores }
+
+  /professionals:
+    get:
+      tags: [Scheduling]
+      summary: Lista profissionais
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Scheduling]
+      summary: Cria profissional (respeita cota do plano)
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+      responses:
+        '201': { description: Criado }
+        '402': { description: Limite de profissionais do plano atingido }
+
+  /customers:
+    get:
+      tags: [Scheduling]
+      summary: Lista/busca clientes
+      security: [{ sanctum: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/OrganizationId' }
+        - { name: q, in: query, schema: { type: string }, description: Busca por nome ou telefone }
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Scheduling]
+      summary: Cadastra cliente
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                phone: { type: string, nullable: true }
+                email: { type: string, format: email, nullable: true }
+      responses:
+        '201': { description: Criado }
+
+  /appointments:
+    get:
+      tags: [Scheduling]
+      summary: Lista agendamentos por período
+      security: [{ sanctum: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/OrganizationId' }
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Scheduling]
+      summary: Cria agendamento (anti-overlap + cota mensal no servidor)
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [start_time, end_time]
+              properties:
+                service_id: { type: string, format: uuid, nullable: true }
+                professional_id: { type: string, format: uuid, nullable: true }
+                customer_id: { type: string, format: uuid, nullable: true }
+                start_time: { type: string, format: date-time }
+                end_time: { type: string, format: date-time }
+                source: { type: string, enum: [direct, instagram, google, qr, site, referral] }
+      responses:
+        '201': { description: Criado }
+        '402': { description: Cota mensal de agendamentos atingida }
+        '409': { description: Conflito de horário (sobreposição) }
+
+  /appointments/{appointment}/reschedule:
+    post:
+      tags: [Scheduling]
+      summary: Remarca agendamento (verifica sobreposição)
+      security: [{ sanctum: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/OrganizationId' }
+        - { name: appointment, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Remarcado }
+        '409': { description: Conflito de horário }
+
+  /appointments/{appointment}/status:
+    post:
+      tags: [Scheduling]
+      summary: Atualiza status (pending/confirmed/completed/cancelled)
+      security: [{ sanctum: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/OrganizationId' }
+        - { name: appointment, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [pending, confirmed, completed, cancelled] }
+      responses:
+        '200': { description: Atualizado }
+        '404': { description: Não encontrado no tenant atual }
 
 components:
   securitySchemes:

@@ -27,4 +27,26 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Conflito de agenda -> 409.
+        $exceptions->render(function (\Modules\Scheduling\Exceptions\SchedulingConflictException $e, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage()], 409);
+            }
+
+            return null;
+        });
+
+        // Cota de plano excedida -> 402 (pagamento necessário / upgrade).
+        $exceptions->render(function (\Modules\Billing\Exceptions\QuotaExceededException $e, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'entitlement' => $e->entitlementKey,
+                    'limit' => $e->limit,
+                ], 402);
+            }
+
+            return null;
+        });
     })->create();

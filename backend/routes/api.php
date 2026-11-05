@@ -4,6 +4,10 @@ use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Billing\PlanController;
 use App\Http\Controllers\Api\V1\Billing\SubscriptionController;
 use App\Http\Controllers\Api\V1\Billing\WebhookController;
+use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\ProfessionalController;
+use App\Http\Controllers\Api\V1\Scheduling\AppointmentController;
+use App\Http\Controllers\Api\V1\ServiceController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -36,6 +40,28 @@ Route::prefix('v1')->group(function (): void {
             Route::post('subscription/checkout', [SubscriptionController::class, 'checkout'])->middleware('throttle:auth');
             Route::post('subscription/change-plan', [SubscriptionController::class, 'changePlan']);
             Route::post('subscription/cancel', [SubscriptionController::class, 'cancel']);
+
+            // Núcleo operacional — exige assinatura utilizável (trial/active/grace).
+            Route::middleware('subscription.active')->group(function (): void {
+                // Serviços
+                Route::get('services', [ServiceController::class, 'index']);
+                Route::post('services', [ServiceController::class, 'store']);
+                Route::patch('services/{service}', [ServiceController::class, 'update']);
+
+                // Profissionais (cota do plano aplicada na criação)
+                Route::get('professionals', [ProfessionalController::class, 'index']);
+                Route::post('professionals', [ProfessionalController::class, 'store']);
+
+                // Clientes
+                Route::get('customers', [CustomerController::class, 'index']);
+                Route::post('customers', [CustomerController::class, 'store']);
+
+                // Agenda
+                Route::get('appointments', [AppointmentController::class, 'index']);
+                Route::post('appointments', [AppointmentController::class, 'store']);
+                Route::post('appointments/{appointment}/reschedule', [AppointmentController::class, 'reschedule']);
+                Route::post('appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
+            });
         });
     });
 });

@@ -11,13 +11,15 @@
 - `npx tsc -b` → ✅ limpo
 - `npm test` (vitest) → ✅ **31 testes / 10 arquivos**
 
-### Backend Laravel (novo — Fase B/E)
+### Backend Laravel (novo — Fases B/E/D)
 - `./vendor/bin/pint --test` → ✅ estilo limpo
-- `php artisan test` (Pest) → ✅ **29 testes / 72 asserções**
+- `php artisan test` (Pest) → ✅ **41 testes / 98 asserções**
   - Auth/provisionamento (owner, transacional, isolamento 2 orgs, slug único)
   - Billing: incompleta→ativa só com pagamento; trial não reinicia; sem duplicidade; grace→suspensão automática; cancelamento imediato/fim de período; upgrade/downgrade auditado
   - Webhook: idempotência, fora de ordem, assinatura inválida rejeitada
-  - API HTTP: catálogo de planos, cadastro, checkout owner-only, webhook assinado ativa a assinatura
+  - Agenda: anti-overlap (sobreposição, adjacência, profissionais distintos, cancelado ignorado), remarcação com conflito, intervalo inválido
+  - Cotas: profissionais e agendamentos/mês barrados ao estourar; ilimitado respeitado
+  - API HTTP: catálogo de planos, cadastro, checkout owner-only, webhook assinado ativa; CRUD operacional; guard de assinatura (402); anti-IDOR entre 2 orgs
 - `php artisan migrate --seed` → ✅ migrações + `PlanCatalogSeeder` aplicam (validado em SQLite)
 
 ## Definition of Done (§11 da missão) — rastreamento
@@ -26,14 +28,14 @@
 |---|---|---|
 | Organização consegue se cadastrar | 🟡 backend pronto e testado | UI Angular pendente (Fase D) |
 | Proprietário conclui onboarding | 🟡 provisionamento pronto | onboarding completo pendente (Fase D) |
-| Profissionais e serviços cadastrados | ⬜ pendente | módulos Scheduling/Services (Fase D) |
-| Cliente externo reserva | ⬜ pendente | PublicBooking (Fase D) |
-| Agendamento aparece na agenda | ⬜ pendente | Scheduling (Fase D) |
+| Profissionais e serviços cadastrados | ✅ backend comprovado | API + cota de profissionais; UI pendente |
+| Cliente externo reserva | ⬜ pendente | PublicBooking/CustomerPortal (próxima iteração) |
+| Agendamento aparece na agenda | ✅ backend comprovado | `GET /appointments`; criação anti-overlap |
 | Plano reconhecido pelo servidor | ✅ comprovado | catálogo no servidor + `GET /subscription` |
 | Cobrança sandbox confirmada | 🟡 fluxo provado com provedor **fake** | sandbox Stripe/Asaas bloqueado (credenciais) |
 | Renovação/falha/troca/cancelamento | ✅ comprovado (serviço + webhook) | com provedor fake; revalidar em sandbox real |
-| Limites não podem ser burlados | ✅ comprovado | `EntitlementService` + testes de cota |
-| Org não acessa dados de outra | 🟡 comprovado no provisionamento | ampliar quando houver dados de negócio migrados |
+| Limites não podem ser burlados | ✅ comprovado | cotas aplicadas a profissionais e agendamentos reais |
+| Org não acessa dados de outra | ✅ comprovado | teste anti-IDOR HTTP (2 orgs) + isolamento no provisionamento |
 | Angular nos principais tamanhos de tela | ⬜ pendente | Fase D/F |
 | Builds/testes/CI aprovados | 🟡 testes locais verdes | CI do backend a adicionar |
 | Backups restauráveis | ⬜ pendente | Fase G |

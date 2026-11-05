@@ -12,7 +12,7 @@
 | B — Fundação Laravel + Sanctum | 🟡 Backend fundado e testado | `backend/`; 29 testes Pest verdes |
 | B — Fundação Angular | ⬜ Não iniciada | — |
 | C — Banco + multi-tenancy | 🟡 Modelo + isolamento provados; migração de dados ⛔ bloqueada (dump do Supabase) | `TENANT_MATRIX.md`; MultiTenancyTest |
-| D — Funcionalidades | ⬜ Não iniciada | — |
+| D — Funcionalidades (backend) | 🟡 Serviços/Profissionais/Clientes/Agenda com anti-overlap e cotas, provados | Scheduling/Services/Customers/Professionals; 41 testes |
 | E — Billing | 🟡 Lógica correta + cotas + webhooks provados (provedor fake); sandbox Stripe/Asaas ⛔ bloqueado | `SUBSCRIPTIONS.md`; billing tests |
 | F — Segurança/E2E/QA | ⬜ Não iniciada | — |
 | G — Staging/docs/piloto | ⬜ Não iniciada | docs operacionais criados |
@@ -25,7 +25,18 @@
 - Billing completo e correto — ADR-011: catálogo no servidor, status canônico único, `active` só com pagamento confirmado, trial não reutilizável, sem duplicidade, enforcement de cotas, ledger de webhooks idempotente, `BillingProvider` desacoplado (fake/stripe/asaas).
 - API REST `/api/v1` + OpenAPI (`docs/api/openapi.yaml`).
 - Docker Compose (PostgreSQL 18 + MinIO + backend).
-- **29 testes Pest / 72 asserções — todos passando** (`php artisan test`); Pint limpo.
+
+## Entregue na Fase D (backend — núcleo operacional)
+
+- Domínios Services, Professionals, Customers, Scheduling (`backend/app/Modules/`).
+- **Agenda sem sobreposição** (SchedulingService): lock consultivo por profissional + verificação de interseção + constraint `EXCLUDE` (PostgreSQL) — SPEC-004/ADR-006. Cancelados não bloqueiam horário.
+- **Cotas aplicadas a dados reais**: criação de profissional respeita o limite do plano (402); criação de agendamento consome a cota mensal (402 ao estourar; renova por mês).
+- API: CRUD de serviços (gestores), profissionais (com cota), clientes, e agenda (criar/remarcar/status), todas tenant-scoped e com guard de assinatura (`subscription.active`).
+- Isolamento anti-IDOR/BOLA provado por teste HTTP (acesso cruzado entre 2 orgs negado; dado da outra org intacto).
+
+## Evidência consolidada
+
+- **41 testes Pest / 98 asserções — todos passando** (`php artisan test`); Pint limpo; migrações aplicam (SQLite no sandbox; PostgreSQL 18 alvo).
 
 ## Baseline verificado (Fase A) — executado em 2026-11-05 neste ambiente
 
