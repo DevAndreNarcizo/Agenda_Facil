@@ -1,0 +1,30 @@
+<section class="crud">
+  <h1>Serviços</h1>
+
+  @if (auth.isManager()) {
+    <form [formGroup]="form" (ngSubmit)="create()" class="inline-form" novalidate>
+      <input type="text" formControlName="name" placeholder="Nome do serviço" />
+      <input type="number" formControlName="duration_minutes" min="1" placeholder="Min" />
+      <input type="number" formControlName="price" min="0" step="0.01" placeholder="Preço" />
+      <button type="submit" [disabled]="saving()">{{ saving() ? 'Salvando…' : 'Adicionar' }}</button>
+    </form>
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+  } @else {
+    <p class="muted">Apenas gestores podem cadastrar serviços.</p>
+  }
+
+  @if (agenda.services().length === 0) {
+    <p class="empty">Nenhum serviço cadastrado.</p>
+  } @else {
+    <ul class="crud-list">
+      @for (s of agenda.services(); track s.id) {
+        <li>
+          <strong>{{ s.name }}</strong>
+          <span class="muted">· {{ s.duration_minutes }} min · {{ formatPrice(s.price_cents) }}</span>
+        </li>
+      }
+    </ul>
+  }
+</section>

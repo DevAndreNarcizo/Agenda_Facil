@@ -90,3 +90,14 @@ Registradas como ADRs em `docs/adr/` (novas ADRs a partir de ADR-010).
 - Qualidade: backend **50 testes / 127 asserções**; Angular **5 testes** + build de produção (chunks `onboarding-page`, `agenda-page`).
 
 > Paridade da área operacional central (onboarding→agenda) agora existe no Angular consumindo o backend — passo concreto rumo ao cutover do React.
+
+## Entregue na continuação (Angular: CRUD + assinatura)
+
+- **Clientes**: página de busca + cadastro (`CustomersService`).
+- **Serviços**: listagem + cadastro (gestor); UI reflete 403 do servidor.
+- **Profissionais**: listagem + cadastro com tradução do **402 (cota do plano)** e 403.
+- **Assinatura**: plano atual + **uso de cotas** (profissionais/agendamentos no mês, com barra), troca de plano e cancelamento ao fim do período, consumindo a API.
+- Rotas protegidas por `authGuard` + `onboardingCompletedGuard`; links no painel.
+- Qualidade: Angular **7 testes** (app, interceptor, AgendaService, CustomersService) + build de produção (chunks por página). Backend inalterado (50 testes verdes).
+
+> Paridade das áreas operacionais do MVP (agenda, clientes, serviços, profissionais, assinatura) agora existe no Angular consumindo o backend.

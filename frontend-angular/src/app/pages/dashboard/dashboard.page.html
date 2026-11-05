@@ -19,10 +19,12 @@
   }
 
   <nav class="actions">
-    <a routerLink="/agenda">Abrir agenda</a>
-    <a routerLink="/plans">Ver planos</a>
+    <a routerLink="/agenda">Agenda</a>
+    <a routerLink="/customers">Clientes</a>
+    <a routerLink="/services">Serviços</a>
+    <a routerLink="/professionals">Profissionais</a>
     @if (auth.isManager()) {
-      <a routerLink="/subscription">Gerenciar assinatura</a>
+      <a routerLink="/subscription">Assinatura</a>
     }
   </nav>
 </section>

@@ -1,0 +1,29 @@
+<section class="crud">
+  <h1>Clientes</h1>
+
+  <form [formGroup]="form" (ngSubmit)="create()" class="inline-form" novalidate>
+    <input type="text" formControlName="name" placeholder="Nome" />
+    <input type="text" formControlName="phone" placeholder="Telefone" />
+    <input type="email" formControlName="email" placeholder="E-mail (opcional)" />
+    <button type="submit" [disabled]="saving()">{{ saving() ? 'Salvando…' : 'Adicionar' }}</button>
+  </form>
+
+  <label class="search">
+    Buscar
+    <input type="search" [value]="search()" (input)="doSearch($any($event.target).value)" placeholder="Nome ou telefone" />
+  </label>
+
+  @if (customers.customers().length === 0) {
+    <p class="empty">Nenhum cliente encontrado.</p>
+  } @else {
+    <ul class="crud-list">
+      @for (c of customers.customers(); track c.id) {
+        <li>
+          <strong>{{ c.name }}</strong>
+          @if (c.phone) { <span class="muted">· {{ c.phone }}</span> }
+          @if (c.email) { <span class="muted">· {{ c.email }}</span> }
+        </li>
+      }
+    </ul>
+  }
+</section>

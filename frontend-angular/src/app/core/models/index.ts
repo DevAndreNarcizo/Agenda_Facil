@@ -42,6 +42,12 @@ export interface SubscriptionSummary {
   plan: { code: string; name: string; price_cents: number } | null;
 }
 
+export interface SubscriptionUsage {
+  professionals_limit: number | null;
+  monthly_appointments_limit: number | null;
+  monthly_appointments_used: number;
+}
+
 export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 
 export interface Service {
@@ -83,4 +89,12 @@ export interface OrganizationState {
   slug: string;
   onboarding_completed: boolean;
   business_hours: BusinessHour[];
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  notes: string | null;
 }

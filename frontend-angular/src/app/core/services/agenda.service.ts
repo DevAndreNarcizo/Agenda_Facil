@@ -61,4 +61,25 @@ export class AgendaService {
       this.http.post(`${environment.apiBaseUrl}/appointments/${appointmentId}/status`, { status }),
     );
   }
+
+  async createService(input: {
+    name: string;
+    duration_minutes: number;
+    price_cents?: number;
+    category?: string;
+  }): Promise<Service> {
+    const res = await firstValueFrom(
+      this.http.post<{ data: Service }>(`${environment.apiBaseUrl}/services`, input),
+    );
+    await this.loadServices();
+    return res.data;
+  }
+
+  async createProfessional(input: { name: string }): Promise<Professional> {
+    const res = await firstValueFrom(
+      this.http.post<{ data: Professional }>(`${environment.apiBaseUrl}/professionals`, input),
+    );
+    await this.loadProfessionals();
+    return res.data;
+  }
 }

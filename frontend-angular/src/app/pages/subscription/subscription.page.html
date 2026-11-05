@@ -2,17 +2,60 @@
   <h1>Assinatura</h1>
 
   @if (billing.subscription(); as sub) {
-    <p>Plano atual: <strong>{{ sub.plan?.name ?? 'Nenhum' }}</strong> — {{ sub.status }}</p>
+    <div class="card">
+      <p>Plano atual: <strong>{{ sub.plan?.name ?? 'Nenhum' }}</strong> — {{ sub.status }}</p>
+      @if (sub.trial_ends_at) {
+        <p class="muted">Teste termina em {{ sub.trial_ends_at }}</p>
+      }
+      @if (sub.cancel_at_period_end) {
+        <p class="warn">Cancelamento agendado para o fim do período.</p>
+      }
+
+      @if (billing.usage(); as u) {
+        <div class="usage">
+          <p>Profissionais: limite {{ u.professionals_limit ?? 'ilimitado' }}</p>
+          <p>
+            Agendamentos no mês: {{ u.monthly_appointments_used }}
+            @if (u.monthly_appointments_limit !== null) {
+              / {{ u.monthly_appointments_limit }}
+            } @else {
+              (ilimitado)
+            }
+          </p>
+          @if (usagePercent() !== null) {
+            <div class="bar"><div class="bar-fill" [style.width.%]="usagePercent()"></div></div>
+          }
+        </div>
+      }
+
+      @if (sub.status !== 'canceled') {
+        <div class="actions">
+          <button type="button" class="danger" [disabled]="busy() !== null" (click)="cancel(true)">
+            Cancelar no fim do período
+          </button>
+        </div>
+      }
+    </div>
   }
 
-  <h2>Escolher plano</h2>
+  @if (message()) {
+    <p class="message" role="status">{{ message() }}</p>
+  }
+
+  <h2>Planos</h2>
   <div class="plan-grid">
     @for (plan of billing.plans(); track plan.code) {
-      <article class="plan-card">
+      <article class="plan-card" [class.current]="billing.subscription()?.plan?.code === plan.code">
         <h3>{{ plan.name }}</h3>
         <p class="price">{{ formatPrice(plan.price_cents) }}<span>/mês</span></p>
-        <button type="button" [disabled]="busy() !== null" (click)="subscribe(plan.code)">
-          {{ busy() === plan.code ? 'Abrindo checkout…' : 'Assinar' }}
+        <button type="button" [disabled]="busy() !== null || billing.subscription()?.plan?.code === plan.code" (click)="subscribe(plan.code)">
+          @if (billing.subscription()?.plan?.code === plan.code) {
+            Plano atual
+          } @else if (busy() === plan.code) {
+            Processando…
+          } @else {
+            Escolher
+          }
         </button>
       </article>
     }

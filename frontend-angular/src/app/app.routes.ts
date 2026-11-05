@@ -33,6 +33,22 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/agenda/agenda.page').then((m) => m.AgendaPage),
   },
   {
+    path: 'customers',
+    canActivate: [authGuard, onboardingCompletedGuard],
+    loadComponent: () => import('./pages/customers/customers.page').then((m) => m.CustomersPage),
+  },
+  {
+    path: 'services',
+    canActivate: [authGuard, onboardingCompletedGuard],
+    loadComponent: () => import('./pages/services/services.page').then((m) => m.ServicesPage),
+  },
+  {
+    path: 'professionals',
+    canActivate: [authGuard, onboardingCompletedGuard],
+    loadComponent: () =>
+      import('./pages/professionals/professionals.page').then((m) => m.ProfessionalsPage),
+  },
+  {
     path: 'plans',
     loadComponent: () => import('./pages/plans/plans.page').then((m) => m.PlansPage),
   },

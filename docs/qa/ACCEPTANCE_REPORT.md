@@ -36,7 +36,7 @@
 |---|---|---|
 | Organização consegue se cadastrar | 🟡 backend pronto e testado | UI Angular pendente (Fase D) |
 | Proprietário conclui onboarding | ✅ comprovado | endpoint transacional + página Angular; testado |
-| Profissionais e serviços cadastrados | ✅ backend comprovado | API + cota de profissionais; UI pendente |
+| Profissionais e serviços cadastrados | ✅ comprovado | API + cota; UI Angular (CRUD) entregue |
 | Cliente externo reserva | ✅ backend comprovado | OTP→sessão opaca→reserva pública; anti-enumeração/isolamento testados; UI pendente |
 | Agendamento aparece na agenda | ✅ backend comprovado | `GET /appointments`; criação anti-overlap |
 | Plano reconhecido pelo servidor | ✅ comprovado | catálogo no servidor + `GET /subscription` |

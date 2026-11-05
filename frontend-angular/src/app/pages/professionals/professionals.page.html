@@ -1,0 +1,25 @@
+<section class="crud">
+  <h1>Profissionais</h1>
+
+  @if (auth.isManager()) {
+    <form [formGroup]="form" (ngSubmit)="create()" class="inline-form" novalidate>
+      <input type="text" formControlName="name" placeholder="Nome do profissional" />
+      <button type="submit" [disabled]="saving()">{{ saving() ? 'Salvando…' : 'Adicionar' }}</button>
+    </form>
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+  } @else {
+    <p class="muted">Apenas gestores podem cadastrar profissionais.</p>
+  }
+
+  @if (agenda.professionals().length === 0) {
+    <p class="empty">Nenhum profissional cadastrado.</p>
+  } @else {
+    <ul class="crud-list">
+      @for (p of agenda.professionals(); track p.id) {
+        <li><strong>{{ p.name }}</strong></li>
+      }
+    </ul>
+  }
+</section>

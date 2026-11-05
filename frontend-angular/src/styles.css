@@ -53,3 +53,19 @@ select { padding: 0.5rem; border: 1px solid var(--af-line); border-radius: 6px; 
 button.danger { background: #b91c1c; }
 .message { color: #0f766e; }
 .empty { color: #64748b; }
+
+/* CRUD (clientes/serviços/profissionais) */
+.crud { max-width: 760px; margin: 2rem auto; padding: 1.5rem; }
+.inline-form { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 1rem; }
+.inline-form input { flex: 1 1 140px; }
+.inline-form button { flex: 0 0 auto; }
+.search { max-width: 360px; margin-bottom: 1rem; }
+.crud-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.crud-list li { padding: 0.6rem 0.8rem; border: 1px solid var(--af-line); border-radius: 8px; background: #fff; }
+.muted { color: #64748b; font-size: 0.9rem; }
+
+/* Assinatura — uso/cotas */
+.usage { margin-top: 0.75rem; }
+.bar { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 0.25rem; }
+.bar-fill { height: 100%; background: var(--af-accent); }
+.plan-card.current { border-color: var(--af-accent); }
