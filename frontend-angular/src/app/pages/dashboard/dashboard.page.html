@@ -1,0 +1,27 @@
+<section class="dashboard">
+  <h1>Olá, {{ auth.user()?.name }}</h1>
+
+  @if (auth.activeMembership(); as m) {
+    <p>Organização: <strong>{{ m.organization?.name }}</strong> ({{ m.role }})</p>
+  }
+
+  @if (billing.subscription(); as sub) {
+    <div class="card">
+      <h2>Assinatura</h2>
+      <p>Plano: {{ sub.plan?.name ?? 'Nenhum' }}</p>
+      <p>Status: <strong>{{ sub.status }}</strong></p>
+      @if (!sub.grants_paid_access) {
+        <p class="warn">Acesso pago inativo — regularize para continuar usando os recursos.</p>
+      }
+    </div>
+  } @else {
+    <p>Carregando assinatura…</p>
+  }
+
+  <nav class="actions">
+    <a routerLink="/plans">Ver planos</a>
+    @if (auth.isManager()) {
+      <a routerLink="/subscription">Gerenciar assinatura</a>
+    }
+  </nav>
+</section>

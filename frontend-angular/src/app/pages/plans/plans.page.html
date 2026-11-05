@@ -1,0 +1,22 @@
+<section class="plans">
+  <h1>Planos</h1>
+
+  @if (billing.plans().length === 0) {
+    <p>Carregando planos…</p>
+  } @else {
+    <div class="plan-grid">
+      @for (plan of billing.plans(); track plan.code) {
+        <article class="plan-card">
+          <h2>{{ plan.name }}</h2>
+          <p class="subtitle">{{ plan.subtitle }}</p>
+          <p class="price">{{ formatPrice(plan.price_cents) }}<span>/mês</span></p>
+          <ul>
+            @for (entry of plan.entitlements | keyvalue; track entry.key) {
+              <li>{{ entry.key }}: {{ entry.value === null ? 'ilimitado' : entry.value }}</li>
+            }
+          </ul>
+        </article>
+      }
+    </div>
+  }
+</section>

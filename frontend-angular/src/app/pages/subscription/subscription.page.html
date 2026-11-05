@@ -1,0 +1,20 @@
+<section class="subscription">
+  <h1>Assinatura</h1>
+
+  @if (billing.subscription(); as sub) {
+    <p>Plano atual: <strong>{{ sub.plan?.name ?? 'Nenhum' }}</strong> — {{ sub.status }}</p>
+  }
+
+  <h2>Escolher plano</h2>
+  <div class="plan-grid">
+    @for (plan of billing.plans(); track plan.code) {
+      <article class="plan-card">
+        <h3>{{ plan.name }}</h3>
+        <p class="price">{{ formatPrice(plan.price_cents) }}<span>/mês</span></p>
+        <button type="button" [disabled]="busy() !== null" (click)="subscribe(plan.code)">
+          {{ busy() === plan.code ? 'Abrindo checkout…' : 'Assinar' }}
+        </button>
+      </article>
+    }
+  </div>
+</section>

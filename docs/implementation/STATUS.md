@@ -9,8 +9,8 @@
 | Fase | Estado | Evidência |
 |---|---|---|
 | A — Auditoria + baseline | ✅ Concluída | `docs/migration/AUDIT.md`; baseline de testes §abaixo |
-| B — Fundação Laravel + Sanctum | 🟡 Backend fundado e testado | `backend/`; 29 testes Pest verdes |
-| B — Fundação Angular | ⬜ Não iniciada | — |
+| B — Fundação Laravel + Sanctum | 🟡 Backend fundado e testado | `backend/`; 41 testes Pest verdes |
+| B — Fundação Angular | 🟡 App standalone + auth/guards/interceptors + billing; build e testes verdes | `frontend-angular/`; ADR-012 |
 | C — Banco + multi-tenancy | 🟡 Modelo + isolamento provados; migração de dados ⛔ bloqueada (dump do Supabase) | `TENANT_MATRIX.md`; MultiTenancyTest |
 | D — Funcionalidades (backend) | 🟡 Serviços/Profissionais/Clientes/Agenda com anti-overlap e cotas, provados | Scheduling/Services/Customers/Professionals; 41 testes |
 | E — Billing | 🟡 Lógica correta + cotas + webhooks provados (provedor fake); sandbox Stripe/Asaas ⛔ bloqueado | `SUBSCRIPTIONS.md`; billing tests |
@@ -63,3 +63,15 @@ PHP 8.4.27 + Composer 2.9.5 (via mise) · Node 22 · Docker 5.2.3 · Postgres vi
 ## Decisões arquiteturais
 
 Registradas como ADRs em `docs/adr/` (novas ADRs a partir de ADR-010).
+
+## Entregue na Fase B (frontend — fundação Angular)
+
+- App Angular 22 standalone em `frontend-angular/` (ADR-012), isolado do app React (preservado).
+- Zoneless + signals; TypeScript estrito; lazy loading por rota (chunks separados no build).
+- `AuthService` (signals) + `BillingService` consumindo a API v1 do Laravel.
+- Interceptors: `authInterceptor` (token Sanctum + `X-Organization-Id` + Accept) e `errorInterceptor` (401→logout).
+- Guards: `authGuard`, `managerGuard`.
+- Reactive Forms tipados: login e cadastro; páginas dashboard/planos/assinatura.
+- **Build de produção OK** (chunks por rota) e **2 testes Angular verdes** (shell + interceptor), via runner Vitest (chromium do Playwright no sandbox).
+
+> Pendente: migração completa das 12 áreas com paridade visual, design tokens completos do app React, E2E Playwright, guard de assinatura nas rotas pagas. O React só é desativado após paridade verificada.

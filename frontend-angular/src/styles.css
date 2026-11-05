@@ -1,0 +1,36 @@
+/* Estilos globais mínimos — tokens de design completos serão migrados do app React. */
+:root {
+  --af-bg: #f7f9fc;
+  --af-accent: #2563eb;
+  --af-ink: #0f172a;
+  --af-line: #e2e8f0;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--af-bg);
+  color: var(--af-ink);
+}
+
+.auth, .dashboard, .plans, .subscription {
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+}
+
+.auth form { display: flex; flex-direction: column; gap: 0.75rem; max-width: 360px; }
+label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.9rem; }
+input { padding: 0.5rem; border: 1px solid var(--af-line); border-radius: 6px; }
+button { padding: 0.6rem 1rem; border: 0; border-radius: 6px; background: var(--af-accent); color: #fff; cursor: pointer; }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+.error, .warn { color: #b91c1c; }
+.field-error { color: #b91c1c; font-size: 0.8rem; }
+.plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+.plan-card { border: 1px solid var(--af-line); border-radius: 10px; padding: 1rem; background: #fff; }
+.price { font-size: 1.6rem; font-weight: 700; }
+.price span { font-size: 0.9rem; font-weight: 400; color: #64748b; }
+.card { border: 1px solid var(--af-line); border-radius: 10px; padding: 1rem; background: #fff; margin: 1rem 0; }
+.actions { display: flex; gap: 1rem; margin-top: 1rem; }
