@@ -27,7 +27,7 @@ const ACTIVITY_BY_SOURCE: Record<string, string> = {
 /**
  * Saudação conforme o horário local de São Paulo.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function greeting(minutes: number): string {
   if (minutes < 12 * 60) return "Bom dia";
@@ -38,7 +38,7 @@ function greeting(minutes: number): string {
 /**
  * Duração do atendimento em minutos (fim − início).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function durationMinutes(appointment: Appointment): number {
   return Math.max(0, Math.round((new Date(appointment.end_time).getTime() - new Date(appointment.start_time).getTime()) / 60_000));
@@ -47,7 +47,7 @@ function durationMinutes(appointment: Appointment): number {
 /**
  * Formata o horário (HH:MM) de um instante ISO no fuso operacional.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function timeOf(iso: string): string {
   return formatInstant(iso, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
@@ -56,7 +56,7 @@ function timeOf(iso: string): string {
 /**
  * Início do painel: métricas do dia, agenda por profissional, pendências e atividade recente.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export default function DashboardHome() {
   const { profile } = useAuth();
@@ -91,7 +91,7 @@ export default function DashboardHome() {
   /**
    * Confirma uma pendência direto do Início, pela Edge Function autorizada.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const confirm = async (appointment: Appointment) => {
     try {
@@ -105,7 +105,7 @@ export default function DashboardHome() {
   /**
    * Abre o agendamento no painel lateral da Agenda.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const openInAgenda = (appointment: Appointment) => {
     const { dateKey } = getZonedParts(new Date(appointment.start_time));

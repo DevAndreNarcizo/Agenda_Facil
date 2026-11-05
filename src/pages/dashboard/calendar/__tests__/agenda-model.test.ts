@@ -4,7 +4,7 @@ import { findConflict, layoutDayItems, type AgendaItem } from "../agenda-model";
 /**
  * Cria um item mínimo de agenda para os cenários de teste.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function item(key: string, startMin: number, endMin: number, extra: Partial<AgendaItem> = {}): AgendaItem {
   return {

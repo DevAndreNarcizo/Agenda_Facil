@@ -13,7 +13,7 @@
 --
 -- Migration aditiva: apenas CREATE OR REPLACE e ADD COLUMN; grants e owners são preservados.
 --
--- @author André Narcizo - andre.narcizo@sysout.com.br
+-- @author André Narcizo
 
 ALTER TABLE public.organization_settings
   ADD COLUMN IF NOT EXISTS segment text
@@ -26,7 +26,7 @@ COMMENT ON COLUMN public.organization_settings.segment IS
  * Cria o perfil (e, no autocadastro com slug válido, a empresa) de cada novo usuário do Auth.
  * Nunca lê organization_id/role de raw_user_meta_data: esses dados vêm do cliente.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
@@ -84,7 +84,7 @@ $$;
  * Onboarding transacional. Mesmo comportamento anterior, com a verificação de que, se o
  * perfil já pertence a uma empresa, o chamador é o owner dela.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 CREATE OR REPLACE FUNCTION public.complete_onboarding(p_user_id uuid, p_payload jsonb)
 RETURNS uuid

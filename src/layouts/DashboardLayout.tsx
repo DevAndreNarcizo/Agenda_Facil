@@ -37,7 +37,7 @@ const ROLE_LABELS: Record<string, string> = { owner: "Proprietária(o)", admin: 
 /**
  * Verifica se a rota atual pertence ao item de navegação (Início só casa exatamente).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function isActiveRoute(pathname: string, href: string): boolean {
   return href === "/dashboard" ? pathname === "/dashboard" || pathname === "/dashboard/" : pathname.startsWith(href);
@@ -47,7 +47,7 @@ function isActiveRoute(pathname: string, href: string): boolean {
  * Layout do painel refinado: sidebar 232px (≥1100), rail de ícones 64px (720–1099)
  * e barra inferior no celular (<720), com cabeçalho fixo de 56px.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function DashboardLayout() {
   const { signOut, profile, loading } = useAuth();
@@ -100,7 +100,7 @@ export function DashboardLayout() {
   /**
    * Encerra a sessão e volta ao login.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const handleSignOut = async () => {
     await signOut();
@@ -110,7 +110,7 @@ export function DashboardLayout() {
   /**
    * Busca global: leva à lista de clientes já filtrada pelo termo.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -121,7 +121,7 @@ export function DashboardLayout() {
   /**
    * Abre o modal de novo agendamento na Agenda, preservando os filtros quando já está nela.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const openNewAppointment = () => {
     const params = new URLSearchParams(isCalendar ? location.search : "");

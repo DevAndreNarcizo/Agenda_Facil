@@ -13,7 +13,7 @@ const SLOT_HEIGHT = (HOUR_HEIGHT * SLOT_MINUTES) / 60;
 /**
  * Minuto atual no fuso operacional, atualizado a cada minuto para a linha "agora".
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function useNowParts() {
   const [now, setNow] = useState(() => getZonedParts(new Date()));
@@ -28,7 +28,7 @@ function useNowParts() {
  * Grade de horários da Agenda (Semana = 7 colunas, Dia = 1 coluna).
  * Clique em horário vazio abre "Novo agendamento" já preenchido; dias fechados não respondem.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function WeekGrid({ days, items, window: range, businessDays, selectedKey, onSelect, onCreate }: {
   days: string[];

@@ -10,7 +10,7 @@ const NONE: AuthProviders = { google: false, whatsapp: false };
  * ligado no painel do Supabase, sem novo deploy, e nunca aparecem quebrados antes disso.
  * Em qualquer falha a resposta é "nenhum", mantendo só e-mail e senha. `ready` indica que a consulta terminou.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function useAuthProviders(): AuthProviders & { ready: boolean } {
   const { data, isFetched } = useQuery({

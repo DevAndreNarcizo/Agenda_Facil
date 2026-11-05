@@ -6,7 +6,7 @@ import { IconAction } from "@/components/panel/primitives";
  * Modal centralizado do painel (até 520px, raio 12, corpo com rolagem e rodapé fixo).
  * Construído direto sobre o Radix para não alterar o Dialog usado nas telas públicas.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function PanelDialog({ open, onOpenChange, title, description, footer, width = 520, children }: {
   open: boolean;

@@ -21,7 +21,7 @@ type SortKey = "name" | "recent" | "visits";
 /**
  * Clientes: busca (também pelo cabeçalho, via ?q=), ordenação, paginação e CRUD.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export default function CustomersPage() {
   const { profile } = useAuth();
@@ -76,7 +76,7 @@ export default function CustomersPage() {
   /**
    * Cria ou atualiza o cliente e fecha o modal em caso de sucesso.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const handleSave = async (event: React.FormEvent) => {
     event.preventDefault();

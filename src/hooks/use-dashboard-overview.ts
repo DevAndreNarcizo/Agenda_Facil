@@ -8,7 +8,7 @@ const SELECT = "id, customer_name, customer_phone, customer_id, service_id, empl
 /**
  * Normaliza a relação de serviço (PostgREST pode devolver objeto ou lista).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function normalize(rows: Record<string, unknown>[]): Appointment[] {
   return rows.map((row) => ({
@@ -21,7 +21,7 @@ function normalize(rows: Record<string, unknown>[]): Appointment[] {
 /**
  * Próximas reservas aguardando confirmação (qualquer data futura) e o total pendente.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function usePendingAppointments(limit = 5) {
   const { profile } = useAuth();
@@ -51,7 +51,7 @@ export function usePendingAppointments(limit = 5) {
 /**
  * Últimas reservas criadas (atividade recente), independente da data do atendimento.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function useRecentActivity(limit = 4) {
   const { profile } = useAuth();

@@ -2,7 +2,7 @@
  * Regras puras dos formulários de autenticação (força de senha, slug e mensagens de erro).
  * Ficam fora dos componentes para serem testadas sem DOM nem Supabase.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 
 export const PASSWORD_MIN_LENGTH = 8;
@@ -22,7 +22,7 @@ export const PASSWORD_STRENGTH_LABEL: Record<PasswordStrength, string> = {
  * (12+ caracteres, maiúsculas e minúsculas, dígito, símbolo) soma um ponto, limitado a 4.
  * É só um indicador visual; a política efetiva é a do Supabase Auth.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function getPasswordStrength(password: string): PasswordStrength {
   if (password.length < PASSWORD_MIN_LENGTH) return 0;
@@ -39,7 +39,7 @@ export function getPasswordStrength(password: string): PasswordStrength {
  * Converte o nome do negócio no slug da página de reserva (/reservar/:slug).
  * Mesma regra da Edge Function complete-onboarding, para o resultado ser previsível.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function slugify(value: string): string {
   return value
@@ -55,7 +55,7 @@ export function slugify(value: string): string {
  * Traduz os erros conhecidos do Supabase Auth para mensagens acionáveis em português.
  * Mensagens desconhecidas viram um texto genérico para não vazar detalhes internos.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function describeAuthError(error: unknown, fallback: string): string {
   const message = error instanceof Error ? error.message : "";
@@ -89,7 +89,7 @@ export const BUSINESS_SEGMENTS: { value: BusinessSegment; label: string; icon: s
 /**
  * Mantém só os dígitos de um telefone brasileiro (DDD + número), no máximo 11.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function phoneDigits(value: string): string {
   return value.replace(/\D/g, "").slice(0, 11);
@@ -98,7 +98,7 @@ export function phoneDigits(value: string): string {
 /**
  * Aplica a máscara (11) 91234-5678 / (11) 1234-5678 progressivamente, enquanto o usuário digita.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function formatBrPhone(value: string): string {
   const digits = phoneDigits(value);
@@ -113,7 +113,7 @@ export function formatBrPhone(value: string): string {
 /**
  * Converte o telefone digitado para E.164 (+55...), formato exigido pelo Supabase Auth no login por telefone.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function toE164Br(value: string): string {
   return `+55${phoneDigits(value)}`;
@@ -125,7 +125,7 @@ export type AuthProviders = { google: boolean; whatsapp: boolean };
  * Lê a resposta de GET /auth/v1/settings e diz quais métodos extras exibir.
  * WhatsApp exige login por telefone ativo com provedor Twilio (único com canal WhatsApp).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function parseAuthProviders(settings: unknown): AuthProviders {
   const data = (settings ?? {}) as { external?: Record<string, unknown>; sms_provider?: unknown };
