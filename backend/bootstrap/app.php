@@ -20,8 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         apiPrefix: 'api',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // SPA stateful (cookie HttpOnly + CSRF) via Sanctum para a aplicação Angular.
-        $middleware->statefulApi();
+        // Autenticação da SPA Angular por token Bearer (Sanctum `auth:sanctum`), sem sessão
+        // stateful/CSRF — por isso NÃO usamos statefulApi(). CORS liberado em config/cors.php.
 
         // Alias de autorização por recurso/tenant usados nas rotas da API.
         $middleware->alias([
