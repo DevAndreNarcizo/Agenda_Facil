@@ -40,7 +40,7 @@ test('proprietário cadastra, conclui onboarding e cria agendamento', async ({ p
 
   // Redireciona para a agenda
   await expect(page).toHaveURL(/\/agenda$/);
-  await expect(page.getByRole('heading', { name: 'Agenda' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Agenda', exact: true })).toBeVisible();
 
   // Precisa de um profissional para agendar — cadastra via UI.
   await page.goto('/professionals');
