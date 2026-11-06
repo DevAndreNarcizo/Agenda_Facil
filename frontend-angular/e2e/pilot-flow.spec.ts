@@ -48,10 +48,11 @@ test('proprietário cadastra, conclui onboarding e cria agendamento', async ({ p
   await page.getByRole('button', { name: 'Adicionar' }).click();
   await expect(page.getByText('Profa. E2E')).toBeVisible();
 
-  // Cria um agendamento na agenda.
+  // Cria um agendamento na agenda. Seleciona a primeira opção real (índice 1, após o placeholder).
   await page.goto('/agenda');
-  await page.locator('select[formcontrolname="service_id"]').selectOption({ label: /Corte E2E/ });
-  await page.locator('select[formcontrolname="professional_id"]').selectOption({ label: /Profa\. E2E/ });
+  await expect(page.locator('select[formcontrolname="service_id"] option')).toHaveCount(2); // placeholder + 1 serviço
+  await page.locator('select[formcontrolname="service_id"]').selectOption({ index: 1 });
+  await page.locator('select[formcontrolname="professional_id"]').selectOption({ index: 1 });
   // Amanhã 10:00 no formato datetime-local.
   const tomorrow = new Date(Date.now() + 86_400_000);
   const dt = `${tomorrow.toISOString().slice(0, 10)}T10:00`;
