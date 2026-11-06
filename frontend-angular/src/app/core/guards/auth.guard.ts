@@ -24,10 +24,16 @@ export const authGuard: CanActivateFn = async () => {
 };
 
 /**
- * Restringe rotas a gestores (owner/admin).
+ * Restringe rotas a gestores (owner/admin). Garante a sessão hidratada antes de checar o papel
+ * (evita redirecionar por engano logo após navegação direta/reload).
  */
-export const managerGuard: CanActivateFn = () => {
+export const managerGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);
   const router = inject(Router);
+
+  if (!auth.isAuthenticated() && auth.token) {
+    await auth.loadMe().catch(() => undefined);
+  }
+
   return auth.isManager() ? true : router.createUrlTree(['/dashboard']);
 };

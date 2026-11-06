@@ -18,13 +18,15 @@ export class SubscriptionPage implements OnInit {
   private readonly auth = inject(AuthService);
 
   async ngOnInit(): Promise<void> {
-    // Garante o contexto de organização resolvido (após navegação direta/reload) antes
-    // de carregar a assinatura, evitando corrida no X-Organization-Id.
-    if (!this.auth.activeOrgId()) {
-      await this.auth.loadMe();
-    }
+    // Planos são públicos: carrega primeiro (sempre renderiza os cards).
     await this.billing.loadPlans();
-    await this.billing.loadSubscription();
+
+    // Garante o contexto de organização resolvido (após navegação direta/reload) antes
+    // de carregar a assinatura, evitando corrida no X-Organization-Id. Não fatal.
+    if (!this.auth.activeOrgId()) {
+      await this.auth.loadMe().catch(() => undefined);
+    }
+    await this.billing.loadSubscription().catch(() => undefined);
   }
 
   async subscribe(planCode: string): Promise<void> {
