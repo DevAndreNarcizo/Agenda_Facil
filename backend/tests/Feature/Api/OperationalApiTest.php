@@ -7,7 +7,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Modules\Billing\Models\Plan;
 use Modules\Billing\Services\SubscriptionService;
-use Modules\Organizations\Models\Organization;
 use Modules\Organizations\Services\ProvisioningService;
 use Modules\Scheduling\Models\Appointment;
 
@@ -132,15 +131,14 @@ it('impede acesso a agendamento de outra organização (anti-IDOR)', function ()
 });
 
 it('bloqueia operações pagas quando a assinatura não concede acesso (402)', function (): void {
-    // Cadastra dono sem ativar assinatura (fica incomplete -> sem acesso pago).
+    // Cadastra (ganha trial automático) e então suspende a assinatura: sem acesso pago.
     $user = app(ProvisioningService::class)->registerOwner([
         'full_name' => 'Dona', 'email' => 'semplano@example.com', 'password' => 'senha12345',
         'org_name' => 'Org Sem Plano', 'org_slug' => 'sem-plano',
     ]);
-    $org = Organization::query()->where('owner_id', $user->id)->firstOrFail();
+    $org = $user->memberships()->firstOrFail()->organization;
     $subs = app(SubscriptionService::class);
-    $starter = Plan::query()->where('code', 'starter')->firstOrFail()->currentVersion;
-    $subs->startCheckout($org, $starter, 'fake'); // incomplete, não ativa
+    $subs->suspend($org->liveSubscription); // trial -> suspended (acesso pago revogado)
 
     $token = $user->createToken('t')->plainTextToken;
 

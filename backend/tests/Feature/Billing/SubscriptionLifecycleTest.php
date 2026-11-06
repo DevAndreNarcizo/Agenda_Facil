@@ -2,32 +2,34 @@
 
 declare(strict_types=1);
 
+use App\Models\User;
 use Database\Seeders\PlanCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Modules\Billing\Enums\SubscriptionStatus;
 use Modules\Billing\Models\Plan;
 use Modules\Billing\Models\SubscriptionAuditLog;
 use Modules\Billing\Services\SubscriptionService;
 use Modules\Organizations\Models\Organization;
-use Modules\Organizations\Services\ProvisioningService;
 
 uses(RefreshDatabase::class);
 
 /**
  * Prova que os defeitos de billing do AUDIT §5 estão corrigidos.
+ * Monta a organização diretamente (sem o trial automático do provisionamento) para
+ * exercitar as transições de assinatura a partir de um estado limpo.
  */
 beforeEach(function (): void {
     $this->seed(PlanCatalogSeeder::class);
     $this->service = app(SubscriptionService::class);
 
-    $user = app(ProvisioningService::class)->registerOwner([
-        'full_name' => 'Dona Teste',
-        'email' => 'dona@example.com',
-        'password' => 'senha12345',
-        'org_name' => 'Estúdio Teste',
-        'org_slug' => 'estudio-teste',
+    $user = User::factory()->create();
+    $this->organization = Organization::create([
+        'id' => (string) Str::uuid(),
+        'name' => 'Estúdio Teste',
+        'slug' => 'estudio-teste',
+        'owner_id' => $user->id,
     ]);
-    $this->organization = Organization::query()->where('owner_id', $user->id)->firstOrFail();
     $this->starter = Plan::query()->where('code', 'starter')->firstOrFail()->currentVersion;
     $this->pro = Plan::query()->where('code', 'pro')->firstOrFail()->currentVersion;
 });

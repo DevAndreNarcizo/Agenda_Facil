@@ -8,6 +8,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Modules\Billing\Models\Plan;
+use Modules\Billing\Services\SubscriptionService;
 use Modules\Organizations\Enums\Role;
 use Modules\Organizations\Models\Membership;
 use Modules\Organizations\Models\Organization;
@@ -20,8 +22,11 @@ use Modules\Organizations\Models\OrganizationSettings;
  */
 final class ProvisioningService
 {
+    public function __construct(private readonly SubscriptionService $subscriptions) {}
+
     /**
      * Cria usuário dono + organização + settings + membership 'owner' em uma transação.
+     * Inicia um período de teste (trial) no plano inicial, concedendo acesso imediato ao MVP.
      *
      * @param  array{full_name:string, email:string, password:string, phone?:?string, org_name:string, org_slug:string, segment?:?string}  $input
      */
@@ -56,6 +61,14 @@ final class ProvisioningService
                 'role' => Role::Owner->value,
                 'accepted_at' => now(),
             ]);
+
+            // Período de teste automático no plano inicial (acesso imediato ao MVP).
+            // Trial não reutilizável: trial_used trava reinícios (ver SubscriptionService).
+            $starter = Plan::query()->where('code', 'starter')->first()?->currentVersion;
+            if ($starter !== null) {
+                $subscription = $this->subscriptions->startCheckout($organization, $starter, 'trial');
+                $this->subscriptions->beginTrial($subscription);
+            }
 
             return $user;
         });
