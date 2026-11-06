@@ -63,7 +63,8 @@ test('proprietário cadastra, conclui onboarding e cria agendamento', async ({ p
 });
 
 /**
- * Cadastra um novo proprietário pela UI e retorna o slug usado (org com trial no Starter).
+ * Cadastra um novo proprietário pela UI e conclui o onboarding (org com trial no Starter,
+ * já apta a usar as áreas protegidas por onboardingCompletedGuard). Retorna o slug.
  */
 async function registerOwner(page: import('@playwright/test').Page): Promise<string> {
   const slug = uniqueSlug();
@@ -75,6 +76,15 @@ async function registerOwner(page: import('@playwright/test').Page): Promise<str
   await page.getByLabel('Link (slug)').fill(slug);
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
+
+  // Conclui o onboarding (necessário para acessar áreas com onboardingCompletedGuard).
+  await page.goto('/onboarding');
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await page.getByLabel('Nome do negócio').fill('Negócio E2E');
+  await page.getByLabel('Nome do serviço').fill('Serviço E2E');
+  await page.getByLabel('Duração (min)').fill('60');
+  await page.getByRole('button', { name: 'Concluir configuração' }).click();
+  await expect(page).toHaveURL(/\/agenda$/);
   return slug;
 }
 
@@ -82,7 +92,9 @@ test('owner faz upgrade de plano (Starter -> Pro) pela tela de assinatura', asyn
   await registerOwner(page);
 
   await page.goto('/subscription');
-  // Org nova tem trial no Starter -> Starter é o "Plano atual".
+  // Aguarda o resumo da assinatura carregar (plano atual exibido no card de status).
+  await expect(page.locator('.card').getByText(/Plano atual:/)).toBeVisible();
+  // Org nova tem trial no Starter -> Starter é o "Plano atual" nos cards de planos.
   const starterCard = page.locator('.plan-card', { hasText: 'Starter' });
   await expect(starterCard.getByRole('button', { name: 'Plano atual' })).toBeVisible();
 
