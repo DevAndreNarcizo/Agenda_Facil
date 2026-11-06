@@ -25,7 +25,10 @@ test('proprietário cadastra, conclui onboarding e cria agendamento', async ({ p
   await page.getByLabel('Link (slug)').fill(slug);
   await page.getByRole('button', { name: 'Criar conta' }).click();
 
-  // Sem onboarding concluído, a agenda redireciona para /onboarding.
+  // Após o cadastro, chega ao painel autenticado.
+  await expect(page).toHaveURL(/\/dashboard$/);
+
+  // Sem onboarding concluído, a agenda redireciona para /onboarding (guard).
   await page.goto('/agenda');
   await expect(page).toHaveURL(/\/onboarding$/);
 
