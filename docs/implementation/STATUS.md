@@ -138,6 +138,6 @@ Registradas como ADRs em `docs/adr/` (novas ADRs a partir de ADR-010).
 - `DemoSeeder`: habilita reserva pública e usa telefones determinísticos (para o OTP do E2E).
 - CORS explícito (`config/cors.php`) para a SPA; `.env.example` ajustado.
 - **CI**: job `e2e` no workflow Angular (setup PHP + Composer + `playwright install` + `playwright test`).
-- Testes reconhecidos por `playwright test --list` (3 testes). Backend 58 testes e Angular 10 testes unitários permanecem verdes.
+- **E2E executado e verde no CI: 3/3** (job `e2e` do workflow Angular). Descobriu e corrigiu bugs reais de integração: (a) `statefulApi()` exigia CSRF na SPA de token Bearer → removido; (b) org nova sem assinatura não acessava o MVP → **trial automático no cadastro**. Backend 59 testes e Angular 10 testes unitários verdes.
 
-> **Limitação do sandbox (honesta):** cada chamada de shell roda em um sandbox efêmero com `--die-with-parent` e `/tmp` próprio, então servidores em background não sobrevivem entre comandos — não é possível executar o E2E multi-servidor vivo aqui. Os assets do E2E estão validados estaticamente (`--list`) e são executados no **CI** (onde PHP, navegador e rede são provisionados).
+> **Limitação do sandbox (honesta):** cada chamada de shell roda em um sandbox efêmero com `--die-with-parent` e `/tmp` próprio, então servidores em background não sobrevivem entre comandos — não é possível executar o E2E multi-servidor vivo *localmente*. Por isso a execução viva é feita no **CI** (PHP, navegador e rede provisionados), onde os 3 testes passam.

@@ -19,7 +19,7 @@
 
 ### Backend Laravel (novo — Fases B/E/D + PublicBooking/Portal)
 - `./vendor/bin/pint --test` → ✅ estilo limpo
-- `php artisan test` (Pest) → ✅ **58 testes / 158 asserções**
+- `php artisan test` (Pest) → ✅ **59 testes / 163 asserções**
   - (além dos anteriores) Reserva pública/Portal: contexto por slug, anti-enumeração de OTP, OTP inválido rejeitado, sessão opaca exigida, isolamento de sessão entre organizações
 - CI: `backend.yml` (PostgreSQL 18) e `frontend-angular.yml` adicionados
   - Auth/provisionamento (owner, transacional, isolamento 2 orgs, slug único)
@@ -31,9 +31,10 @@
   - Lembretes (outbox): enfileiramento idempotente, envio com marcação, pular se não-confirmado, backoff em falha, sem reenvio duplicado
 - `php artisan migrate --seed` → ✅ migrações + `PlanCatalogSeeder` aplicam (validado em SQLite)
 
-### E2E (Playwright — fluxo de piloto)
-- `frontend-angular/e2e/pilot-flow.spec.ts`: 3 testes (cadastro→onboarding→agenda; link público indisponível; reserva pública via OTP).
-- Reconhecidos por `playwright test --list`. Execução viva roda no **CI** (job `e2e` do workflow Angular) — o sandbox não sustenta servidores em background entre comandos.
+### E2E (Playwright — fluxo de piloto) → ✅ **3 testes passando no CI**
+- `frontend-angular/e2e/pilot-flow.spec.ts`: (1) cadastro→onboarding→agenda (cria agendamento); (2) link público indisponível; (3) reserva pública via OTP→sessão opaca→confirmação.
+- Executado vivo no **CI** (job `e2e` do workflow Angular): Playwright sobe o backend Laravel (SQLite efêmero, `php -S`, migrado + DemoSeeder) e `ng serve`. O sandbox local não sustenta servidores em background entre comandos, então a execução viva é no CI.
+- Cadastro agora concede **trial automático** (plano Starter) → acesso imediato ao MVP sem checkout manual.
 
 ## Definition of Done (§11 da missão) — rastreamento
 
@@ -46,6 +47,7 @@
 | Agendamento aparece na agenda | ✅ backend comprovado | `GET /appointments`; criação anti-overlap |
 | Plano reconhecido pelo servidor | ✅ comprovado | catálogo no servidor + `GET /subscription` |
 | Cobrança sandbox confirmada | 🟡 fluxo provado com provedor **fake** | sandbox Stripe/Asaas bloqueado (credenciais) |
+| Fluxo de piloto ponta a ponta (E2E) | ✅ Playwright 3/3 no CI | cadastro→onboarding→agenda; reserva pública OTP |
 | Renovação/falha/troca/cancelamento | ✅ comprovado (serviço + webhook) | com provedor fake; revalidar em sandbox real |
 | Limites não podem ser burlados | ✅ comprovado | cotas aplicadas a profissionais e agendamentos reais |
 | Org não acessa dados de outra | ✅ comprovado | teste anti-IDOR HTTP (2 orgs) + isolamento no provisionamento |
