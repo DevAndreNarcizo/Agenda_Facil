@@ -161,3 +161,11 @@ Registradas como ADRs em `docs/adr/` (novas ADRs a partir de ADR-010).
 - Qualidade: 3 testes com dump **sintético** no formato do Supabase (IDs preservados, preço/profissional/assinatura mapeados, senha nula, reconciliação sem órfãos). Backend **64 testes / 206 asserções**; Pint limpo.
 
 > **Bloqueio externo:** a execução sobre os dados reais depende do dump/credenciais do Supabase. A lógica está pronta e provada; nenhum ambiente remoto foi tocado.
+
+## Entregue na continuação (QA: cenários E2E de borda + billing na UI)
+
+- **E2E ampliado para 5 testes** (`pilot-flow.spec.ts`): além do fluxo de piloto e reserva pública, agora cobre (a) **upgrade de plano** Starter→Pro pela tela de assinatura (troca de plano com assinatura viva, sem checkout) e (b) **cota de profissionais estourada** (Starter=1) com a mensagem de upgrade (402 traduzido na UI).
+- **Backend**: 2 testes de `change-plan` pela API (trial Starter→Pro; bloqueio de não-owner), confirmando o comportamento que a UI exercita.
+- Qualidade: backend **66 testes / 214 asserções**; E2E 5/5 no CI; Pint limpo.
+
+> QA de borda cobrindo os caminhos de billing/cota na UI — qualidade adicional sem depender de bloqueios externos.

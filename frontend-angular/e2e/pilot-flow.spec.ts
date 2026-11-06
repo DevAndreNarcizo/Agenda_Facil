@@ -62,6 +62,54 @@ test('proprietário cadastra, conclui onboarding e cria agendamento', async ({ p
   await expect(page.getByText('Agendamento criado.')).toBeVisible();
 });
 
+/**
+ * Cadastra um novo proprietário pela UI e retorna o slug usado (org com trial no Starter).
+ */
+async function registerOwner(page: import('@playwright/test').Page): Promise<string> {
+  const slug = uniqueSlug();
+  await page.goto('/register');
+  await page.getByLabel('Seu nome').fill('Owner E2E');
+  await page.getByLabel('E-mail').fill(`${slug}@example.com`);
+  await page.getByLabel('Senha').fill('senha12345');
+  await page.getByLabel('Nome do negócio').fill('Negócio E2E');
+  await page.getByLabel('Link (slug)').fill(slug);
+  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  return slug;
+}
+
+test('owner faz upgrade de plano (Starter -> Pro) pela tela de assinatura', async ({ page }) => {
+  await registerOwner(page);
+
+  await page.goto('/subscription');
+  // Org nova tem trial no Starter -> Starter é o "Plano atual".
+  const starterCard = page.locator('.plan-card', { hasText: 'Starter' });
+  await expect(starterCard.getByRole('button', { name: 'Plano atual' })).toBeVisible();
+
+  // Faz upgrade para o Pro: com assinatura viva, o botão troca o plano (não abre checkout).
+  const proCard = page.locator('.plan-card', { hasText: 'Pro' });
+  await proCard.getByRole('button', { name: 'Escolher' }).click();
+
+  await expect(page.getByText('Plano atualizado.')).toBeVisible();
+  // Agora o Pro passa a ser o plano atual.
+  await expect(proCard.getByRole('button', { name: 'Plano atual' })).toBeVisible();
+});
+
+test('bloqueia profissional além da cota do plano (Starter = 1) com mensagem de upgrade', async ({ page }) => {
+  await registerOwner(page);
+
+  await page.goto('/professionals');
+  // Primeiro profissional: dentro do limite do Starter.
+  await page.getByPlaceholder('Nome do profissional').fill('Profa. Um');
+  await page.getByRole('button', { name: 'Adicionar' }).click();
+  await expect(page.getByText('Profa. Um')).toBeVisible();
+
+  // Segundo profissional: estoura a cota (limite 1) -> 402 traduzido na UI.
+  await page.getByPlaceholder('Nome do profissional').fill('Profa. Dois');
+  await page.getByRole('button', { name: 'Adicionar' }).click();
+  await expect(page.getByText(/Limite de profissionais do plano atingido/)).toBeVisible();
+});
+
 test('link público inexistente mostra estado indisponível', async ({ page }) => {
   await page.goto('/reservar/organizacao-inexistente');
   await expect(page.getByRole('heading', { name: 'Reservas indisponíveis' })).toBeVisible();

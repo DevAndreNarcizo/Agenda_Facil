@@ -19,7 +19,7 @@
 
 ### Backend Laravel (novo — Fases B/E/D + PublicBooking/Portal)
 - `./vendor/bin/pint --test` → ✅ estilo limpo
-- `php artisan test` (Pest) → ✅ **64 testes / 206 asserções**
+- `php artisan test` (Pest) → ✅ **66 testes / 214 asserções**
   - (além dos anteriores) Reserva pública/Portal: contexto por slug, anti-enumeração de OTP, OTP inválido rejeitado, sessão opaca exigida, isolamento de sessão entre organizações
 - CI: `backend.yml` (PostgreSQL 18) e `frontend-angular.yml` adicionados
   - Auth/provisionamento (owner, transacional, isolamento 2 orgs, slug único)
@@ -31,8 +31,8 @@
   - Lembretes (outbox): enfileiramento idempotente, envio com marcação, pular se não-confirmado, backoff em falha, sem reenvio duplicado
 - `php artisan migrate --seed` → ✅ migrações + `PlanCatalogSeeder` aplicam (validado em SQLite)
 
-### E2E (Playwright — fluxo de piloto) → ✅ **3 testes passando no CI**
-- `frontend-angular/e2e/pilot-flow.spec.ts`: (1) cadastro→onboarding→agenda (cria agendamento); (2) link público indisponível; (3) reserva pública via OTP→sessão opaca→confirmação.
+### E2E (Playwright — fluxo de piloto) → ✅ **5 testes passando no CI**
+- `frontend-angular/e2e/pilot-flow.spec.ts`: (1) cadastro→onboarding→agenda (cria agendamento); (2) **upgrade de plano Starter→Pro** pela tela de assinatura; (3) **cota de profissionais estourada** (Starter=1) com mensagem de upgrade (402 traduzido); (4) link público indisponível; (5) reserva pública via OTP→sessão opaca→confirmação.
 - Executado vivo no **CI** (job `e2e` do workflow Angular): Playwright sobe o backend Laravel (SQLite efêmero, `php -S`, migrado + DemoSeeder) e `ng serve`. O sandbox local não sustenta servidores em background entre comandos, então a execução viva é no CI.
 - Cadastro agora concede **trial automático** (plano Starter) → acesso imediato ao MVP sem checkout manual.
 
