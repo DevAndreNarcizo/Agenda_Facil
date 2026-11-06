@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { BillingService } from '../../core/services/billing.service';
+import { AuthService } from '../../core/services/auth.service';
 
 /**
  * Administração da assinatura (owner): plano atual, uso de cotas, checkout/troca/cancelamento.
@@ -14,8 +15,16 @@ export class SubscriptionPage implements OnInit {
   readonly busy = signal<string | null>(null);
   readonly message = signal<string | null>(null);
 
+  private readonly auth = inject(AuthService);
+
   async ngOnInit(): Promise<void> {
-    await Promise.all([this.billing.loadPlans(), this.billing.loadSubscription()]);
+    // Garante o contexto de organização resolvido (após navegação direta/reload) antes
+    // de carregar a assinatura, evitando corrida no X-Organization-Id.
+    if (!this.auth.activeOrgId()) {
+      await this.auth.loadMe();
+    }
+    await this.billing.loadPlans();
+    await this.billing.loadSubscription();
   }
 
   async subscribe(planCode: string): Promise<void> {
