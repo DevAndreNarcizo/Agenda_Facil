@@ -141,3 +141,13 @@ Registradas como ADRs em `docs/adr/` (novas ADRs a partir de ADR-010).
 - **E2E executado e verde no CI: 3/3** (job `e2e` do workflow Angular). Descobriu e corrigiu bugs reais de integração: (a) `statefulApi()` exigia CSRF na SPA de token Bearer → removido; (b) org nova sem assinatura não acessava o MVP → **trial automático no cadastro**. Backend 59 testes e Angular 10 testes unitários verdes.
 
 > **Limitação do sandbox (honesta):** cada chamada de shell roda em um sandbox efêmero com `--die-with-parent` e `/tmp` próprio, então servidores em background não sobrevivem entre comandos — não é possível executar o E2E multi-servidor vivo *localmente*. Por isso a execução viva é feita no **CI** (PHP, navegador e rede provisionados), onde os 3 testes passam.
+
+## Entregue na continuação (Analytics + Configurações + paridade visual)
+
+- **Backend Analytics** (`Modules/Analytics`): `AnalyticsService` + `GET /analytics/summary` — totais por status, faturamento estimado (serviços concluídos), série diária e top serviços; tudo escopado por tenant. Colunas qualificadas para evitar ambiguidade em joins. Endpoint `PATCH /organization` (owner/admin) para identidade (nome, cor da marca, logo).
+- **Angular**: página **Analytics** (KPIs, barras diárias inline sem dependência de chart, top serviços) e **Configurações** (nome + cor da marca com preview, aplica `--af-accent`). `AnalyticsService`/`OrganizationService` estendidos.
+- **Paridade visual**: tokens `af-*` (light + dark) portados do app React para `styles.css`; estilos globais passam a usar os tokens (superfícies, linhas, tinta, acento, estados ok/pend/bad).
+- Rotas protegidas (`authGuard`/`onboardingCompletedGuard`/`managerGuard`); links no painel.
+- Qualidade: backend **61 testes / 185 asserções**; Angular **12 testes** + build (chunks `analytics-page`, `settings-page`); Pint limpo.
+
+> Áreas do painel migradas para Angular: agenda, clientes, serviços, profissionais, assinatura, **analytics**, **configurações/identidade** — além de landing/auth/onboarding e reserva pública/portal. Paridade funcional do MVP essencialmente completa na nova stack.

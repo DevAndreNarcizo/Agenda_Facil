@@ -1,9 +1,45 @@
-/* Estilos globais mínimos — tokens de design completos serão migrados do app React. */
+/* Design tokens af-* portados do app React (paridade visual). Light + dark. */
 :root {
   --af-bg: #f7f9fc;
-  --af-accent: #2563eb;
-  --af-ink: #0f172a;
+  --af-surface: #ffffff;
+  --af-surface2: #eef2f7;
   --af-line: #e2e8f0;
+  --af-line2: #cbd5e1;
+  --af-ink: #092343;
+  --af-ink2: #475569;
+  --af-ink3: #64748b;
+  --af-accent: #087bf5;
+  --af-accent-hover: #0757b9;
+  --af-accent-soft: #ebf4ff;
+  --af-on-accent: #ffffff;
+  --af-ok: #146c38;
+  --af-ok-soft: #e8f7ee;
+  --af-pend: #8a5a00;
+  --af-pend-soft: #fef5de;
+  --af-bad: #b42318;
+  --af-bad-soft: #fdedec;
+  --af-radius: 10px;
+}
+
+.dark {
+  --af-bg: #07121f;
+  --af-surface: #0d1b2e;
+  --af-surface2: #132640;
+  --af-line: #1b2d47;
+  --af-line2: #2a3f5e;
+  --af-ink: #e6edf7;
+  --af-ink2: #afbfd4;
+  --af-ink3: #93a4bc;
+  --af-accent: #2b8df7;
+  --af-accent-hover: #4a9ef8;
+  --af-accent-soft: #0e2a4d;
+  --af-on-accent: #ffffff;
+  --af-ok: #6fd49a;
+  --af-ok-soft: #11301f;
+  --af-pend: #f2c45a;
+  --af-pend-soft: #33290f;
+  --af-bad: #f58b8e;
+  --af-bad-soft: #3a1719;
 }
 
 * { box-sizing: border-box; }
@@ -15,62 +51,94 @@ body {
   color: var(--af-ink);
 }
 
-.auth, .dashboard, .plans, .subscription {
-  max-width: 720px;
+h1 { color: var(--af-ink); }
+h2 { color: var(--af-ink); }
+
+.auth, .dashboard, .plans, .subscription, .onboarding, .agenda, .crud, .analytics, .public-booking {
+  max-width: 760px;
   margin: 2rem auto;
   padding: 1.5rem;
 }
+.public-booking { max-width: 480px; }
 
-.auth form { display: flex; flex-direction: column; gap: 0.75rem; max-width: 360px; }
-label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.9rem; }
-input { padding: 0.5rem; border: 1px solid var(--af-line); border-radius: 6px; }
-button { padding: 0.6rem 1rem; border: 0; border-radius: 6px; background: var(--af-accent); color: #fff; cursor: pointer; }
+.auth form, .onboarding form, .new-appointment, .inline-form, .settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.inline-form { flex-direction: row; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+.inline-form input { flex: 1 1 140px; }
+.auth form { max-width: 360px; }
+
+label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.9rem; color: var(--af-ink2); }
+input, select {
+  padding: 0.5rem;
+  border: 1px solid var(--af-line);
+  border-radius: 6px;
+  background: var(--af-surface);
+  color: var(--af-ink);
+}
+input:focus, select:focus { outline: 2px solid var(--af-accent-soft); border-color: var(--af-accent); }
+
+button {
+  padding: 0.6rem 1rem;
+  border: 0;
+  border-radius: 6px;
+  background: var(--af-accent);
+  color: var(--af-on-accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+button:hover:not(:disabled) { background: var(--af-accent-hover); }
 button:disabled { opacity: 0.6; cursor: not-allowed; }
-.error, .warn { color: #b91c1c; }
-.field-error { color: #b91c1c; font-size: 0.8rem; }
-.plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
-.plan-card { border: 1px solid var(--af-line); border-radius: 10px; padding: 1rem; background: #fff; }
-.price { font-size: 1.6rem; font-weight: 700; }
-.price span { font-size: 0.9rem; font-weight: 400; color: #64748b; }
-.card { border: 1px solid var(--af-line); border-radius: 10px; padding: 1rem; background: #fff; margin: 1rem 0; }
-.actions { display: flex; gap: 1rem; margin-top: 1rem; }
+button.danger { background: var(--af-bad); }
 
-/* Onboarding + Agenda */
-.onboarding, .agenda { max-width: 760px; margin: 2rem auto; padding: 1.5rem; }
-.onboarding form, .new-appointment { display: flex; flex-direction: column; gap: 0.6rem; max-width: 420px; }
-.onboarding h2, .agenda h2 { margin-top: 1.25rem; font-size: 1rem; }
-select { padding: 0.5rem; border: 1px solid var(--af-line); border-radius: 6px; background: #fff; }
+a { color: var(--af-accent); }
+
+.error, .field-error { color: var(--af-bad); }
+.field-error { font-size: 0.8rem; }
+.message { color: var(--af-ok); }
+.warn { color: var(--af-pend); }
+.muted, .empty { color: var(--af-ink3); font-size: 0.9rem; }
+
+.card { border: 1px solid var(--af-line); border-radius: var(--af-radius); padding: 1rem; background: var(--af-surface); margin: 1rem 0; }
+.actions { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
+
+/* Planos */
+.plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+.plan-card { border: 1px solid var(--af-line); border-radius: var(--af-radius); padding: 1rem; background: var(--af-surface); }
+.plan-card.current { border-color: var(--af-accent); }
+.price { font-size: 1.6rem; font-weight: 700; }
+.price span { font-size: 0.9rem; font-weight: 400; color: var(--af-ink3); }
+
+/* Agenda */
 .schedule { display: flex; flex-direction: column; gap: 0.4rem; }
 .schedule-row { display: flex; align-items: center; gap: 0.5rem; }
 .schedule-row .day { flex: 1; flex-direction: row; align-items: center; gap: 0.4rem; }
-.appointment-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
-.appointment { display: flex; align-items: center; gap: 1rem; padding: 0.6rem 0.8rem; border: 1px solid var(--af-line); border-radius: 8px; background: #fff; }
+.appointment-list, .crud-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.appointment, .crud-list li { display: flex; align-items: center; gap: 1rem; padding: 0.6rem 0.8rem; border: 1px solid var(--af-line); border-radius: 8px; background: var(--af-surface); }
 .appointment.cancelled { opacity: 0.55; }
 .appointment .time { font-variant-numeric: tabular-nums; font-weight: 600; }
-.appointment .status { font-size: 0.85rem; color: #64748b; }
+.appointment .status { font-size: 0.85rem; color: var(--af-ink3); }
 .appointment .controls { margin-left: auto; display: flex; gap: 0.4rem; }
 .appointment .controls button { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
-button.danger { background: #b91c1c; }
-.message { color: #0f766e; }
-.empty { color: #64748b; }
-
-/* CRUD (clientes/serviços/profissionais) */
-.crud { max-width: 760px; margin: 2rem auto; padding: 1.5rem; }
-.inline-form { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 1rem; }
-.inline-form input { flex: 1 1 140px; }
-.inline-form button { flex: 0 0 auto; }
-.search { max-width: 360px; margin-bottom: 1rem; }
-.crud-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
-.crud-list li { padding: 0.6rem 0.8rem; border: 1px solid var(--af-line); border-radius: 8px; background: #fff; }
-.muted { color: #64748b; font-size: 0.9rem; }
 
 /* Assinatura — uso/cotas */
 .usage { margin-top: 0.75rem; }
-.bar { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 0.25rem; }
+.bar { height: 8px; background: var(--af-surface2); border-radius: 4px; overflow: hidden; margin-top: 0.25rem; }
 .bar-fill { height: 100%; background: var(--af-accent); }
-.plan-card.current { border-color: var(--af-accent); }
 
-/* Reserva pública / portal */
-.public-booking { max-width: 480px; margin: 2rem auto; padding: 1.5rem; }
-.public-booking form { display: flex; flex-direction: column; gap: 0.75rem; }
-.public-booking h1 { font-size: 1.3rem; }
+/* Analytics */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin: 1rem 0; }
+.kpi { border: 1px solid var(--af-line); border-radius: var(--af-radius); padding: 0.85rem; background: var(--af-surface); display: flex; flex-direction: column; gap: 0.25rem; }
+.kpi-label { font-size: 0.8rem; color: var(--af-ink3); }
+.kpi-value { font-size: 1.4rem; font-weight: 700; }
+.bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 160px; padding: 0.5rem; border: 1px solid var(--af-line); border-radius: var(--af-radius); background: var(--af-surface); }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 4px; }
+.bar-mark { width: 70%; min-height: 2px; background: var(--af-accent); border-radius: 3px 3px 0 0; }
+.bar-x { font-size: 0.7rem; color: var(--af-ink3); }
+
+/* Configurações */
+.color-row { display: flex; align-items: center; gap: 0.5rem; }
+.color-hex { max-width: 120px; }
+.color-preview { width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--af-line); }

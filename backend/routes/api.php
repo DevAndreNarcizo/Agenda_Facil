@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AnalyticsController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Billing\PlanController;
 use App\Http\Controllers\Api\V1\Billing\SubscriptionController;
@@ -46,8 +47,9 @@ Route::prefix('v1')->group(function (): void {
 
         // Operações no contexto da organização resolvido pelo servidor.
         Route::middleware('tenant.context')->group(function (): void {
-            // Organização / onboarding (não exige assinatura ativa — faz parte do setup).
+            // Organização / onboarding / identidade (não exige assinatura ativa — setup/admin).
             Route::get('organization', [OrganizationController::class, 'show']);
+            Route::patch('organization', [OrganizationController::class, 'update']);
             Route::post('organization/onboarding', [OrganizationController::class, 'completeOnboarding']);
 
             // Assinatura — administração (owner). Não exige assinatura ativa (regularização).
@@ -76,6 +78,9 @@ Route::prefix('v1')->group(function (): void {
                 Route::post('appointments', [AppointmentController::class, 'store']);
                 Route::post('appointments/{appointment}/reschedule', [AppointmentController::class, 'reschedule']);
                 Route::post('appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
+
+                // Analytics (qualquer membro)
+                Route::get('analytics/summary', [AnalyticsController::class, 'summary']);
             });
         });
     });

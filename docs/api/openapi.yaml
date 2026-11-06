@@ -95,6 +95,24 @@ paths:
         '200': { description: OK }
         '403': { description: Sem acesso à organização }
 
+    patch:
+      tags: [Organizations]
+      summary: Atualiza identidade (owner/admin) — nome, cor da marca, logo
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 120 }
+                primary_color: { type: string, pattern: '^#([0-9a-fA-F]{6})$', nullable: true }
+                logo_url: { type: string, format: uri, nullable: true }
+      responses:
+        '200': { description: Identidade atualizada }
+        '403': { description: Apenas gestores }
+
   /organization/onboarding:
     post:
       tags: [Organizations]
@@ -204,6 +222,19 @@ paths:
                 at_period_end: { type: boolean, default: true }
       responses:
         '200': { description: Cancelamento aplicado/agendado }
+
+  /analytics/summary:
+    get:
+      tags: [Scheduling]
+      summary: Resumo de métricas do período (totais, faturamento, série diária, top serviços)
+      security: [{ sanctum: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/OrganizationId' }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+      responses:
+        '200': { description: OK }
+        '402': { description: Assinatura inativa }
 
   /billing/webhook/{provider}:
     post:

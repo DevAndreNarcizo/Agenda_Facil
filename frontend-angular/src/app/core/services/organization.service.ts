@@ -36,4 +36,20 @@ export class OrganizationService {
     );
     await this.load();
   }
+
+  async updateIdentity(input: { name?: string; primary_color?: string | null; logo_url?: string | null }): Promise<void> {
+    await firstValueFrom(
+      this.http.patch(`${environment.apiBaseUrl}/organization`, input),
+    );
+    await this.load();
+    this.applyBrandColor();
+  }
+
+  /** Aplica a cor da marca como variável CSS (--af-accent) para refletir a identidade. */
+  applyBrandColor(): void {
+    const color = this._state()?.primary_color;
+    if (color) {
+      document.documentElement.style.setProperty('--af-accent', color);
+    }
+  }
 }

@@ -87,6 +87,8 @@ export interface OrganizationState {
   id: string;
   name: string;
   slug: string;
+  primary_color: string | null;
+  logo_url: string | null;
   onboarding_completed: boolean;
   business_hours: BusinessHour[];
 }
@@ -115,4 +117,12 @@ export interface PublicBookingContext {
   organization: { name: string; slug: string };
   services: PublicService[];
   professionals: PublicProfessional[];
+}
+
+export interface AnalyticsSummary {
+  period: { from: string; to: string };
+  totals: { total: number; confirmed: number; completed: number; cancelled: number; pending: number };
+  revenue_cents: number;
+  by_day: { date: string; count: number }[];
+  top_services: { name: string; count: number }[];
 }

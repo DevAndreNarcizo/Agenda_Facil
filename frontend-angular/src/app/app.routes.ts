@@ -49,6 +49,16 @@ export const routes: Routes = [
       import('./pages/professionals/professionals.page').then((m) => m.ProfessionalsPage),
   },
   {
+    path: 'analytics',
+    canActivate: [authGuard, onboardingCompletedGuard],
+    loadComponent: () => import('./pages/analytics/analytics.page').then((m) => m.AnalyticsPage),
+  },
+  {
+    path: 'settings',
+    canActivate: [authGuard, managerGuard],
+    loadComponent: () => import('./pages/settings/settings.page').then((m) => m.SettingsPage),
+  },
+  {
     path: 'plans',
     loadComponent: () => import('./pages/plans/plans.page').then((m) => m.PlansPage),
   },

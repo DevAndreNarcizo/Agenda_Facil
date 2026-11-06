@@ -23,7 +23,9 @@
     <a routerLink="/customers">Clientes</a>
     <a routerLink="/services">Serviços</a>
     <a routerLink="/professionals">Profissionais</a>
+    <a routerLink="/analytics">Analytics</a>
     @if (auth.isManager()) {
+      <a routerLink="/settings">Configurações</a>
       <a routerLink="/subscription">Assinatura</a>
     }
   </nav>

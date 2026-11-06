@@ -1,0 +1,27 @@
+<section class="crud">
+  <h1>Configurações</h1>
+
+  @if (auth.isManager()) {
+    <form [formGroup]="form" (ngSubmit)="save()" class="settings-form" novalidate>
+      <label>Nome do negócio<input type="text" formControlName="name" /></label>
+      <label>
+        Cor da marca
+        <span class="color-row">
+          <input type="color" formControlName="primary_color" />
+          <input type="text" formControlName="primary_color" class="color-hex" />
+          <span class="color-preview" [style.background]="form.controls.primary_color.value"></span>
+        </span>
+      </label>
+      @if (form.controls.primary_color.touched && form.controls.primary_color.invalid) {
+        <small class="field-error">Use um hex válido, ex.: #087bf5.</small>
+      }
+
+      @if (message()) { <p class="message" role="status">{{ message() }}</p> }
+      @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+
+      <button type="submit" [disabled]="saving()">{{ saving() ? 'Salvando…' : 'Salvar' }}</button>
+    </form>
+  } @else {
+    <p class="muted">Apenas gestores podem alterar as configurações.</p>
+  }
+</section>

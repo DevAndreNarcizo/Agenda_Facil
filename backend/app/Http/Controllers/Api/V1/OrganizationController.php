@@ -26,11 +26,36 @@ final class OrganizationController extends Controller
             'id' => $org->id,
             'name' => $org->name,
             'slug' => $org->slug,
+            'primary_color' => $org->primary_color,
+            'logo_url' => $org->logo_url,
             'onboarding_completed' => $org->onboarding_completed_at !== null,
             'business_hours' => BusinessHour::query()
                 ->where('organization_id', $org->id)
                 ->orderBy('day_of_week')
                 ->get(['day_of_week', 'start_time', 'end_time', 'is_active']),
+        ]]);
+    }
+
+    public function update(Request $request): JsonResponse
+    {
+        if (! $this->tenant->membership()->role->isManager()) {
+            abort(403, 'Apenas proprietário ou administrador pode alterar a identidade.');
+        }
+
+        $data = $request->validate([
+            'name' => ['sometimes', 'string', 'max:120'],
+            'primary_color' => ['sometimes', 'nullable', 'regex:/^#([0-9a-fA-F]{6})$/'],
+            'logo_url' => ['sometimes', 'nullable', 'url', 'max:2048'],
+        ]);
+
+        $org = $this->tenant->organization();
+        $org->update($data);
+
+        return response()->json(['data' => [
+            'id' => $org->id,
+            'name' => $org->name,
+            'primary_color' => $org->primary_color,
+            'logo_url' => $org->logo_url,
         ]]);
     }
 
