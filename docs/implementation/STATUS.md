@@ -151,3 +151,13 @@ Registradas como ADRs em `docs/adr/` (novas ADRs a partir de ADR-010).
 - Qualidade: backend **61 testes / 185 asserções**; Angular **12 testes** + build (chunks `analytics-page`, `settings-page`); Pint limpo.
 
 > Áreas do painel migradas para Angular: agenda, clientes, serviços, profissionais, assinatura, **analytics**, **configurações/identidade** — além de landing/auth/onboarding e reserva pública/portal. Paridade funcional do MVP essencialmente completa na nova stack.
+
+## Entregue na continuação (Fase C: pipeline de migração de dados)
+
+- **`SupabaseMigrationService`**: transforma um dump lógico do Supabase (modelo legado) no modelo canônico do Laravel, **preservando IDs/UUID**. Mapeia: `services.price`→`price_cents`, `appointments.employee_id`→`professional_id`, `profiles`→`users`+`memberships`(+`professionals`), campos inline de assinatura da organização→`subscriptions`+`billing_customers`, senha **nula** (redefinição obrigatória), status de agendamento canônico, `business_hours`.
+- **`MigrationReconciliationService`**: contagens origem×destino + checagem de órfãos (FK).
+- **`php artisan migrate:supabase <dump.json> [--dry-run]`**: import em transação única, idempotente por IDs; imprime reconciliação e falha se houver divergência/órfão.
+- **Runbook**: `docs/migration/DATA_MIGRATION.md` (como extrair o dump, dry-run, backup, import, pós-migração, reversibilidade).
+- Qualidade: 3 testes com dump **sintético** no formato do Supabase (IDs preservados, preço/profissional/assinatura mapeados, senha nula, reconciliação sem órfãos). Backend **64 testes / 206 asserções**; Pint limpo.
+
+> **Bloqueio externo:** a execução sobre os dados reais depende do dump/credenciais do Supabase. A lógica está pronta e provada; nenhum ambiente remoto foi tocado.

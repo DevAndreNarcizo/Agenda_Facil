@@ -14,7 +14,7 @@
 
 - [x] **A — Auditoria + baseline** — `AUDIT.md` + baseline verde (lint/tsc/31 testes). **Concluída.**
 - [ ] **B — Fundação Angular/Laravel + Sanctum + Docker Compose + CI**
-- [ ] **C — Banco (dump→PostgreSQL próprio) + multi-tenancy (policies + RLS defensivo + testes negativos 2+ orgs)**
+- [~] **C — Banco + multi-tenancy** — multi-tenancy/policies/testes 2+ orgs ✅; **pipeline de migração de dados pronto e testado** (`docs/migration/DATA_MIGRATION.md`), execução real ⛔ bloqueada pelo dump do Supabase
 - [ ] **D — Migração de funcionalidades (paridade por área, React segue vivo)**
 - [ ] **E — Billing (`BillingProvider`, catálogo no servidor, lifecycle correto, cotas, webhooks, reconciliação, sandbox)**
 - [ ] **F — Segurança + E2E + QA visual**
