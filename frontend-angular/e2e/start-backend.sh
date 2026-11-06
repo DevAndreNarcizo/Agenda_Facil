@@ -8,13 +8,10 @@ set -euo pipefail
 BACKEND_DIR="$(cd "$(dirname "$0")/../../backend" && pwd)"
 DB_FILE="/tmp/agenda_e2e.sqlite"
 
-# PHP via mise (ambiente deste sandbox). Em CI, o PHP já está no PATH.
-if [ -f "$BACKEND_DIR/../backend-dev-env.sh" ]; then
+# PHP via mise só neste sandbox (caminho específico). Em CI o PHP já está no PATH.
+if [ -d /inner_container/usr/lib64 ] && [ -f "$BACKEND_DIR/../backend-dev-env.sh" ]; then
   # shellcheck disable=SC1091
   source "$BACKEND_DIR/../backend-dev-env.sh"
-fi
-# Garante as libs do PHP do sandbox também para o processo final (exec serve).
-if [ -d /inner_container/usr/lib64 ]; then
   export LD_LIBRARY_PATH="/inner_container/usr/lib64:${LD_LIBRARY_PATH:-}"
 fi
 
