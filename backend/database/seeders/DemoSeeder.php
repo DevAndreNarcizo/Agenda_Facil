@@ -43,6 +43,8 @@ class DemoSeeder extends Seeder
             'segment' => 'estetica',
         ]);
         $org = $owner->memberships()->firstOrFail()->organization;
+        // Demo já configurada: o login cai direto no painel (sem passar pelo onboarding).
+        $org->update(['onboarding_completed_at' => now()]);
 
         // Assinatura Pro ativa (demonstra cotas sem bloquear operação).
         $pro = Plan::query()->where('code', 'pro')->firstOrFail()->currentVersion;
@@ -84,7 +86,8 @@ class DemoSeeder extends Seeder
 
         // Alguns agendamentos amanhã, sem sobreposição (horários distintos).
         $scheduling = app(SchedulingService::class);
-        $base = Carbon::tomorrow()->setHour(9);
+        // Hoje, para a agenda do dia já abrir com dados na demonstração.
+        $base = Carbon::today()->setHour(9);
         foreach ($customers as $i => $customer) {
             $start = $base->copy()->addHours($i * 2);
             $service = $services[$i % $services->count()];
