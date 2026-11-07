@@ -24,7 +24,7 @@ export interface ServiceInput {
  * Catálogo de serviços da organização com comandos de CRUD e ativação.
  * Fonte única para a tela de Serviços e para o modal de novo agendamento.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function useServices() {
   const { profile } = useAuth();
@@ -51,7 +51,7 @@ export function useServices() {
   /**
    * Garante o escopo da organização em toda escrita (defesa em profundidade além do RLS).
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const requireOrganization = (): string => {
     if (!organizationId) throw new Error("Organização não encontrada.");

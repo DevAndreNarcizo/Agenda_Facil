@@ -21,7 +21,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 /**
  * Tela de entrada do painel (e-mail + senha via Supabase Auth), no padrão visual do design system.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +39,7 @@ export default function LoginPage() {
   /**
    * Autentica e envia ao painel; o ProtectedRoute redireciona ao onboarding se não houver empresa.
    *
-   * @author André Narcizo - andre.narcizo@sysout.com.br
+   * @author André Narcizo
    */
   const onSubmit = async ({ email, password, remember }: LoginForm): Promise<void> => {
     setError(null);

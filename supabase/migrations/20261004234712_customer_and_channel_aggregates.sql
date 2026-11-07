@@ -7,7 +7,7 @@
 -- Ambas são SECURITY INVOKER (o RLS de appointments continua valendo) e escopadas pela organização
 -- do usuário autenticado; não recebem identificador de tenant.
 --
--- @author André Narcizo - andre.narcizo@sysout.com.br
+-- @author André Narcizo
 
 /**
  * Última visita e total de agendamentos ativos (não cancelados) por cliente.

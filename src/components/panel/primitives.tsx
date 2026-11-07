@@ -6,7 +6,7 @@ import { STATUS_META, type AgendaItemKind } from "@/lib/appointment-status";
 /**
  * Ícone Material Symbols com tamanho e preenchimento controlados (peso 350 do painel refinado).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function Icon({ name, size = 20, fill = false, className, ...rest }: { name: string; size?: number; fill?: boolean } & React.HTMLAttributes<HTMLSpanElement>) {
   return (
@@ -24,7 +24,7 @@ export function Icon({ name, size = 20, fill = false, className, ...rest }: { na
 /**
  * Cabeçalho de página: rótulo de contexto (eyebrow), título e ações à direita.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function PageHeader({ eyebrow, title, actions }: { eyebrow: React.ReactNode; title: React.ReactNode; actions?: React.ReactNode }) {
   return (
@@ -41,7 +41,7 @@ export function PageHeader({ eyebrow, title, actions }: { eyebrow: React.ReactNo
 /**
  * Superfície padrão (card) com borda fina e raio 12px.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function Panel({ className, ...props }: React.HTMLAttributes<HTMLElement>) {
   return <section className={cn("rounded-af-lg border border-af-line bg-af-surface", className)} {...props} />;
@@ -50,7 +50,7 @@ export function Panel({ className, ...props }: React.HTMLAttributes<HTMLElement>
 /**
  * Cabeçalho de seção dentro de um Panel (título 15px/600 e ação opcional).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function PanelHeader({ title, subtitle, action, className }: { title: React.ReactNode; subtitle?: React.ReactNode; action?: React.ReactNode; className?: string }) {
   return (
@@ -74,7 +74,7 @@ export interface KpiItem {
 /**
  * Faixa única de métricas (4 → 2 → 1 colunas), separadas por linhas de 1px.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function KpiStrip({ items, children }: { items?: KpiItem[]; children?: React.ReactNode }) {
   return (
@@ -90,7 +90,7 @@ export function KpiStrip({ items, children }: { items?: KpiItem[]; children?: Re
 /**
  * Célula individual da KpiStrip; exportada para composições com conteúdo extra (ex.: barra de uso).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function KpiCell({ label, value, sub, subClassName, children }: KpiItem & { children?: React.ReactNode }) {
   return (
@@ -106,7 +106,7 @@ export function KpiCell({ label, value, sub, subClassName, children }: KpiItem &
 /**
  * Controle segmentado (ex.: Hoje/Semana, Mensal/Anual, Claro/Escuro).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function Segmented<T extends string>({ options, value, onChange, size = "md", label }: {
   options: { value: T; label: React.ReactNode }[];
@@ -145,7 +145,7 @@ type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 /**
  * Botão do painel: primary (azul), secondary (contorno), ghost e danger (ação destrutiva discreta).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export const PanelButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
@@ -177,7 +177,7 @@ PanelButton.displayName = "PanelButton";
 /**
  * Botão só com ícone (editar, mais, fechar); label obrigatório para acessibilidade.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export const IconAction = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement> & { icon: string; label: string; size?: number }>(
   ({ icon, label, size = 18, className, type = "button", ...props }, ref) => (
@@ -201,7 +201,7 @@ IconAction.displayName = "IconAction";
 /**
  * Indicador de status com ponto colorido (lista, agenda de hoje).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function StatusDot({ status, className }: { status: AgendaItemKind; className?: string }) {
   const meta = STATUS_META[status];
@@ -216,7 +216,7 @@ export function StatusDot({ status, className }: { status: AgendaItemKind; class
 /**
  * Pílula de status com fundo claro (cabeçalho do detalhe do agendamento).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function StatusPill({ status }: { status: AgendaItemKind }) {
   const meta = STATUS_META[status];
@@ -231,7 +231,7 @@ export function StatusPill({ status }: { status: AgendaItemKind }) {
 /**
  * Tag pequena em pílula (ex.: "Plano atual", "Teste grátis").
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function Tag({ children, className }: { children: React.ReactNode; className?: string }) {
   return <span className={cn("whitespace-nowrap rounded-full bg-af-accent-soft px-2 py-[3px] text-[11px] font-medium text-af-accent", className)}>{children}</span>;
@@ -240,7 +240,7 @@ export function Tag({ children, className }: { children: React.ReactNode; classN
 /**
  * Switch 34×20 do painel, sobre o primitivo acessível do Radix.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export const PanelSwitch = React.forwardRef<
   React.ElementRef<typeof SwitchPrimitives.Root>,
@@ -262,7 +262,7 @@ PanelSwitch.displayName = "PanelSwitch";
 /**
  * Campo de formulário: label 13px/500, controle e dica/erro opcionais.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function Field({ label, htmlFor, hint, error, optional, className, children }: {
   label: React.ReactNode;
@@ -288,7 +288,7 @@ export function Field({ label, htmlFor, hint, error, optional, className, childr
 /**
  * Select nativo estilizado como filtro de toolbar (32–34px, borda fina, seta à direita).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function ToolbarSelect({ label, value, onChange, options, className }: {
   label: string;
@@ -315,7 +315,7 @@ export function ToolbarSelect({ label, value, onChange, options, className }: {
 /**
  * Busca de lista (ícone + input), com largura fluida até 300px.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function SearchField({ value, onChange, placeholder }: { value: string; onChange: (value: string) => void; placeholder: string }) {
   return (
@@ -336,7 +336,7 @@ export function SearchField({ value, onChange, placeholder }: { value: string; o
 /**
  * Avatar circular (ou quadrado arredondado) com iniciais e tom suave de destaque.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function InitialsAvatar({ initials, size = 32, square = false, muted = false, icon }: { initials?: string; size?: number; square?: boolean; muted?: boolean; icon?: string }) {
   return (
@@ -356,7 +356,7 @@ export function InitialsAvatar({ initials, size = 32, square = false, muted = fa
 /**
  * Estado vazio compacto e calmo, com ação opcional.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function EmptyState({ icon, title, description, action }: { icon: string; title: string; description?: string; action?: React.ReactNode }) {
   return (
@@ -372,7 +372,7 @@ export function EmptyState({ icon, title, description, action }: { icon: string;
 /**
  * Bloco de carregamento (skeleton) com a cor de superfície rebaixada.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function Skeleton({ className }: { className?: string }) {
   return <div className={cn("animate-pulse rounded-af-lg bg-af-surface2", className)} />;
@@ -381,7 +381,7 @@ export function Skeleton({ className }: { className?: string }) {
 /**
  * Seção de configurações em duas colunas: descrição à esquerda, conteúdo à direita.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function SettingsSection({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
@@ -398,7 +398,7 @@ export function SettingsSection({ title, description, children }: { title: strin
 /**
  * Pilha vertical de uma página do painel (gap 20px no mobile, 28px a partir de 720px).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function Page({ children, className }: { children: React.ReactNode; className?: string }) {
   return <div className={cn("flex flex-col gap-5 min-[720px]:gap-7", className)}>{children}</div>;

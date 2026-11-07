@@ -5,7 +5,7 @@ const REMEMBER_KEY = "af-remember-session";
 /**
  * Executa um acesso a Web Storage tolerando navegação privada e cookies bloqueados.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function safely<T>(action: () => T, fallback: T): T {
   try {
@@ -19,7 +19,7 @@ function safely<T>(action: () => T, fallback: T): T {
  * Indica se a sessão deve sobreviver ao fechamento do navegador ("Manter conectado").
  * Padrão: sim, que é o comportamento esperado em celular.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function shouldRememberSession(): boolean {
   return safely(() => localStorage.getItem(REMEMBER_KEY) !== "0", true);
@@ -29,7 +29,7 @@ export function shouldRememberSession(): boolean {
  * Grava a preferência "Manter conectado". Deve ser chamada antes de autenticar,
  * para a sessão nova já nascer no armazenamento certo.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function setRememberSession(remember: boolean): void {
   safely(() => localStorage.setItem(REMEMBER_KEY, remember ? "1" : "0"), undefined);
@@ -40,7 +40,7 @@ export function setRememberSession(remember: boolean): void {
  * com a opção marcada usa localStorage (persiste); desmarcada, sessionStorage (some ao fechar a aba).
  * Cada escrita remove a cópia do outro armazenamento para nunca existirem duas sessões.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export const authStorage: SupportedStorage = {
   getItem: (key) => safely(() => sessionStorage.getItem(key), null) ?? safely(() => localStorage.getItem(key), null),

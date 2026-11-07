@@ -1,0 +1,46 @@
+<div class="page">
+  <header class="page-header">
+    <div><span class="eyebrow">Relacionamento</span><h1>Clientes</h1></div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-header"><h2>Novo cliente</h2></div>
+    <form class="panel-body" [formGroup]="form" (ngSubmit)="create()" novalidate>
+      <div class="form-row">
+        <label>Nome<input type="text" formControlName="name" placeholder="Nome completo" /></label>
+        <label>Telefone<input type="text" formControlName="phone" placeholder="(11) 99999-0000" /></label>
+        <label>E-mail<input type="email" formControlName="email" placeholder="Opcional" /></label>
+        <button type="submit" class="btn-primary" [disabled]="saving()">{{ saving() ? 'Salvando…' : 'Adicionar' }}</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Todos os clientes</h2>
+      <input
+        type="search"
+        style="max-width: 280px"
+        [value]="search()"
+        (input)="doSearch($any($event.target).value)"
+        placeholder="Buscar por nome ou telefone"
+        aria-label="Buscar cliente"
+      />
+    </div>
+    @if (customers.customers().length === 0) {
+      <p class="empty">Nenhum cliente encontrado.</p>
+    } @else {
+      <ul class="list">
+        @for (c of customers.customers(); track c.id) {
+          <li>
+            <span class="avatar">{{ c.name.slice(0, 1).toUpperCase() }}</span>
+            <span class="grow">
+              <span class="title">{{ c.name }}</span>
+              <span class="sub" style="display: block">{{ c.phone || 'Sem telefone' }}@if (c.email) { · {{ c.email }} }</span>
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</div>

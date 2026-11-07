@@ -20,7 +20,7 @@ interface CustomerModalProps {
 /**
  * Modal de cadastro/edição de cliente no padrão do painel refinado.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function CustomerModal({ isOpen, onOpenChange, isEditing, formData, onFormChange, onSubmit, saving }: CustomerModalProps) {
   return (

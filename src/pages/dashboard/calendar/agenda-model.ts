@@ -29,7 +29,7 @@ const MINUTES_IN_DAY = 24 * 60;
 /**
  * Converte início/fim de um evento em minutos do dia local, limitando eventos que cruzam a meia-noite.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function toDayRange(startIso: string, endIso: string): { dateKey: string; startMin: number; endMin: number } {
   const start = getZonedParts(new Date(startIso));
@@ -41,7 +41,7 @@ function toDayRange(startIso: string, endIso: string): { dateKey: string; startM
 /**
  * Normaliza agendamentos e bloqueios em itens de agenda no fuso operacional.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function buildAgendaItems(appointments: Appointment[], blocks: AppointmentBlock[], visibleStatuses: string[]): AgendaItem[] {
   const appointmentItems = appointments
@@ -75,7 +75,7 @@ export function buildAgendaItems(appointments: Appointment[], blocks: Appointmen
  * Distribui itens sobrepostos de um mesmo dia em faixas lado a lado (algoritmo guloso por grupo).
  * Cada grupo é um conjunto transitivamente sobreposto; todos os itens do grupo dividem a mesma largura.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function layoutDayItems(items: AgendaItem[]): PositionedItem[] {
   const sorted = [...items].sort((a, b) => a.startMin - b.startMin || b.endMin - a.endMin);
@@ -112,7 +112,7 @@ export function layoutDayItems(items: AgendaItem[]): PositionedItem[] {
  * Detecta conflito de horário para um profissional: agendamentos ativos dele
  * e bloqueios dele ou da organização inteira (employeeId nulo).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function findConflict(
   items: AgendaItem[],

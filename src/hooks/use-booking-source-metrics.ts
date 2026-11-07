@@ -59,7 +59,7 @@ export function buildBookingSourceMetrics(rows: BookingSourceRow[]): BookingSour
 /**
  * Contagem por canal agregada no banco (antes: paginação de todos os agendamentos no navegador).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 async function getOrganizationBookingSources(): Promise<BookingSourceRow[]> {
   const { data, error } = await supabase.rpc('get_booking_source_counts');

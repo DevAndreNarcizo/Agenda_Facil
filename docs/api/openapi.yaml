@@ -1,0 +1,541 @@
+openapi: 3.1.0
+info:
+  title: Agenda Fácil API
+  version: "1.0.0"
+  description: >
+    API REST versionada (v1) do SaaS Agenda Fácil. O servidor é a autoridade sobre
+    identificação do tenant, permissões, cotas, preço e assinatura. Autenticação da SPA
+    via Laravel Sanctum. Esta especificação cobre os endpoints implementados na Fase B/E
+    (fundação + billing); áreas de agenda/clientes/serviços serão adicionadas nas próximas fases.
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Desenvolvimento local
+tags:
+  - name: Auth
+  - name: Organizations
+  - name: Billing
+  - name: Scheduling
+  - name: PublicBooking
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Cadastra o proprietário e provisiona a organização (transacional)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201':
+          description: Conta criada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Autentica e emite token de sessão (Sanctum)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Autenticado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Dados do usuário autenticado e seus vínculos
+      security: [{ sanctum: [] }]
+      responses:
+        '200': { description: OK }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Encerra a sessão atual
+      security: [{ sanctum: [] }]
+      responses:
+        '200': { description: Sessão encerrada }
+
+  /plans:
+    get:
+      tags: [Billing]
+      summary: Catálogo de planos (fonte autoritativa no servidor)
+      responses:
+        '200':
+          description: Lista de planos ativos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Plan' }
+
+  /organization:
+    get:
+      tags: [Organizations]
+      summary: Estado da organização (onboarding + horários de funcionamento)
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      responses:
+        '200': { description: OK }
+        '403': { description: Sem acesso à organização }
+
+    patch:
+      tags: [Organizations]
+      summary: Atualiza identidade (owner/admin) — nome, cor da marca, logo
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 120 }
+                primary_color: { type: string, pattern: '^#([0-9a-fA-F]{6})$', nullable: true }
+                logo_url: { type: string, format: uri, nullable: true }
+      responses:
+        '200': { description: Identidade atualizada }
+        '403': { description: Apenas gestores }
+
+  /organization/onboarding:
+    post:
+      tags: [Organizations]
+      summary: Conclui o onboarding (owner) — identidade, horários e primeiro serviço
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [business_name, schedule, first_service]
+              properties:
+                business_name: { type: string }
+                specialty: { type: string, nullable: true }
+                segment: { type: string, enum: [estetica, beleza, cabelo, pet], nullable: true }
+                schedule:
+                  type: array
+                  minItems: 7
+                  maxItems: 7
+                  items:
+                    type: object
+                    properties:
+                      day_of_week: { type: integer, minimum: 0, maximum: 6 }
+                      start: { type: string, example: '09:00' }
+                      end: { type: string, example: '18:00' }
+                      active: { type: boolean }
+                first_service:
+                  type: object
+                  properties:
+                    name: { type: string }
+                    duration_minutes: { type: integer, minimum: 1 }
+                    price_cents: { type: integer, minimum: 0 }
+      responses:
+        '200': { description: Onboarding concluído }
+        '403': { description: Apenas o proprietário }
+
+  /subscription:
+    get:
+      tags: [Billing]
+      summary: Assinatura atual da organização e uso de cotas
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      responses:
+        '200': { description: OK }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Sem acesso à organização }
+
+  /subscription/checkout:
+    post:
+      tags: [Billing]
+      summary: Inicia o checkout do plano (owner); preço resolvido no servidor
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plan_code]
+              properties:
+                plan_code: { type: string, example: pro }
+      responses:
+        '200':
+          description: URL de checkout
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url: { type: string, format: uri }
+        '403': { description: Apenas o proprietário administra a assinatura }
+
+  /subscription/change-plan:
+    post:
+      tags: [Billing]
+      summary: Upgrade/downgrade de plano (owner)
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plan_code]
+              properties:
+                plan_code: { type: string }
+      responses:
+        '200': { description: Plano alterado }
+        '409': { description: Sem assinatura ativa }
+
+  /subscription/cancel:
+    post:
+      tags: [Billing]
+      summary: Cancela a assinatura (imediato ou no fim do período) (owner)
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                at_period_end: { type: boolean, default: true }
+      responses:
+        '200': { description: Cancelamento aplicado/agendado }
+
+  /analytics/summary:
+    get:
+      tags: [Scheduling]
+      summary: Resumo de métricas do período (totais, faturamento, série diária, top serviços)
+      security: [{ sanctum: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/OrganizationId' }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+      responses:
+        '200': { description: OK }
+        '402': { description: Assinatura inativa }
+
+  /billing/webhook/{provider}:
+    post:
+      tags: [Billing]
+      summary: Recebe webhooks do gateway (validados por assinatura; idempotentes)
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema: { type: string, enum: [fake, stripe, asaas] }
+      responses:
+        '200': { description: Recebido }
+        '400': { description: Webhook inválido }
+
+  /services:
+    get:
+      tags: [Scheduling]
+      summary: Lista serviços da organização
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      responses:
+        '200': { description: OK }
+        '402': { description: Assinatura inativa }
+    post:
+      tags: [Scheduling]
+      summary: Cria serviço (owner/admin)
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, duration_minutes]
+              properties:
+                name: { type: string }
+                category: { type: string, nullable: true }
+                duration_minutes: { type: integer, minimum: 1 }
+                price_cents: { type: integer, minimum: 0 }
+      responses:
+        '201': { description: Criado }
+        '403': { description: Apenas gestores }
+
+  /professionals:
+    get:
+      tags: [Scheduling]
+      summary: Lista profissionais
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Scheduling]
+      summary: Cria profissional (respeita cota do plano)
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+      responses:
+        '201': { description: Criado }
+        '402': { description: Limite de profissionais do plano atingido }
+
+  /customers:
+    get:
+      tags: [Scheduling]
+      summary: Lista/busca clientes
+      security: [{ sanctum: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/OrganizationId' }
+        - { name: q, in: query, schema: { type: string }, description: Busca por nome ou telefone }
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Scheduling]
+      summary: Cadastra cliente
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                phone: { type: string, nullable: true }
+                email: { type: string, format: email, nullable: true }
+      responses:
+        '201': { description: Criado }
+
+  /appointments:
+    get:
+      tags: [Scheduling]
+      summary: Lista agendamentos por período
+      security: [{ sanctum: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/OrganizationId' }
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Scheduling]
+      summary: Cria agendamento (anti-overlap + cota mensal no servidor)
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrganizationId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [start_time, end_time]
+              properties:
+                service_id: { type: string, format: uuid, nullable: true }
+                professional_id: { type: string, format: uuid, nullable: true }
+                customer_id: { type: string, format: uuid, nullable: true }
+                start_time: { type: string, format: date-time }
+                end_time: { type: string, format: date-time }
+                source: { type: string, enum: [direct, instagram, google, qr, site, referral] }
+      responses:
+        '201': { description: Criado }
+        '402': { description: Cota mensal de agendamentos atingida }
+        '409': { description: Conflito de horário (sobreposição) }
+
+  /appointments/{appointment}/reschedule:
+    post:
+      tags: [Scheduling]
+      summary: Remarca agendamento (verifica sobreposição)
+      security: [{ sanctum: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/OrganizationId' }
+        - { name: appointment, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Remarcado }
+        '409': { description: Conflito de horário }
+
+  /appointments/{appointment}/status:
+    post:
+      tags: [Scheduling]
+      summary: Atualiza status (pending/confirmed/completed/cancelled)
+      security: [{ sanctum: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/OrganizationId' }
+        - { name: appointment, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [pending, confirmed, completed, cancelled] }
+      responses:
+        '200': { description: Atualizado }
+        '404': { description: Não encontrado no tenant atual }
+
+  /public/{slug}/context:
+    get:
+      tags: [PublicBooking]
+      summary: Contexto público de reservas (serviços/profissionais permitidos) por slug
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+        '404': { description: Slug inexistente ou reservas desabilitadas }
+
+  /public/{slug}/portal/otp/request:
+    post:
+      tags: [PublicBooking]
+      summary: Solicita OTP do portal (anti-enumeração; rate-limited)
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone: { type: string }
+      responses:
+        '202': { description: Resposta genérica (código enviado por WhatsApp em produção) }
+        '429': { description: Rate-limit excedido }
+
+  /public/{slug}/portal/otp/verify:
+    post:
+      tags: [PublicBooking]
+      summary: Verifica OTP e emite sessão opaca do portal
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, code]
+              properties:
+                phone: { type: string }
+                code: { type: string, minLength: 6, maxLength: 6 }
+      responses:
+        '200':
+          description: Sessão criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string, description: Token opaco (64 hex), devolvido uma única vez }
+                  expires_at: { type: string, format: date-time }
+        '422': { description: Código inválido ou expirado }
+
+  /public/{slug}/portal/booking:
+    post:
+      tags: [PublicBooking]
+      summary: Cria reserva pública (requer sessão de portal via X-Portal-Session)
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+        - { name: X-Portal-Session, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [service_id, professional_id, start_time]
+              properties:
+                service_id: { type: string, format: uuid }
+                professional_id: { type: string, format: uuid }
+                start_time: { type: string, format: date-time }
+      responses:
+        '201': { description: Reserva criada }
+        '401': { description: Sessão do portal inválida }
+        '409': { description: Conflito de horário }
+
+components:
+  securitySchemes:
+    sanctum:
+      type: http
+      scheme: bearer
+  parameters:
+    OrganizationId:
+      name: X-Organization-Id
+      in: header
+      required: false
+      schema: { type: string, format: uuid }
+      description: Organização alvo (obrigatória quando o usuário tem múltiplos vínculos)
+  responses:
+    Unauthorized:
+      description: Não autenticado
+    ValidationError:
+      description: Erro de validação
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [full_name, email, password, org_name, org_slug]
+      properties:
+        full_name: { type: string, maxLength: 120 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        phone: { type: string, nullable: true }
+        org_name: { type: string }
+        org_slug: { type: string, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
+        segment: { type: string, enum: [estetica, beleza, cabelo, pet], nullable: true }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string }
+            email: { type: string }
+        token: { type: string }
+    Plan:
+      type: object
+      properties:
+        code: { type: string }
+        name: { type: string }
+        subtitle: { type: string }
+        price_cents: { type: integer }
+        currency: { type: string }
+        billing_interval: { type: string }
+        entitlements:
+          type: object
+          additionalProperties: true

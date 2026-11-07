@@ -1,0 +1,51 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">
+        @if (analytics.summary(); as s) { {{ s.period.from }} a {{ s.period.to }} } @else { Mês atual }
+      </span>
+      <h1>Analytics</h1>
+    </div>
+  </header>
+
+  @if (analytics.summary(); as s) {
+    <div class="kpis">
+      <div class="kpi"><span class="kpi-label">Total</span><span class="kpi-value">{{ s.totals.total }}</span></div>
+      <div class="kpi"><span class="kpi-label">Confirmados</span><span class="kpi-value">{{ s.totals.confirmed }}</span></div>
+      <div class="kpi"><span class="kpi-label">Concluídos</span><span class="kpi-value">{{ s.totals.completed }}</span></div>
+      <div class="kpi"><span class="kpi-label">Cancelados</span><span class="kpi-value">{{ s.totals.cancelled }}</span></div>
+      <div class="kpi"><span class="kpi-label">Faturamento</span><span class="kpi-value">{{ formatCurrency(s.revenue_cents) }}</span></div>
+    </div>
+
+    <section class="panel">
+      <div class="panel-header"><h2>Agendamentos por dia</h2></div>
+      @if (s.by_day.length === 0) {
+        <p class="empty">Sem agendamentos no período.</p>
+      } @else {
+        <div class="bar-chart" role="img" aria-label="Agendamentos por dia">
+          @for (d of s.by_day; track d.date) {
+            <div class="bar-col" [title]="d.date + ': ' + d.count">
+              <div class="bar-mark" [style.height.%]="barHeight(d.count)"></div>
+              <span class="bar-x">{{ d.date.slice(8) }}</span>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="panel">
+      <div class="panel-header"><h2>Serviços mais agendados</h2></div>
+      @if (s.top_services.length === 0) {
+        <p class="empty">Sem dados no período.</p>
+      } @else {
+        <ul class="list">
+          @for (t of s.top_services; track t.name) {
+            <li><span class="title grow">{{ t.name }}</span><strong>{{ t.count }}</strong></li>
+          }
+        </ul>
+      }
+    </section>
+  } @else {
+    <p class="empty">Carregando métricas…</p>
+  }
+</div>

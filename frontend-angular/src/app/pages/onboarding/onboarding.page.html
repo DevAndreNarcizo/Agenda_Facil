@@ -1,0 +1,65 @@
+<af-auth-shell lead="Três passos rápidos e sua agenda está pronta." [wide]="true">
+  <form class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <h1>Configurar seu negócio</h1>
+
+    <section class="form" aria-labelledby="ob-negocio">
+      <h2 id="ob-negocio">Negócio</h2>
+      <label>
+        Nome do negócio
+        <input type="text" formControlName="business_name" />
+      </label>
+      <label>
+        Segmento
+        <select formControlName="segment">
+          <option value="estetica">Estética</option>
+          <option value="beleza">Beleza</option>
+          <option value="cabelo">Cabelo</option>
+          <option value="pet">Pet</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="form" aria-labelledby="ob-servico">
+      <h2 id="ob-servico">Primeiro serviço</h2>
+      <label>
+        Nome do serviço
+        <input type="text" formControlName="service_name" placeholder="Ex.: Limpeza de pele" />
+      </label>
+      <div class="form-row">
+        <label>
+          Duração (min)
+          <input type="number" formControlName="service_duration" min="1" />
+        </label>
+        <label>
+          Preço (R$)
+          <input type="number" formControlName="service_price" min="0" step="0.01" />
+        </label>
+      </div>
+    </section>
+
+    <section class="form" aria-labelledby="ob-horario">
+      <h2 id="ob-horario">Horário de funcionamento</h2>
+      <div formArrayName="schedule" class="schedule">
+        @for (ctrl of schedule.controls; track $index) {
+          <div class="schedule-row" [formGroupName]="$index">
+            <label class="day">
+              <input type="checkbox" formControlName="active" />
+              {{ weekdays[$index] }}
+            </label>
+            <input type="time" formControlName="start" [attr.aria-label]="'Abre ' + weekdays[$index]" />
+            <span class="muted">às</span>
+            <input type="time" formControlName="end" [attr.aria-label]="'Fecha ' + weekdays[$index]" />
+          </div>
+        }
+      </div>
+    </section>
+
+    @if (error()) {
+      <div class="alert alert-bad" role="alert">{{ error() }}</div>
+    }
+
+    <button type="submit" class="btn-primary btn-lg" [disabled]="submitting()">
+      {{ submitting() ? 'Concluindo…' : 'Concluir configuração' }}
+    </button>
+  </form>
+</af-auth-shell>

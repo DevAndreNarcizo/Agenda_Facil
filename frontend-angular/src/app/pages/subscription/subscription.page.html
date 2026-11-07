@@ -1,0 +1,90 @@
+<div class="page">
+  <header class="page-header">
+    <div><span class="eyebrow">Plano e faturamento</span><h1>Assinatura</h1></div>
+  </header>
+
+  @if (billing.subscription(); as sub) {
+    <div class="kpis">
+      <div class="kpi">
+        <span class="kpi-label">Plano atual</span>
+        <span class="kpi-value">{{ sub.plan?.name ?? 'Nenhum' }}</span>
+        <span class="kpi-sub"><span class="pill {{ subStatus[sub.status]?.cls ?? 'pill-info' }}">{{ subStatus[sub.status]?.label ?? sub.status }}</span></span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Mensalidade</span>
+        <span class="kpi-value">{{ formatPrice(sub.plan?.price_cents ?? null) }}</span>
+        <span class="kpi-sub">
+          @if (sub.trial_ends_at) { Teste termina em {{ sub.trial_ends_at.slice(0, 10) }} } @else { cobrança mensal }
+        </span>
+      </div>
+      @if (billing.usage(); as u) {
+        <div class="kpi">
+          <span class="kpi-label">Profissionais</span>
+          <span class="kpi-value">{{ u.professionals_limit ?? '∞' }}</span>
+          <span class="kpi-sub">{{ u.professionals_limit === null ? 'ilimitado' : 'limite do plano' }}</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label">Agendamentos no mês</span>
+          <span class="kpi-value">{{ u.monthly_appointments_used }}@if (u.monthly_appointments_limit !== null) {<small class="muted"> / {{ u.monthly_appointments_limit }}</small>}</span>
+          @if (usagePercent() !== null) {
+            <div class="bar"><div class="bar-fill" [style.width.%]="usagePercent()"></div></div>
+          } @else {
+            <span class="kpi-sub">ilimitado</span>
+          }
+        </div>
+      }
+    </div>
+
+    @if (sub.cancel_at_period_end) {
+      <div class="alert alert-warn" role="status">Cancelamento agendado para o fim do período.</div>
+    }
+  }
+
+  @if (message()) {
+    <div class="message" role="status">{{ message() }}</div>
+  }
+
+  <section aria-labelledby="planos" class="page">
+    <h2 id="planos">Planos</h2>
+    <div class="plan-grid">
+      @for (plan of billing.plans(); track plan.code) {
+        <article class="plan-card" [class.current]="billing.subscription()?.plan?.code === plan.code">
+          <div>
+            <h3>{{ plan.name }}</h3>
+            <p class="muted">{{ plan.subtitle }}</p>
+          </div>
+          <p class="price">{{ formatPrice(plan.price_cents) }}<span>/mês</span></p>
+          <ul class="features">
+            @for (f of features(plan); track f) {
+              <li><af-icon name="check" [size]="17" />{{ f }}</li>
+            }
+          </ul>
+          <button
+            type="button"
+            [class.btn-primary]="billing.subscription()?.plan?.code !== plan.code"
+            [disabled]="busy() !== null || billing.subscription()?.plan?.code === plan.code"
+            (click)="subscribe(plan.code)"
+          >
+            @if (billing.subscription()?.plan?.code === plan.code) {
+              Plano atual
+            } @else if (busy() === plan.code) {
+              Processando…
+            } @else {
+              Escolher
+            }
+          </button>
+        </article>
+      }
+    </div>
+  </section>
+
+  @if (billing.subscription(); as sub) {
+    @if (sub.status !== 'canceled' && !sub.cancel_at_period_end) {
+      <div>
+        <button type="button" class="btn-danger" [disabled]="busy() !== null" (click)="cancel(true)">
+          Cancelar no fim do período
+        </button>
+      </div>
+    }
+  }
+</div>

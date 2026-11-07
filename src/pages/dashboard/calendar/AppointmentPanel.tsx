@@ -11,7 +11,7 @@ import { useCustomerHistory } from "./use-customer-history";
 /**
  * Linha "ícone · rótulo · valor" da tabela de detalhes.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 function DetailRow({ icon, label, value }: { icon: string; label: string; value: ReactNode }) {
   return (
@@ -27,7 +27,7 @@ function DetailRow({ icon, label, value }: { icon: string; label: string; value:
  * Painel fixo ao lado do calendário com os dados do agendamento (ou bloqueio) selecionado:
  * contato, detalhes, observações, histórico da cliente, linha do tempo e ações.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function AppointmentPanel({ item, employees, busy, onClose, onConfirm, onComplete, onReschedule, onCancel, onRemoveBlock }: {
   item: AgendaItem;

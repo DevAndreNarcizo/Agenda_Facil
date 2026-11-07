@@ -1,0 +1,72 @@
+<div class="page">
+  <header class="page-header">
+    <div><span class="eyebrow">Operação</span><h1>Agenda</h1></div>
+  </header>
+
+  @if (loading()) {
+    <p class="empty">Carregando agenda…</p>
+  } @else {
+    <section class="panel">
+      <div class="panel-header"><h2>Novo agendamento</h2></div>
+      <form class="panel-body" [formGroup]="form" (ngSubmit)="create()" novalidate>
+        <div class="form-row">
+          <label>
+            Serviço
+            <select formControlName="service_id">
+              <option value="">Selecione…</option>
+              @for (s of agenda.services(); track s.id) {
+                <option [value]="s.id">{{ s.name }} ({{ s.duration_minutes }} min)</option>
+              }
+            </select>
+          </label>
+          <label>
+            Profissional
+            <select formControlName="professional_id">
+              <option value="">Selecione…</option>
+              @for (p of agenda.professionals(); track p.id) {
+                <option [value]="p.id">{{ p.name }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            Início
+            <input type="datetime-local" formControlName="start_time" />
+          </label>
+          <button type="submit" class="btn-primary" [disabled]="creating()">
+            {{ creating() ? 'Agendando…' : 'Agendar' }}
+          </button>
+        </div>
+        @if (message()) {
+          <div class="message" role="status">{{ message() }}</div>
+        }
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header"><h2>Agendamentos do dia</h2></div>
+      @if (agenda.appointments().length === 0) {
+        <p class="empty">Nenhum agendamento para hoje.</p>
+      } @else {
+        <ul class="list">
+          @for (a of agenda.appointments(); track a.id) {
+            <li [class.cancelled]="a.status === 'cancelled'">
+              <span class="time">{{ a.start_time | date: 'HH:mm' }}–{{ a.end_time | date: 'HH:mm' }}</span>
+              <span class="pill {{ statusMeta[a.status]?.cls }}">{{ statusMeta[a.status]?.label ?? a.status }}</span>
+              <span class="actions">
+                @if (a.status !== 'confirmed' && a.status !== 'cancelled') {
+                  <button type="button" class="btn-sm" (click)="setStatus(a.id, 'confirmed')">Confirmar</button>
+                }
+                @if (a.status !== 'completed' && a.status !== 'cancelled') {
+                  <button type="button" class="btn-sm" (click)="setStatus(a.id, 'completed')">Concluir</button>
+                }
+                @if (a.status !== 'cancelled') {
+                  <button type="button" class="btn-sm btn-danger" (click)="setStatus(a.id, 'cancelled')">Cancelar</button>
+                }
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</div>

@@ -10,7 +10,7 @@ const MAX_CHIPS = 3;
  * Visão mensal: semanas de segunda a domingo, até 3 itens por dia e "+N mais".
  * Clique no dia abre a visão Dia; clique no item abre o detalhe lateral.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function MonthGrid({ monthKey, items, selectedKey, onSelect, onOpenDay }: {
   /** Qualquer data do mês exibido (YYYY-MM-DD). */

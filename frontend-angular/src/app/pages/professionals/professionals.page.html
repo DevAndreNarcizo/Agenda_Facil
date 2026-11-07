@@ -1,0 +1,38 @@
+<div class="page">
+  <header class="page-header">
+    <div><span class="eyebrow">Equipe</span><h1>Profissionais</h1></div>
+  </header>
+
+  @if (auth.isManager()) {
+    <section class="panel">
+      <div class="panel-header"><h2>Novo profissional</h2></div>
+      <form class="panel-body" [formGroup]="form" (ngSubmit)="create()" novalidate>
+        <div class="form-row">
+          <label>Nome<input type="text" formControlName="name" placeholder="Nome do profissional" /></label>
+          <button type="submit" class="btn-primary" [disabled]="saving()">{{ saving() ? 'Salvando…' : 'Adicionar' }}</button>
+        </div>
+        @if (error()) {
+          <div class="error" role="alert">{{ error() }}</div>
+        }
+      </form>
+    </section>
+  } @else {
+    <div class="alert alert-warn">Apenas gestores podem cadastrar profissionais.</div>
+  }
+
+  <section class="panel">
+    <div class="panel-header"><h2>Equipe cadastrada</h2></div>
+    @if (agenda.professionals().length === 0) {
+      <p class="empty">Nenhum profissional cadastrado.</p>
+    } @else {
+      <ul class="list">
+        @for (p of agenda.professionals(); track p.id) {
+          <li>
+            <span class="avatar">{{ p.name.slice(0, 1).toUpperCase() }}</span>
+            <span class="title grow">{{ p.name }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</div>

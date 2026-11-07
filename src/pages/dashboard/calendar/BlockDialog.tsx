@@ -15,7 +15,7 @@ export interface BlockDraft {
 /**
  * Modal "Novo bloqueio": impede novas reservas no período, para um profissional ou para toda a equipe.
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 export function BlockDialog({ draft, employees, saving, onClose, onSubmit }: {
   draft: BlockDraft;

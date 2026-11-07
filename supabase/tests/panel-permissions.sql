@@ -2,7 +2,7 @@
 -- Execute somente em ambiente de teste/staging com uma role administrativa.
 -- Todas as fixtures são descartadas ao final com ROLLBACK.
 --
--- @author André Narcizo - andre.narcizo@sysout.com.br
+-- @author André Narcizo
 
 BEGIN;
 

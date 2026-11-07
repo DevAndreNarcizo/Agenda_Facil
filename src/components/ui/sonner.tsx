@@ -7,7 +7,7 @@ type ToasterProps = React.ComponentProps<typeof Sonner>
  * Toasts no padrão do design system: pílula navy (tinta) centralizada embaixo, ícone de status
  * e tema sincronizado com useThemeMode (antes dependia de next-themes sem provider).
  *
- * @author André Narcizo - andre.narcizo@sysout.com.br
+ * @author André Narcizo
  */
 const Toaster = ({ ...props }: ToasterProps) => {
   const { mode } = useThemeMode()
