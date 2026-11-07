@@ -1,6 +1,8 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { BillingService } from '../../core/services/billing.service';
 import { AuthService } from '../../core/services/auth.service';
+import { IconComponent } from '../../core/ui/icon.component';
+import { planFeatures, SUBSCRIPTION_STATUS } from '../../core/ui/helpers';
 
 /**
  * Administração da assinatura (owner): plano atual, uso de cotas, checkout/troca/cancelamento.
@@ -8,11 +10,14 @@ import { AuthService } from '../../core/services/auth.service';
 @Component({
   selector: 'af-subscription',
   standalone: true,
+  imports: [IconComponent],
   templateUrl: './subscription.page.html',
 })
 export class SubscriptionPage implements OnInit {
   readonly billing = inject(BillingService);
   readonly busy = signal<string | null>(null);
+  readonly features = planFeatures;
+  readonly subStatus = SUBSCRIPTION_STATUS;
   readonly message = signal<string | null>(null);
 
   private readonly auth = inject(AuthService);

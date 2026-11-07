@@ -93,11 +93,11 @@ test('owner faz upgrade de plano (Starter -> Pro) pela tela de assinatura', asyn
 
   await page.goto('/subscription');
   // Aguarda os cards de planos renderizarem (dados vindos do servidor).
-  const proCard = page.locator('.plan-card', { hasText: 'Pro' });
+  const proCard = page.locator('.plan-card').filter({ has: page.getByRole('heading', { name: 'Pro', exact: true }) });
   await expect(proCard).toBeVisible();
 
   // Org nova tem trial no Starter -> Starter é o "Plano atual"; Pro oferece "Escolher".
-  const starterCard = page.locator('.plan-card', { hasText: 'Starter' });
+  const starterCard = page.locator('.plan-card').filter({ has: page.getByRole('heading', { name: 'Starter', exact: true }) });
   await expect(starterCard.getByRole('button', { name: 'Plano atual' })).toBeVisible();
 
   // Faz upgrade para o Pro: com assinatura viva, o botão troca o plano (não abre checkout).

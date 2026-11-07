@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { AuthShellComponent } from '../../core/ui/auth-shell.component';
 import { OrganizationService } from '../../core/services/organization.service';
 
 const WEEKDAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -12,7 +13,7 @@ const WEEKDAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', '
 @Component({
   selector: 'af-onboarding',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, AuthShellComponent],
   templateUrl: './onboarding.page.html',
 })
 export class OnboardingPage {

@@ -1,7 +1,7 @@
-<section class="public-booking">
+<af-auth-shell [lead]="publicBooking.context()?.organization?.name ? 'Agende seu horário em poucos passos.' : ''">
   @switch (step()) {
     @case ('loading') {
-      <p>Carregando…</p>
+      <p class="empty">Carregando…</p>
     }
 
     @case ('unavailable') {
@@ -12,7 +12,7 @@
     @case ('choose') {
       <h1>Agendar em {{ publicBooking.context()?.organization?.name }}</h1>
 
-      <form [formGroup]="chooseForm" (ngSubmit)="proceed()" novalidate>
+      <form class="form" [formGroup]="chooseForm" (ngSubmit)="proceed()" novalidate>
         <label>
           Serviço
           <select formControlName="service_id">
@@ -34,10 +34,10 @@
         <label>Data e hora<input type="datetime-local" formControlName="start_time" /></label>
 
         @if (error()) {
-          <p class="error" role="alert">{{ error() }}</p>
+          <div class="error" role="alert">{{ error() }}</div>
         }
 
-        <button type="submit" [disabled]="busy()">
+        <button type="submit" class="btn-primary btn-lg" [disabled]="busy()">
           {{ busy() ? 'Processando…' : 'Continuar' }}
         </button>
       </form>
@@ -47,28 +47,34 @@
       <h1>Confirme seu telefone</h1>
       <p class="muted">Enviaremos um código por WhatsApp para confirmar a reserva.</p>
 
-      <form [formGroup]="otpForm" (ngSubmit)="verifyAndBook()" novalidate>
-        <label>Telefone (com DDD)<input type="tel" formControlName="phone" placeholder="11999990000" /></label>
+      <form class="form" [formGroup]="otpForm" (ngSubmit)="verifyAndBook()" novalidate>
+        <label>
+          Telefone (com DDD)
+          <input type="tel" formControlName="phone" placeholder="11999990000" />
+        </label>
         <button type="button" (click)="requestOtp()" [disabled]="busy()">Enviar código</button>
 
         @if (hint()) {
-          <p class="message">{{ hint() }}</p>
+          <div class="message">{{ hint() }}</div>
         }
 
-        <label>Código (6 dígitos)<input type="text" inputmode="numeric" maxlength="6" formControlName="code" /></label>
+        <label>
+          Código (6 dígitos)
+          <input type="text" inputmode="numeric" maxlength="6" formControlName="code" />
+        </label>
 
         @if (error()) {
-          <p class="error" role="alert">{{ error() }}</p>
+          <div class="error" role="alert">{{ error() }}</div>
         }
 
-        <button type="submit" [disabled]="busy()">
+        <button type="submit" class="btn-primary btn-lg" [disabled]="busy()">
           {{ busy() ? 'Confirmando…' : 'Confirmar reserva' }}
         </button>
       </form>
     }
 
     @case ('done') {
-      <h1>Reserva confirmada! 🎉</h1>
+      <h1>Reserva confirmada!</h1>
       @if (confirmation(); as c) {
         <p>
           Seu horário: <strong>{{ c.start_time | date: 'dd/MM/yyyy HH:mm' }}</strong>
@@ -78,4 +84,4 @@
       <p class="muted">Você receberá lembretes por WhatsApp.</p>
     }
   }
-</section>
+</af-auth-shell>

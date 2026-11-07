@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AgendaService } from '../../core/services/agenda.service';
+import { APPOINTMENT_STATUS } from '../../core/ui/helpers';
 import type { AppointmentStatus } from '../../core/models';
 
 /**
@@ -18,6 +19,7 @@ import type { AppointmentStatus } from '../../core/models';
 export class AgendaPage implements OnInit {
   private readonly fb = inject(FormBuilder);
   readonly agenda = inject(AgendaService);
+  readonly statusMeta = APPOINTMENT_STATUS;
 
   readonly day = signal<string>(new Date().toISOString().slice(0, 10));
   readonly loading = signal(true);

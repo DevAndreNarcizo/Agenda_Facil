@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { PublicBookingService } from '../../core/services/public-booking.service';
+import { AuthShellComponent } from '../../core/ui/auth-shell.component';
 
 type Step = 'loading' | 'choose' | 'otp' | 'done' | 'unavailable';
 
@@ -14,7 +15,7 @@ type Step = 'loading' | 'choose' | 'otp' | 'done' | 'unavailable';
 @Component({
   selector: 'af-public-booking',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, DatePipe, AuthShellComponent],
   templateUrl: './public-booking.page.html',
 })
 export class PublicBookingPage implements OnInit {

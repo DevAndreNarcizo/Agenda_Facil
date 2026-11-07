@@ -1,22 +1,30 @@
-<section class="plans">
-  <h1>Planos</h1>
+<div class="public-wrap">
+  <header class="auth-head">
+    <a routerLink="/login" aria-label="AgendaFácil"><img src="/logo-mark.png" alt="" width="64" height="64" /></a>
+    <span class="brand">Agenda<b>Fácil</b></span>
+    <h1>Planos</h1>
+    <p>Comece com 14 dias de teste grátis. Troque de plano quando quiser.</p>
+  </header>
 
   @if (billing.plans().length === 0) {
-    <p>Carregando planos…</p>
+    <p class="empty">Carregando planos…</p>
   } @else {
     <div class="plan-grid">
       @for (plan of billing.plans(); track plan.code) {
         <article class="plan-card">
-          <h2>{{ plan.name }}</h2>
-          <p class="subtitle">{{ plan.subtitle }}</p>
+          <div>
+            <h2>{{ plan.name }}</h2>
+            <p class="muted">{{ plan.subtitle }}</p>
+          </div>
           <p class="price">{{ formatPrice(plan.price_cents) }}<span>/mês</span></p>
-          <ul>
-            @for (entry of plan.entitlements | keyvalue; track entry.key) {
-              <li>{{ entry.key }}: {{ entry.value === null ? 'ilimitado' : entry.value }}</li>
+          <ul class="features">
+            @for (f of features(plan); track f) {
+              <li><af-icon name="check" [size]="17" />{{ f }}</li>
             }
           </ul>
+          <a class="btn btn-primary" routerLink="/register">Começar teste grátis</a>
         </article>
       }
     </div>
   }
-</section>
+</div>

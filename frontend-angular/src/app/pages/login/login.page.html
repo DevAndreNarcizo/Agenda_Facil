@@ -1,31 +1,40 @@
-<section class="auth">
-  <h1>Entrar — Agenda Fácil</h1>
+<af-auth-shell lead="Sua agenda, clientes e reservas em um só lugar.">
+  <nav class="tabs" aria-label="Acesso">
+    <a routerLink="/login" routerLinkActive="active" ariaCurrentWhenActive="page">Entrar</a>
+    <a routerLink="/register" routerLinkActive="active" ariaCurrentWhenActive="page">Criar conta</a>
+  </nav>
 
-  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <form class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <h1>Entrar na sua conta</h1>
+
     <label>
       E-mail
-      <input type="email" formControlName="email" autocomplete="email" />
+      <span class="input-wrap">
+        <af-icon name="mail" />
+        <input type="email" formControlName="email" autocomplete="email" placeholder="voce@negocio.com" />
+      </span>
+      @if (form.controls.email.touched && form.controls.email.invalid) {
+        <span class="field-error">Informe um e-mail válido.</span>
+      }
     </label>
-    @if (form.controls.email.touched && form.controls.email.invalid) {
-      <small class="field-error">Informe um e-mail válido.</small>
-    }
 
     <label>
       Senha
-      <input type="password" formControlName="password" autocomplete="current-password" />
+      <span class="input-wrap">
+        <af-icon name="lock" />
+        <input type="password" formControlName="password" autocomplete="current-password" />
+      </span>
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        <span class="field-error">A senha deve ter ao menos 8 caracteres.</span>
+      }
     </label>
-    @if (form.controls.password.touched && form.controls.password.invalid) {
-      <small class="field-error">A senha deve ter ao menos 8 caracteres.</small>
-    }
 
     @if (error()) {
-      <p class="error" role="alert">{{ error() }}</p>
+      <div class="alert alert-bad" role="alert"><af-icon name="error" [size]="18" />{{ error() }}</div>
     }
 
-    <button type="submit" [disabled]="submitting()">
+    <button type="submit" class="btn-primary btn-lg" [disabled]="submitting()">
       {{ submitting() ? 'Entrando…' : 'Entrar' }}
     </button>
   </form>
-
-  <p>Não tem conta? <a routerLink="/register">Cadastre-se</a></p>
-</section>
+</af-auth-shell>
