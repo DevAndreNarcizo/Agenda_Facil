@@ -12,7 +12,7 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 DB_FILE="${DEMO_DB:-/tmp/agenda_demo.sqlite}"
 
 cd "$ROOT/backend"
-[ -d vendor ] || composer install --no-interaction --prefer-dist
+composer install --no-interaction --prefer-dist
 [ -f .env ] || { cp .env.example .env; php artisan key:generate --force; }
 
 export DB_CONNECTION=sqlite DB_DATABASE="$DB_FILE" BILLING_PROVIDER=fake NOTIFICATIONS_CHANNEL=fake
@@ -24,6 +24,7 @@ API_PID=$!
 trap 'kill $API_PID 2>/dev/null || true' EXIT INT TERM
 
 cd "$ROOT/frontend-angular"
-[ -d node_modules ] || npm ci
+npm install --no-audit --no-fund --prefer-offline  # garante dependências novas (ex.: fonte Inter)
+echo ">> Commit em uso: $(git -C "$ROOT" rev-parse --short HEAD) (esperado >= 254bb48; se for anterior, rode git pull)"
 echo ">> Abra http://localhost:4200  (login: demo@agendafacil.example / demo-staging-123)"
 npx ng serve --port 4200
